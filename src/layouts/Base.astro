@@ -1,0 +1,98 @@
+---
+export interface Props {
+  title?: string;
+  description?: string;
+}
+const {
+  title = 'David Ediger Design — Creative Director',
+  description = 'Twenty-three years of print, web, video, photo, and audio. Brands that refuse to blend in.',
+} = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Moul&family=Marvel:wght@400;700&family=Fira+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style is:global>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:      #F6F3EC;
+      --blue:    #3457C6;
+      --bluedk:  #2A47A0;
+      --peri:    #90A5D1;
+      --peridk:  #6E84B4;
+      --sand:    #DDD3BC;
+      --sandlt:  #EBE4D4;
+      --slate:   #5A6269;
+      --slatedk: #363D43;
+      --taupe:   #A59A88;
+      --taupedk: #8C8270;
+      --midblue: #4A6FB5;
+      --disp:    'Moul', Georgia, serif;
+      --mid:     'Marvel', 'Trebuchet MS', sans-serif;
+      --body:    'Fira Sans', -apple-system, system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--slate);
+      font-family: var(--body);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    img { max-width: 100%; display: block; }
+
+    .lab {
+      font-family: var(--body);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 40px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 14px 24px;
+      background: var(--blue);
+      color: #fff;
+      font-family: var(--body);
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      border-radius: 5px;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+      transition: transform 120ms ease-out, background 200ms ease-out;
+    }
+    .btn:hover { background: var(--bluedk); }
+    .btn:active { transform: scale(0.97); }
+
+    @media (max-width: 1024px) {
+      .wrap { padding: 0 28px; }
+    }
+    @media (max-width: 680px) {
+      .wrap { padding: 0 20px; }
+    }
+  </style>
+</head>
+<body>
+  <slot />
+</body>
+</html>

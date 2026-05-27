@@ -1,0 +1,92 @@
+---
+const quotes = [
+  {
+    text: '"We have worked with David since 2008. He is dependable, professional and highly talented. He has helped us successfully brand our company."',
+    name: 'Jessica Owen',
+    role: 'Marketing Manager, Innotech',
+  },
+  {
+    text: '"David has to be one of the most talented graphic designers I have ever seen. I\'ve hired hundreds of designers. His talent is head and shoulders above the rest."',
+    name: 'Kim Mullin',
+    role: 'Business Development',
+  },
+  {
+    text: '"David Ediger Design is my first and only recommendation to professional business owners. His passion for design and branding is exceptional and consistent."',
+    name: 'Dave Fullerton',
+    role: 'Investment Manager',
+  },
+];
+---
+<section class="quotes">
+  <div class="wrap">
+    <span class="lab" style="color:var(--taupe);">What people say</span>
+    <h2>Twenty years of working relationships</h2>
+    <div class="qgrid">
+      {quotes.map(q => (
+        <div class="qcard">
+          <p>{q.text}</p>
+          <div class="qn">{q.name}</div>
+          <div class="qr lab">{q.role}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .quotes {
+    padding: 64px 0;
+    background: var(--sandlt);
+  }
+
+  .quotes h2 {
+    font-family: var(--mid);
+    font-weight: 700;
+    font-size: clamp(20px, 2.6vw, 28px);
+    color: var(--slatedk);
+    margin: 8px 0 30px;
+  }
+
+  .qgrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+
+  .qcard {
+    background: #fff;
+    border: 1px solid #e9e3d6;
+    border-radius: 14px;
+    padding: 26px;
+  }
+
+  .qcard p {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--slate);
+    font-weight: 300;
+    margin-bottom: 18px;
+  }
+
+  .qn {
+    font-family: var(--mid);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--slatedk);
+  }
+
+  .qr {
+    color: var(--taupe);
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  @media (max-width: 1024px) {
+    .qgrid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 680px) {
+    .qgrid { grid-template-columns: 1fr; }
+    .quotes { padding-top: 44px; padding-bottom: 46px; }
+  }
+</style>

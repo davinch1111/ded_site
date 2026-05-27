@@ -1,0 +1,211 @@
+---
+---
+<nav class="ded-nav">
+  <div class="brand">
+    <span class="badge">DED</span>
+    <span class="wordmark">DAVID <strong>EDIGER</strong> DESIGN</span>
+  </div>
+  <div class="menu lab">
+    <a href="#work">Work</a>
+    <span class="ddwrap">
+      <a href="#services">Services <i class="fa-solid fa-chevron-down" style="font-size:11px;"></i></a>
+      <span class="dd">
+        <a href="#services">Print</a>
+        <a href="#services">Web</a>
+        <a href="#services">Video</a>
+        <a href="#services">Photo</a>
+        <a href="#services">Audio</a>
+      </span>
+    </span>
+    <a href="#about">About</a>
+    <a href="#contact" class="contact-link">Contact</a>
+  </div>
+  <button class="burger" id="ded-burger" aria-label="Open menu">
+    <i class="fa-solid fa-bars"></i>
+  </button>
+</nav>
+
+<div class="mobmenu" id="ded-mobmenu">
+  <button class="mobclose" id="ded-mobclose" aria-label="Close menu">
+    <i class="fa-solid fa-xmark"></i>
+  </button>
+  <a href="#work">Work</a>
+  <a href="#services">Services</a>
+  <a href="#services" class="sub">Print · Web · Video · Photo · Audio</a>
+  <a href="#about">About</a>
+  <a href="#contact">Contact</a>
+</div>
+
+<style>
+  .ded-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 40px;
+    background: #fff;
+    border-bottom: 0.5px solid #ece7db;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 27px;
+    border: 1.5px solid var(--blue);
+    border-radius: 5px 5px 9px 9px;
+    font-family: var(--mid);
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--blue);
+  }
+
+  .wordmark {
+    font-family: var(--mid);
+    font-size: 16px;
+    color: var(--slatedk);
+    letter-spacing: 0.05em;
+  }
+
+  .menu {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+
+  .menu a {
+    color: var(--slate);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .menu .contact-link { color: var(--blue); }
+
+  .ddwrap { position: relative; }
+  .ddwrap > a {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .dd {
+    position: absolute;
+    top: 26px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-6px);
+    background: #fff;
+    border: 1px solid #e6e0d3;
+    border-radius: 8px;
+    padding: 8px;
+    min-width: 140px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 180ms ease-out;
+    box-shadow: 0 8px 26px rgba(54, 61, 67, 0.12);
+  }
+
+  .ddwrap:hover .dd {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .dd a {
+    display: block;
+    padding: 8px 12px;
+    font-size: 13px;
+    letter-spacing: 0;
+    text-transform: none;
+    border-radius: 5px;
+  }
+
+  .dd a:hover {
+    background: var(--sandlt);
+    color: var(--blue);
+  }
+
+  .burger {
+    display: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--slatedk);
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .mobmenu {
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: var(--slatedk);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 40px;
+    gap: 6px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 260ms ease-out;
+  }
+
+  .mobmenu.open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .mobmenu a {
+    font-family: var(--disp);
+    font-size: 30px;
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 0;
+  }
+
+  .mobmenu a.sub {
+    font-family: var(--body);
+    font-size: 17px;
+    color: #a7adb3;
+    padding-left: 14px;
+  }
+
+  .mobclose {
+    position: absolute;
+    top: 24px;
+    right: 30px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 28px;
+    cursor: pointer;
+  }
+
+  @media (max-width: 1024px) {
+    .ded-nav { padding-left: 28px; padding-right: 28px; }
+  }
+
+  @media (max-width: 680px) {
+    .menu { display: none; }
+    .burger { display: block; }
+    .ded-nav { padding-left: 20px; padding-right: 20px; }
+  }
+</style>
+
+<script>
+  const burger = document.getElementById('ded-burger');
+  const mob = document.getElementById('ded-mobmenu');
+  const mobx = document.getElementById('ded-mobclose');
+
+  burger?.addEventListener('click', () => mob?.classList.add('open'));
+  mobx?.addEventListener('click', () => mob?.classList.remove('open'));
+  mob?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mob.classList.remove('open')));
+</script>

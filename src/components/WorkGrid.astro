@@ -1,0 +1,382 @@
+---
+// Tile background colours — brand tones, no per-project colours
+const TILE_COLORS = ['#3457C6', '#6E84B4', '#5A6269', '#363D43', '#4A6FB5', '#8C8270'];
+
+interface Project {
+  id: number;
+  title: string;
+  excerpt: string;
+  disciplines: string;
+  color: string;
+  featuredImage: string | null;
+}
+
+const FALLBACK_PROJECTS: Project[] = [
+  {
+    id: 1,
+    title: 'First Light Fishing',
+    excerpt: 'A fishing charter in Prince Rupert run by two guys who know the water. Brand, website, and photography that makes a 4am start look worth it.',
+    disciplines: 'Brand · Web · Photography · 2026',
+    color: '#3457C6',
+    featuredImage: null,
+  },
+  {
+    id: 2,
+    title: 'Chanvre Hemp',
+    excerpt: 'A hemp line that needed to look premium on a dispensary shelf. Identity, packaging, product photography, and a launch film.',
+    disciplines: 'Brand · Packaging · Photo · Video · Web · 2024',
+    color: '#6E84B4',
+    featuredImage: null,
+  },
+  {
+    id: 3,
+    title: 'RackOn',
+    excerpt: 'An innovative rack system with a sasquatch for a mascot. We took the joke seriously and built a video campaign around it.',
+    disciplines: 'Video · Brand · Mascot · 2025',
+    color: '#5A6269',
+    featuredImage: null,
+  },
+  {
+    id: 4,
+    title: 'Wayne Northey',
+    excerpt: 'Two decades of writing on justice and faith, finally organised. A dark, readable site built around his book reviews.',
+    disciplines: 'Web · Identity · 2026',
+    color: '#363D43',
+    featuredImage: null,
+  },
+  {
+    id: 5,
+    title: 'Innotech Windows & Doors',
+    excerpt: 'Fifteen years and counting. Print, video, vehicle wraps, tradeshow booths, the lot. When they need something made, they call.',
+    disciplines: 'Print · Video · Wraps · Tradeshow · Since 2008',
+    color: '#4A6FB5',
+    featuredImage: null,
+  },
+  {
+    id: 6,
+    title: 'Vindauga Windows',
+    excerpt: 'An Innotech dealer that needed its own voice. A website and brand that borrow the quality cue without copying the parent.',
+    disciplines: 'Web · Brand · 2025',
+    color: '#8C8270',
+    featuredImage: null,
+  },
+];
+
+let projects: Project[] = FALLBACK_PROJECTS;
+
+try {
+  const res = await fetch(
+    'https://davidedigerdesign.in/wp-json/wp/v2/ded_project?per_page=20&_embed',
+    { signal: AbortSignal.timeout(8000) }
+  );
+
+  if (res.ok) {
+    const data = await res.json() as any[];
+
+    const mapped: Project[] = data.map((p: any, i: number) => {
+      // Extract discipline term names from _embedded
+      const termGroups: any[][] = p._embedded?.['wp:term'] ?? [];
+      const disciplines = termGroups
+        .flat()
+        .filter((t: any) => t.taxonomy === 'discipline')
+        .map((t: any) => t.name as string)
+        .join(' · ');
+
+      // Extract featured image URL
+      const mediaItems: any[] = p._embedded?.['wp:featuredmedia'] ?? [];
+      const featuredImage: string | null =
+        mediaItems[0]?.source_url ?? null;
+
+      // Strip HTML from excerpt
+      const excerptRaw: string = p.excerpt?.rendered ?? '';
+      const excerpt = excerptRaw.replace(/<[^>]+>/g, '').trim();
+
+      return {
+        id: p.id as number,
+        title: (p.title?.rendered ?? 'Untitled') as string,
+        excerpt,
+        disciplines: disciplines || 'Design · 2026',
+        color: TILE_COLORS[i % TILE_COLORS.length],
+        featuredImage,
+      };
+    });
+
+    if (mapped.length > 0) projects = mapped;
+  }
+} catch {
+  // WP unreachable — use fallback
+}
+---
+
+<section class="work" id="work">
+  <div class="wrap">
+    <div class="work-head">
+      <span class="lab" style="color:var(--taupe);">Selected work</span>
+      <span class="lab" style="color:var(--taupe);">Tap a project</span>
+    </div>
+    <h2>A handful of recent projects</h2>
+
+    <div class="detail" id="ded-detail">
+      <div class="panel">
+        <div class="pimg" id="ded-pimg">
+          <span class="lab">Project hero / video</span>
+        </div>
+        <div class="pbody">
+          <button class="x" id="ded-x" aria-label="Close">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+          <div class="lab" id="ded-pmeta" style="color:var(--taupe);">Brand · Web</div>
+          <div class="pname" id="ded-pname">Project Name</div>
+          <p id="ded-pblurb"></p>
+          <a class="btn" href="#" id="ded-pcta">
+            View full project <i class="fa-solid fa-arrow-right"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid" id="ded-grid">
+      {projects.map(p => (
+        <div
+          class="tile"
+          data-n={p.title}
+          data-m={p.disciplines}
+          data-c={p.color}
+          data-b={p.excerpt}
+          data-img={p.featuredImage ?? ''}
+        >
+          {p.featuredImage
+            ? <img src={p.featuredImage} alt={p.title} class="fill-img" loading="lazy" />
+            : <div class="fill" style={`background:${p.color};`}></div>
+          }
+          <div class="cap">
+            <div class="t">{p.title}</div>
+            <div class="m lab">{p.disciplines}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .work { padding: 64px 0 70px; }
+
+  .work-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .work h2 {
+    font-family: var(--mid);
+    font-weight: 700;
+    font-size: clamp(22px, 3vw, 30px);
+    color: var(--slatedk);
+    margin-bottom: 24px;
+  }
+
+  .detail {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 440ms cubic-bezier(.22,.61,.36,1), opacity 320ms ease-out, margin 320ms ease-out;
+  }
+
+  .detail.open {
+    max-height: 640px;
+    opacity: 1;
+    margin-bottom: 18px;
+  }
+
+  .panel {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #e6e0d3;
+  }
+
+  .pimg {
+    position: relative;
+    min-height: 320px;
+    background: var(--blue);
+    overflow: hidden;
+  }
+
+  .pimg > .lab {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    color: #fff;
+    opacity: 0.85;
+  }
+
+  .pimg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .pbody {
+    background: #fff;
+    padding: 34px 32px;
+    position: relative;
+  }
+
+  .pbody .x {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--taupe);
+    font-size: 20px;
+  }
+
+  .pname {
+    font-family: var(--disp);
+    font-size: 30px;
+    color: var(--slatedk);
+    line-height: 1.04;
+    margin: 10px 0 16px;
+  }
+
+  .pbody p {
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--slate);
+    font-weight: 300;
+    margin-bottom: 26px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+
+  .tile {
+    position: relative;
+    height: 240px;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 240ms cubic-bezier(.22,.61,.36,1);
+  }
+
+  .tile:hover { transform: translateY(-4px); }
+
+  .fill {
+    position: absolute;
+    inset: 0;
+    transition: filter 280ms ease-out;
+  }
+
+  .fill-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: filter 280ms ease-out;
+  }
+
+  .tile:hover .fill,
+  .tile:hover .fill-img { filter: brightness(1.08); }
+
+  .tile.active { outline: 2px solid var(--slatedk); outline-offset: 3px; }
+
+  .cap {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 20px;
+    background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%);
+  }
+
+  .cap .t {
+    font-family: var(--disp);
+    font-size: 22px;
+    color: #fff;
+  }
+
+  .cap .m {
+    color: rgba(255, 255, 255, 0.82);
+    margin-top: 6px;
+    font-size: 10px;
+  }
+
+  @media (max-width: 1024px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  @media (max-width: 680px) {
+    .grid { grid-template-columns: 1fr; }
+    .panel { grid-template-columns: 1fr; }
+    .detail.open { max-height: 900px; }
+    .work { padding-top: 44px; padding-bottom: 46px; }
+  }
+</style>
+
+<script>
+  const grid = document.getElementById('ded-grid');
+  const det = document.getElementById('ded-detail');
+  const pimg = document.getElementById('ded-pimg') as HTMLElement;
+  const pn = document.getElementById('ded-pname') as HTMLElement;
+  const pm = document.getElementById('ded-pmeta') as HTMLElement;
+  const pb = document.getElementById('ded-pblurb') as HTMLElement;
+  let cur: Element | null = null;
+
+  grid?.querySelectorAll('.tile').forEach(t => {
+    t.addEventListener('click', () => {
+      if (cur === t) {
+        det?.classList.remove('open');
+        t.classList.remove('active');
+        cur = null;
+        return;
+      }
+      grid.querySelectorAll('.tile').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+      cur = t;
+
+      const td = t as HTMLElement;
+      pn.textContent = td.dataset.n ?? '';
+      pm.textContent = td.dataset.m ?? '';
+      pb.textContent = td.dataset.b ?? '';
+
+      // Update panel image
+      const imgUrl = td.dataset.img;
+      const existingImg = pimg.querySelector('img');
+      const existingPlaceholder = pimg.querySelector('.lab');
+
+      if (imgUrl) {
+        if (existingImg) {
+          existingImg.setAttribute('src', imgUrl);
+        } else {
+          const img = document.createElement('img');
+          img.src = imgUrl;
+          img.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
+          pimg.appendChild(img);
+        }
+        if (existingPlaceholder) (existingPlaceholder as HTMLElement).style.display = 'none';
+        pimg.style.background = 'transparent';
+      } else {
+        pimg.style.background = td.dataset.c ?? '#3457C6';
+        if (existingImg) existingImg.remove();
+        if (existingPlaceholder) (existingPlaceholder as HTMLElement).style.display = '';
+      }
+
+      det?.classList.add('open');
+      setTimeout(() => det?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120);
+    });
+  });
+
+  document.getElementById('ded-x')?.addEventListener('click', () => {
+    det?.classList.remove('open');
+    if (cur) { cur.classList.remove('active'); cur = null; }
+  });
+</script>

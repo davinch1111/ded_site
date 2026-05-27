@@ -1,0 +1,109 @@
+---
+const services = [
+  {
+    name: 'Print',
+    desc: 'Logos, brand systems, packaging, signage, vehicle wraps, tradeshow booths. The work people can hold and walk up to.',
+  },
+  {
+    name: 'Web',
+    desc: 'Websites that load fast and convert, plus the social campaigns to feed them. WordPress builds with the back end actually organised.',
+  },
+  {
+    name: 'Video',
+    desc: 'Cinematic shoots, editing, colour, motion graphics. From hero films down to social cuts.',
+  },
+  {
+    name: 'Photo',
+    desc: 'Product, portrait, and conceptual photography. Images built to sell, not just to sit there.',
+  },
+  {
+    name: 'Audio',
+    desc: 'Music, soundtracks, sound design. Twenty years behind instruments, put to work on your brand.',
+  },
+];
+---
+<section class="services" id="services">
+  <div class="wrap">
+    <span class="lab" style="color:var(--taupe);">What I make</span>
+    <h2>Five ways I can help</h2>
+    <div class="srows">
+      {services.map(s => (
+        <a class="srow" href="#contact">
+          <div class="sname">{s.name}</div>
+          <p>{s.desc}</p>
+          <span class="ar"><i class="fa-solid fa-arrow-right"></i></span>
+        </a>
+      ))}
+    </div>
+  </div>
+</section>
+
+<style>
+  .services {
+    padding: 8px 0 64px;
+  }
+
+  .services h2 {
+    font-family: var(--mid);
+    font-weight: 700;
+    font-size: clamp(20px, 2.6vw, 28px);
+    color: var(--slatedk);
+    margin: 8px 0 18px;
+  }
+
+  .srows {
+    border-bottom: 1px solid #e6e0d3;
+  }
+
+  .srow {
+    display: grid;
+    grid-template-columns: 160px 1fr auto;
+    gap: 20px;
+    align-items: center;
+    padding: 22px 18px;
+    border-top: 1px solid #e6e0d3;
+    cursor: pointer;
+    transition: background 180ms ease-out;
+    text-decoration: none;
+  }
+
+  .srow:hover { background: #fff; }
+
+  .sname {
+    font-family: var(--disp);
+    font-size: clamp(22px, 3vw, 30px);
+    color: var(--slatedk);
+    transition: color 180ms ease-out;
+  }
+
+  .srow p {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--slate);
+    font-weight: 300;
+  }
+
+  .ar {
+    opacity: 0;
+    transform: translateX(-8px);
+    color: var(--taupe);
+    font-size: 18px;
+    transition: all 180ms ease-out;
+  }
+
+  .srow:hover .ar {
+    opacity: 1;
+    transform: translateX(0);
+    color: var(--blue);
+  }
+
+  .srow:hover .sname { color: var(--blue); }
+
+  @media (max-width: 680px) {
+    .srow {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .ar { display: none; }
+  }
+</style>

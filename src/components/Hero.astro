@@ -1,0 +1,92 @@
+---
+---
+<header class="hero">
+  <!-- TODO: wire new showreel:
+    <video autoplay muted loop playsinline poster="POSTER.jpg">
+      <source src="SHOWREEL.mp4" type="video/mp4">
+    </video>
+  -->
+  <div class="scrim"></div>
+  <div class="reel lab"><i class="fa-solid fa-play"></i> Showreel</div>
+  <div class="inner wrap">
+    <div class="ey lab">David Ediger · Creative Director</div>
+    <h1>Brands that<br>refuse to blend in</h1>
+    <p>Twenty-three years of print, web, video, photo, and audio. Some of these clients have stayed since 2008.</p>
+  </div>
+</header>
+
+<style>
+  .hero {
+    position: relative;
+    min-height: 78vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 48px 40px;
+    overflow: hidden;
+    background: linear-gradient(165deg, #3457C6 0%, #2A3A6E 100%);
+  }
+
+  .hero video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(30, 38, 70, 0.34);
+  }
+
+  .reel {
+    position: absolute;
+    top: 26px;
+    right: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #fff;
+    z-index: 2;
+  }
+
+  .inner {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .ey {
+    color: #c9d3f4;
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-family: var(--disp);
+    font-size: clamp(36px, 6vw, 72px);
+    line-height: 1.04;
+    color: #fff;
+    font-weight: 400;
+    margin-bottom: 20px;
+  }
+
+  p {
+    font-family: var(--body);
+    font-size: clamp(14px, 1.4vw, 17px);
+    color: #e6eaf6;
+    max-width: 480px;
+    font-weight: 300;
+  }
+
+  @media (max-width: 1024px) {
+    .hero { padding-left: 28px; padding-right: 28px; }
+  }
+
+  @media (max-width: 680px) {
+    .hero { min-height: 62vh; padding-left: 20px; padding-right: 20px; }
+  }
+</style>

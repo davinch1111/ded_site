@@ -1,0 +1,124 @@
+---
+const year = new Date().getFullYear();
+const navLinks = ['Work', 'Services', 'About', 'Contact'];
+const social = [
+  { href: 'https://www.instagram.com/david.ediger.design', icon: 'fa-brands fa-instagram', label: 'Instagram' },
+  { href: 'https://www.linkedin.com/in/david-ediger-b402a914/', icon: 'fa-brands fa-linkedin', label: 'LinkedIn' },
+  { href: 'https://vimeo.com/davidediger/', icon: 'fa-brands fa-vimeo', label: 'Vimeo' },
+  { href: 'https://www.youtube.com/channel/UCVzIVyhZouAq7VjKLsuCPyQ', icon: 'fa-brands fa-youtube', label: 'YouTube' },
+];
+---
+<footer class="foot">
+  <div class="wrap">
+    <div class="fgrid">
+      <div>
+        <div class="brand">
+          <span class="badge">DED</span>
+          <span class="wordmark">DAVID <strong>EDIGER</strong> DESIGN</span>
+        </div>
+        <p class="ftag">Creative direction since 2003.<br>Print, web, video, photo, audio.</p>
+      </div>
+      <div>
+        <div class="lab" style="color:#7e858b;margin-bottom:8px;">Site</div>
+        {navLinks.map(link => (
+          <a href={`#${link.toLowerCase()}`}>{link}</a>
+        ))}
+      </div>
+      <div>
+        <div class="lab" style="color:#7e858b;margin-bottom:8px;">Get in touch</div>
+        <a href="mailto:info@davidedigerdesign.com">info@davidedigerdesign.com</a>
+        <div class="social">
+          {social.map(s => (
+            <a href={s.href} aria-label={s.label}><i class={s.icon}></i></a>
+          ))}
+        </div>
+      </div>
+    </div>
+    <div class="copy">© {year} David Ediger Design</div>
+  </div>
+</footer>
+
+<style>
+  .foot {
+    background: var(--slatedk);
+    padding: 48px 0 28px;
+  }
+
+  .fgrid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 28px;
+    padding-bottom: 30px;
+    border-bottom: 1px solid #4a5158;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 27px;
+    border: 1.5px solid #fff;
+    border-radius: 5px 5px 9px 9px;
+    font-family: var(--mid);
+    font-weight: 700;
+    font-size: 11px;
+    color: #fff;
+  }
+
+  .wordmark {
+    font-family: var(--mid);
+    font-size: 14px;
+    color: #fff;
+    letter-spacing: 0.05em;
+  }
+
+  .ftag {
+    font-size: 13px;
+    color: #a7adb3;
+    font-weight: 300;
+    line-height: 1.6;
+    margin-top: 12px;
+  }
+
+  .foot a {
+    display: block;
+    font-size: 13px;
+    color: #cdd1d5;
+    text-decoration: none;
+    padding: 4px 0;
+    transition: color 160ms;
+  }
+
+  .foot a:hover { color: #fff; }
+
+  .social {
+    display: flex;
+    gap: 16px;
+    color: #cdd1d5;
+    font-size: 18px;
+    margin-top: 6px;
+  }
+
+  .social a {
+    display: inline;
+    padding: 0;
+  }
+
+  .copy {
+    font-size: 11px;
+    color: #7e858b;
+    padding-top: 18px;
+    font-weight: 300;
+  }
+
+  @media (max-width: 680px) {
+    .fgrid { grid-template-columns: 1fr; gap: 22px; }
+  }
+</style>
