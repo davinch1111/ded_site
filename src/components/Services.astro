@@ -3,22 +3,27 @@ const services = [
   {
     name: 'Print',
     desc: 'Logos, brand systems, packaging, signage, vehicle wraps, tradeshow booths. The work people can hold and walk up to.',
+    gradient: 'linear-gradient(135deg, #2c3240 0%, #4a5269 100%)',
   },
   {
     name: 'Web',
     desc: 'Websites that load fast and convert, plus the social campaigns to feed them. WordPress builds with the back end actually organised.',
+    gradient: 'linear-gradient(135deg, #2A47A0 0%, #3457C6 100%)',
   },
   {
     name: 'Video',
     desc: 'Cinematic shoots, editing, colour, motion graphics. From hero films down to social cuts.',
+    gradient: 'linear-gradient(135deg, #0f0f1a 0%, #363D43 100%)',
   },
   {
     name: 'Photo',
     desc: 'Product, portrait, and conceptual photography. Images built to sell, not just to sit there.',
+    gradient: 'linear-gradient(135deg, #4a5a80 0%, #6E84B4 100%)',
   },
   {
     name: 'Audio',
     desc: 'Music, soundtracks, sound design. Twenty years behind instruments, put to work on your brand.',
+    gradient: 'linear-gradient(135deg, #6b5f4e 0%, #A59A88 100%)',
   },
 ];
 ---
@@ -29,6 +34,7 @@ const services = [
     <div class="srows">
       {services.map(s => (
         <a class="srow" href="#contact">
+          <div class="srow-bg" style={`background:${s.gradient};`}></div>
           <div class="sname">{s.name}</div>
           <p>{s.desc}</p>
           <span class="ar"><i class="fa-solid fa-arrow-right"></i></span>
@@ -45,7 +51,7 @@ const services = [
 
   .services h2 {
     font-family: var(--mid);
-    font-weight: 700;
+    font-weight: 300;
     font-size: clamp(20px, 2.6vw, 28px);
     color: var(--slatedk);
     margin: 8px 0 18px;
@@ -63,25 +69,50 @@ const services = [
     padding: 22px 18px;
     border-top: 1px solid #e6e0d3;
     cursor: pointer;
-    transition: background 180ms ease-out;
     text-decoration: none;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 400ms ease-out;
   }
 
-  .srow:hover { background: #fff; }
+  /* Reveal image (gradient placeholder) — clips in on hover */
+  .srow-bg {
+    position: absolute;
+    inset: 0;
+    clip-path: inset(0 100% 0 0);
+    transition: clip-path 400ms ease-out;
+    z-index: 0;
+  }
+
+  .srow:hover .srow-bg {
+    clip-path: inset(0 0% 0 0);
+  }
+
+  /* All row content sits above the bg */
+  .sname, .srow p, .ar {
+    position: relative;
+    z-index: 1;
+  }
 
   .sname {
     font-family: var(--disp);
     font-size: clamp(22px, 3vw, 30px);
+    font-weight: 300;
     color: var(--slatedk);
-    transition: color 180ms ease-out;
+    transition: color 300ms ease-out;
   }
+
+  .srow:hover .sname { color: #fff; }
 
   .srow p {
     font-size: 14px;
     line-height: 1.55;
     color: var(--slate);
     font-weight: 300;
+    transition: color 300ms ease-out;
   }
+
+  .srow:hover p { color: rgba(255,255,255,0.75); }
 
   .ar {
     opacity: 0;
@@ -94,10 +125,8 @@ const services = [
   .srow:hover .ar {
     opacity: 1;
     transform: translateX(0);
-    color: var(--blue);
+    color: rgba(255,255,255,0.8);
   }
-
-  .srow:hover .sname { color: var(--blue); }
 
   @media (max-width: 680px) {
     .srow {

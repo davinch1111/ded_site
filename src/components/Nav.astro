@@ -1,6 +1,6 @@
 ---
 ---
-<nav class="ded-nav">
+<nav class="ded-nav" id="ded-nav">
   <div class="brand">
     <span class="badge">DED</span>
     <span class="wordmark">DAVID <strong>EDIGER</strong> DESIGN</span>
@@ -8,7 +8,7 @@
   <div class="menu lab">
     <a href="#work">Work</a>
     <span class="ddwrap">
-      <a href="#services">Services <i class="fa-solid fa-chevron-down" style="font-size:11px;"></i></a>
+      <a href="#services">Services <i class="fa-solid fa-chevron-down" style="font-size:10px;"></i></a>
       <span class="dd">
         <a href="#services">Print</a>
         <a href="#services">Web</a>
@@ -38,15 +38,25 @@
 
 <style>
   .ded-nav {
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 50;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 18px 40px;
-    background: #fff;
+    background: linear-gradient(to bottom, rgba(80,80,80,0.75) 0%, rgba(0,0,0,0) 100%);
+    border-bottom: none;
+    transition: background 260ms ease-out, border-color 260ms ease-out;
+  }
+
+  .ded-nav.nav--dark {
+    background: rgba(246, 243, 236, 0.97);
     border-bottom: 0.5px solid #ece7db;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
   .brand {
@@ -61,20 +71,31 @@
     justify-content: center;
     width: 32px;
     height: 27px;
-    border: 1.5px solid var(--blue);
+    border: 1.5px solid rgba(255,255,255,0.9);
     border-radius: 5px 5px 9px 9px;
     font-family: var(--mid);
     font-weight: 700;
     font-size: 11px;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.9);
+    transition: border-color 260ms ease-out, color 260ms ease-out;
+  }
+
+  .nav--dark .badge {
+    border-color: var(--blue);
     color: var(--blue);
   }
 
   .wordmark {
     font-family: var(--mid);
-    font-size: 16px;
-    color: var(--slatedk);
-    letter-spacing: 0.05em;
+    font-size: 15px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.9);
+    letter-spacing: 0.08em;
+    transition: color 260ms ease-out;
   }
+
+  .nav--dark .wordmark { color: var(--slatedk); }
 
   .menu {
     display: flex;
@@ -83,12 +104,16 @@
   }
 
   .menu a {
-    color: var(--slate);
+    color: rgba(255,255,255,0.85);
     text-decoration: none;
     cursor: pointer;
+    transition: color 260ms ease-out;
   }
 
-  .menu .contact-link { color: var(--blue); }
+  .nav--dark .menu a { color: var(--slate); }
+
+  .menu .contact-link { color: rgba(255,255,255,0.95); }
+  .nav--dark .menu .contact-link { color: var(--blue); }
 
   .ddwrap { position: relative; }
   .ddwrap > a {
@@ -126,11 +151,12 @@
     letter-spacing: 0;
     text-transform: none;
     border-radius: 5px;
+    color: var(--slate) !important;
   }
 
   .dd a:hover {
     background: var(--sandlt);
-    color: var(--blue);
+    color: var(--blue) !important;
   }
 
   .burger {
@@ -138,10 +164,13 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--slatedk);
+    color: rgba(255,255,255,0.9);
     font-size: 24px;
     line-height: 1;
+    transition: color 260ms ease-out;
   }
+
+  .nav--dark .burger { color: var(--slatedk); }
 
   .mobmenu {
     position: fixed;
@@ -166,6 +195,7 @@
   .mobmenu a {
     font-family: var(--disp);
     font-size: 30px;
+    font-weight: 300;
     color: #fff;
     text-decoration: none;
     padding: 8px 0;
@@ -173,7 +203,8 @@
 
   .mobmenu a.sub {
     font-family: var(--body);
-    font-size: 17px;
+    font-size: 15px;
+    font-weight: 300;
     color: #a7adb3;
     padding-left: 14px;
   }
@@ -201,11 +232,26 @@
 </style>
 
 <script>
+  const nav = document.getElementById('ded-nav');
   const burger = document.getElementById('ded-burger');
   const mob = document.getElementById('ded-mobmenu');
   const mobx = document.getElementById('ded-mobclose');
 
+  // Mobile menu
   burger?.addEventListener('click', () => mob?.classList.add('open'));
   mobx?.addEventListener('click', () => mob?.classList.remove('open'));
-  mob?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mob.classList.remove('open')));
+  mob?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mob!.classList.remove('open')));
+
+  // Nav dark mode: watch hero — when hero leaves viewport, go dark
+  const hero = document.querySelector('header.hero');
+  if (hero && nav) {
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        nav.classList.remove('nav--dark');
+      } else {
+        nav.classList.add('nav--dark');
+      }
+    }, { threshold: 0.05 });
+    io.observe(hero);
+  }
 </script>

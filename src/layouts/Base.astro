@@ -7,6 +7,8 @@ const {
   title = 'David Ediger Design — Creative Director',
   description = 'Twenty-three years of print, web, video, photo, and audio. Brands that refuse to blend in.',
 } = Astro.props;
+
+import IntroSequence from '../components/IntroSequence.tsx';
 ---
 <!doctype html>
 <html lang="en">
@@ -17,7 +19,7 @@ const {
   <meta name="description" content={description} />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Moul&family=Marvel:wght@400;700&family=Fira+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <style is:global>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -35,9 +37,9 @@ const {
       --taupe:   #A59A88;
       --taupedk: #8C8270;
       --midblue: #4A6FB5;
-      --disp:    'Moul', Georgia, serif;
-      --mid:     'Marvel', 'Trebuchet MS', sans-serif;
-      --body:    'Fira Sans', -apple-system, system-ui, sans-serif;
+      --disp:    'Montserrat', sans-serif;
+      --mid:     'Montserrat', sans-serif;
+      --body:    'Montserrat', -apple-system, system-ui, sans-serif;
     }
 
     html { scroll-behavior: smooth; }
@@ -46,6 +48,7 @@ const {
       background: var(--bg);
       color: var(--slate);
       font-family: var(--body);
+      font-weight: 400;
       line-height: 1.6;
       overflow-x: hidden;
     }
@@ -55,6 +58,7 @@ const {
     .lab {
       font-family: var(--body);
       font-size: 11px;
+      font-weight: 400;
       letter-spacing: 0.18em;
       text-transform: uppercase;
     }
@@ -74,7 +78,8 @@ const {
       color: #fff;
       font-family: var(--body);
       font-size: 13px;
-      letter-spacing: 0.04em;
+      font-weight: 500;
+      letter-spacing: 0.06em;
       border-radius: 5px;
       cursor: pointer;
       border: none;
@@ -83,6 +88,26 @@ const {
     }
     .btn:hover { background: var(--bluedk); }
     .btn:active { transform: scale(0.97); }
+
+    /* Spotlight card — global because ::before can't be set from React inline styles */
+    .spotlight-card {
+      position: relative;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .spotlight-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      border-radius: inherit;
+      background: radial-gradient(
+        220px circle at var(--mx, -200px) var(--my, -200px),
+        rgba(255, 255, 255, 0.12),
+        transparent 70%
+      );
+    }
 
     @media (max-width: 1024px) {
       .wrap { padding: 0 28px; }
@@ -93,6 +118,7 @@ const {
   </style>
 </head>
 <body>
+  <IntroSequence client:load />
   <slot />
 </body>
 </html>

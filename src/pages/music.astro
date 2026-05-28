@@ -1,0 +1,60 @@
+---
+import Base from '../layouts/Base.astro';
+---
+<Base title="Music — David Ediger Design" description="Twenty years behind instruments.">
+  <main class="music-page">
+    <div class="wrap">
+      <span class="lab" style="color:var(--taupe);">Side work</span>
+      <h1>Music</h1>
+      <p class="sub">Twenty years behind instruments.</p>
+      <p class="body">
+        Before the clients and the deadlines, there was a recording studio. Composition,
+        production, and sound design have always run parallel to the visual work — and
+        occasionally the two collide. This page collects some of that output.
+      </p>
+
+      <!-- ============================================================
+           MUSIC PLAYER WIDGET
+           Install @astrojs/react (already done) then drop the
+           21st.dev music-player-widget component here:
+
+           import MusicPlayer from '../components/MusicPlayer.tsx';
+           <MusicPlayer client:load tracks={[...]} />
+
+           Confirm @astrojs/react is working on the main site first,
+           then wire the player in the next session.
+           ============================================================ -->
+    </div>
+  </main>
+</Base>
+
+<style>
+  .music-page {
+    min-height: 80vh;
+    padding: 80px 0 100px;
+  }
+
+  .music-page h1 {
+    font-family: var(--disp);
+    font-size: clamp(40px, 7vw, 88px);
+    font-weight: 200;
+    color: var(--slatedk);
+    line-height: 1;
+    margin: 12px 0 20px;
+  }
+
+  .sub {
+    font-size: clamp(16px, 1.8vw, 22px);
+    font-weight: 300;
+    color: var(--slate);
+    margin-bottom: 32px;
+  }
+
+  .body {
+    max-width: 560px;
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 1.7;
+    color: var(--slate);
+  }
+</style>

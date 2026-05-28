@@ -1,5 +1,6 @@
 ---
-// Tile background colours — brand tones, no per-project colours
+import SpotlightCard from './SpotlightCard.tsx';
+
 const TILE_COLORS = ['#3457C6', '#6E84B4', '#5A6269', '#363D43', '#4A6FB5', '#8C8270'];
 
 interface Project {
@@ -74,20 +75,16 @@ try {
     const data = await res.json() as any[];
 
     const mapped: Project[] = data.map((p: any, i: number) => {
-      // Extract discipline term names from _embedded
       const termGroups: any[][] = p._embedded?.['wp:term'] ?? [];
       const disciplines = termGroups
         .flat()
         .filter((t: any) => t.taxonomy === 'discipline')
-        .map((t: any) => t.name as string)
+        .map((t: any) => (t.name as string))
         .join(' · ');
 
-      // Extract featured image URL
       const mediaItems: any[] = p._embedded?.['wp:featuredmedia'] ?? [];
-      const featuredImage: string | null =
-        mediaItems[0]?.source_url ?? null;
+      const featuredImage: string | null = mediaItems[0]?.source_url ?? null;
 
-      // Strip HTML from excerpt
       const excerptRaw: string = p.excerpt?.rendered ?? '';
       const excerpt = excerptRaw.replace(/<[^>]+>/g, '').trim();
 
@@ -119,17 +116,17 @@ try {
     <div class="detail" id="ded-detail">
       <div class="panel">
         <div class="pimg" id="ded-pimg">
-          <span class="lab">Project hero / video</span>
+          <span class="lab pimg-placeholder">Project hero / video</span>
         </div>
         <div class="pbody">
           <button class="x" id="ded-x" aria-label="Close">
             <i class="fa-solid fa-xmark"></i>
           </button>
-          <div class="lab" id="ded-pmeta" style="color:var(--taupe);">Brand · Web</div>
-          <div class="pname" id="ded-pname">Project Name</div>
+          <div class="lab" id="ded-pmeta" style="color:var(--taupe);"></div>
+          <div class="pname" id="ded-pname"></div>
           <p id="ded-pblurb"></p>
-          <a class="btn" href="#" id="ded-pcta">
-            View full project <i class="fa-solid fa-arrow-right"></i>
+          <a class="btn" href="#contact" id="ded-pcta">
+            Start a project <i class="fa-solid fa-arrow-right"></i>
           </a>
         </div>
       </div>
@@ -137,30 +134,32 @@ try {
 
     <div class="grid" id="ded-grid">
       {projects.map(p => (
-        <div
-          class="tile"
-          data-n={p.title}
-          data-m={p.disciplines}
-          data-c={p.color}
-          data-b={p.excerpt}
-          data-img={p.featuredImage ?? ''}
-        >
-          {p.featuredImage
-            ? <img src={p.featuredImage} alt={p.title} class="fill-img" loading="lazy" />
-            : <div class="fill" style={`background:${p.color};`}></div>
-          }
-          <div class="cap">
-            <div class="t">{p.title}</div>
-            <div class="m lab">{p.disciplines}</div>
+        <SpotlightCard client:load>
+          <div
+            class="tile"
+            data-n={p.title}
+            data-m={p.disciplines}
+            data-c={p.color}
+            data-b={p.excerpt}
+            data-img={p.featuredImage ?? ''}
+          >
+            {p.featuredImage
+              ? <img src={p.featuredImage} alt={p.title} class="fill-img" loading="lazy" />
+              : <div class="fill" style={`background:${p.color};`}></div>
+            }
+            <div class="cap">
+              <div class="t">{p.title}</div>
+              <div class="m lab">{p.disciplines}</div>
+            </div>
           </div>
-        </div>
+        </SpotlightCard>
       ))}
     </div>
   </div>
 </section>
 
 <style>
-  .work { padding: 64px 0 70px; }
+  .work { padding: 80px 0 70px; }
 
   .work-head {
     display: flex;
@@ -171,7 +170,7 @@ try {
 
   .work h2 {
     font-family: var(--mid);
-    font-weight: 700;
+    font-weight: 300;
     font-size: clamp(22px, 3vw, 30px);
     color: var(--slatedk);
     margin-bottom: 24px;
@@ -203,17 +202,19 @@ try {
     min-height: 320px;
     background: var(--blue);
     overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    padding: 16px;
   }
 
-  .pimg > .lab {
-    position: absolute;
-    top: 16px;
-    left: 16px;
+  .pimg-placeholder {
     color: #fff;
-    opacity: 0.85;
+    opacity: 0.7;
   }
 
   .pimg img {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -238,14 +239,15 @@ try {
 
   .pname {
     font-family: var(--disp);
-    font-size: 30px;
+    font-size: 28px;
+    font-weight: 300;
     color: var(--slatedk);
-    line-height: 1.04;
+    line-height: 1.1;
     margin: 10px 0 16px;
   }
 
   .pbody p {
-    font-size: 15px;
+    font-size: 14px;
     line-height: 1.65;
     color: var(--slate);
     font-weight: 300;
@@ -256,6 +258,11 @@ try {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 16px;
+  }
+
+  /* SpotlightCard is the grid item; tile fills it */
+  :global(.spotlight-card) {
+    display: block;
   }
 
   .tile {
@@ -285,7 +292,7 @@ try {
   }
 
   .tile:hover .fill,
-  .tile:hover .fill-img { filter: brightness(1.08); }
+  .tile:hover .fill-img { filter: brightness(1.1); }
 
   .tile.active { outline: 2px solid var(--slatedk); outline-offset: 3px; }
 
@@ -295,17 +302,18 @@ try {
     right: 0;
     bottom: 0;
     padding: 20px;
-    background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%);
+    background: linear-gradient(to top, rgba(0,0,0,0.62) 0%, transparent 100%);
   }
 
   .cap .t {
     font-family: var(--disp);
-    font-size: 22px;
+    font-size: 20px;
+    font-weight: 300;
     color: #fff;
   }
 
   .cap .m {
-    color: rgba(255, 255, 255, 0.82);
+    color: rgba(255, 255, 255, 0.75);
     margin-top: 6px;
     font-size: 10px;
   }
@@ -323,6 +331,7 @@ try {
 </style>
 
 <script>
+  // Attach after DOM ready — SpotlightCard SSR preserves .tile elements in initial HTML
   const grid = document.getElementById('ded-grid');
   const det = document.getElementById('ded-detail');
   const pimg = document.getElementById('ded-pimg') as HTMLElement;
@@ -331,52 +340,55 @@ try {
   const pb = document.getElementById('ded-pblurb') as HTMLElement;
   let cur: Element | null = null;
 
-  grid?.querySelectorAll('.tile').forEach(t => {
-    t.addEventListener('click', () => {
-      if (cur === t) {
-        det?.classList.remove('open');
-        t.classList.remove('active');
-        cur = null;
-        return;
-      }
-      grid.querySelectorAll('.tile').forEach(x => x.classList.remove('active'));
-      t.classList.add('active');
-      cur = t;
+  function openPanel(t: HTMLElement) {
+    grid!.querySelectorAll('.tile').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    cur = t;
 
-      const td = t as HTMLElement;
-      pn.textContent = td.dataset.n ?? '';
-      pm.textContent = td.dataset.m ?? '';
-      pb.textContent = td.dataset.b ?? '';
+    // Step 8 fix: read all data-* attributes explicitly
+    pn.textContent = t.getAttribute('data-n') ?? '';
+    pm.textContent = t.getAttribute('data-m') ?? '';
+    pb.textContent = t.getAttribute('data-b') ?? '';
 
-      // Update panel image
-      const imgUrl = td.dataset.img;
-      const existingImg = pimg.querySelector('img');
-      const existingPlaceholder = pimg.querySelector('.lab');
+    const imgUrl = t.getAttribute('data-img') ?? '';
+    const tileColor = t.getAttribute('data-c') ?? '#3457C6';
+    const placeholder = pimg.querySelector('.pimg-placeholder') as HTMLElement | null;
+    const existingImg = pimg.querySelector('img');
 
-      if (imgUrl) {
-        if (existingImg) {
-          existingImg.setAttribute('src', imgUrl);
-        } else {
-          const img = document.createElement('img');
-          img.src = imgUrl;
-          img.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
-          pimg.appendChild(img);
-        }
-        if (existingPlaceholder) (existingPlaceholder as HTMLElement).style.display = 'none';
-        pimg.style.background = 'transparent';
+    if (imgUrl) {
+      if (existingImg) {
+        existingImg.setAttribute('src', imgUrl);
       } else {
-        pimg.style.background = td.dataset.c ?? '#3457C6';
-        if (existingImg) existingImg.remove();
-        if (existingPlaceholder) (existingPlaceholder as HTMLElement).style.display = '';
+        const img = document.createElement('img');
+        img.src = imgUrl;
+        img.alt = pn.textContent;
+        img.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;';
+        pimg.appendChild(img);
       }
+      if (placeholder) placeholder.style.display = 'none';
+      pimg.style.background = 'transparent';
+    } else {
+      pimg.style.background = tileColor;
+      if (existingImg) existingImg.remove();
+      if (placeholder) placeholder.style.display = '';
+    }
 
-      det?.classList.add('open');
-      setTimeout(() => det?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120);
-    });
-  });
+    det!.classList.add('open');
+    setTimeout(() => det!.scrollIntoView({ behavior: 'smooth', block: 'center' }), 120);
+  }
 
-  document.getElementById('ded-x')?.addEventListener('click', () => {
-    det?.classList.remove('open');
+  function closePanel() {
+    det!.classList.remove('open');
     if (cur) { cur.classList.remove('active'); cur = null; }
+  }
+
+  // Use event delegation — works whether tiles are direct children or wrapped in SpotlightCard
+  grid?.addEventListener('click', (e) => {
+    const tile = (e.target as Element).closest('.tile') as HTMLElement | null;
+    if (!tile) return;
+    if (cur === tile) { closePanel(); return; }
+    openPanel(tile);
   });
+
+  document.getElementById('ded-x')?.addEventListener('click', closePanel);
 </script>

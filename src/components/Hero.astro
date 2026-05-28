@@ -1,4 +1,5 @@
 ---
+import PerspectiveMarquee from './PerspectiveMarquee.tsx';
 ---
 <header class="hero">
   <!-- TODO: wire new showreel:
@@ -13,6 +14,9 @@
     <h1>Brands that<br>refuse to blend in</h1>
     <p>Twenty-three years of print, web, video, photo, and audio. Some of these clients have stayed since 2008.</p>
   </div>
+  <div class="pmarquee-overlay">
+    <PerspectiveMarquee client:load />
+  </div>
 </header>
 
 <style>
@@ -22,7 +26,7 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    padding: 48px 40px;
+    padding: 48px 40px 120px;
     overflow: hidden;
     background: linear-gradient(165deg, #3457C6 0%, #2A3A6E 100%);
   }
@@ -38,17 +42,17 @@
   .scrim {
     position: absolute;
     inset: 0;
-    background: rgba(30, 38, 70, 0.34);
+    background: rgba(30, 38, 70, 0.42);
   }
 
   .reel {
     position: absolute;
-    top: 26px;
+    top: 90px;
     right: 40px;
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #fff;
+    color: rgba(255,255,255,0.75);
     z-index: 2;
   }
 
@@ -61,32 +65,44 @@
   }
 
   .ey {
-    color: #c9d3f4;
+    color: rgba(201, 211, 244, 0.85);
     margin-bottom: 20px;
   }
 
   h1 {
     font-family: var(--disp);
     font-size: clamp(36px, 6vw, 72px);
+    font-weight: 200;
     line-height: 1.04;
     color: #fff;
-    font-weight: 400;
     margin-bottom: 20px;
   }
 
   p {
     font-family: var(--body);
-    font-size: clamp(14px, 1.4vw, 17px);
-    color: #e6eaf6;
-    max-width: 480px;
+    font-size: clamp(13px, 1.3vw, 16px);
     font-weight: 300;
+    color: rgba(230, 234, 246, 0.85);
+    max-width: 480px;
+  }
+
+  .pmarquee-overlay {
+    position: absolute;
+    bottom: 20%;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    pointer-events: none;
+    overflow: hidden;
   }
 
   @media (max-width: 1024px) {
     .hero { padding-left: 28px; padding-right: 28px; }
+    .reel { right: 28px; }
   }
 
   @media (max-width: 680px) {
-    .hero { min-height: 62vh; padding-left: 20px; padding-right: 20px; }
+    .hero { min-height: 62vh; padding-left: 20px; padding-right: 20px; padding-bottom: 140px; }
+    .reel { display: none; }
   }
 </style>
