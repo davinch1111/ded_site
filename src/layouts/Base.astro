@@ -25,6 +25,18 @@ import IntroSequence from '../components/IntroSequence.tsx';
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
+      /* Porsche-informed DED dark palette */
+      --bg-dark:        #03040E;
+      --bg-surface:     #111217;
+      --bg-mid:         #1A1B22;
+      --bg-light:       #F6F3EC;
+      --text-primary:   #F5F4F0;
+      --text-secondary: hsl(240 0.6% 67.3%);
+      --text-dark:      #0A0A0F;
+      --accent:         #3457C6;
+      --accent-hover:   #2A47A0;
+
+      /* Legacy tokens — phased out component by component */
       --bg:      #F6F3EC;
       --blue:    #3457C6;
       --bluedk:  #2A47A0;
@@ -37,16 +49,17 @@ import IntroSequence from '../components/IntroSequence.tsx';
       --taupe:   #A59A88;
       --taupedk: #8C8270;
       --midblue: #4A6FB5;
-      --disp:    'Montserrat', sans-serif;
-      --mid:     'Montserrat', sans-serif;
-      --body:    'Montserrat', -apple-system, system-ui, sans-serif;
+
+      --disp: 'Montserrat', sans-serif;
+      --mid:  'Montserrat', sans-serif;
+      --body: 'Montserrat', -apple-system, system-ui, sans-serif;
     }
 
     html { scroll-behavior: smooth; }
 
     body {
-      background: var(--bg);
-      color: var(--slate);
+      background: var(--bg-dark);
+      color: var(--text-primary);
       font-family: var(--body);
       font-weight: 400;
       line-height: 1.6;
@@ -55,12 +68,25 @@ import IntroSequence from '../components/IntroSequence.tsx';
 
     img { max-width: 100%; display: block; }
 
+    h1 {
+      font-size: clamp(2rem, 3.5vw + 1.3rem, 5.5rem);
+      letter-spacing: -0.01em;
+      line-height: 1.05;
+    }
+
+    h2 {
+      font-size: clamp(1.5rem, 2.5vw + 0.8rem, 3.5rem);
+      letter-spacing: -0.01em;
+      line-height: 1.1;
+    }
+
     .lab {
       font-family: var(--body);
       font-size: 11px;
       font-weight: 400;
-      letter-spacing: 0.18em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
+      color: var(--text-secondary);
     }
 
     .wrap {
@@ -74,25 +100,25 @@ import IntroSequence from '../components/IntroSequence.tsx';
       align-items: center;
       gap: 9px;
       padding: 14px 24px;
-      background: var(--blue);
+      background: var(--accent);
       color: #fff;
       font-family: var(--body);
       font-size: 13px;
       font-weight: 500;
       letter-spacing: 0.06em;
-      border-radius: 5px;
+      border-radius: 4px;
       cursor: pointer;
       border: none;
       text-decoration: none;
-      transition: transform 120ms ease-out, background 200ms ease-out;
+      transition: transform 120ms ease-out, background 200ms cubic-bezier(.25,.1,.25,1);
     }
-    .btn:hover { background: var(--bluedk); }
+    .btn:hover { background: var(--accent-hover); }
     .btn:active { transform: scale(0.97); }
 
     /* Spotlight card — global because ::before can't be set from React inline styles */
     .spotlight-card {
       position: relative;
-      border-radius: 14px;
+      border-radius: 0;
       overflow: hidden;
     }
     .spotlight-card::before {
@@ -104,7 +130,7 @@ import IntroSequence from '../components/IntroSequence.tsx';
       border-radius: inherit;
       background: radial-gradient(
         220px circle at var(--mx, -200px) var(--my, -200px),
-        rgba(255, 255, 255, 0.12),
+        rgba(255, 255, 255, 0.10),
         transparent 70%
       );
     }

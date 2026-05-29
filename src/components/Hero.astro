@@ -2,14 +2,14 @@
 import PerspectiveMarquee from './PerspectiveMarquee.tsx';
 ---
 <header class="hero">
-  <!-- TODO: wire new showreel:
-    <video autoplay muted loop playsinline poster="POSTER.jpg">
+  <!-- TODO: wire showreel — add class="hero-video" to the video element
+    <video autoplay muted loop playsinline poster="POSTER.jpg" class="hero-video">
       <source src="SHOWREEL.mp4" type="video/mp4">
     </video>
   -->
   <div class="scrim"></div>
   <div class="reel lab"><i class="fa-solid fa-play"></i> Showreel</div>
-  <div class="inner wrap">
+  <div class="inner">
     <div class="ey lab">David Ediger · Creative Director</div>
     <h1>Brands that<br>refuse to blend in</h1>
     <p>Twenty-three years of print, web, video, photo, and audio. Some of these clients have stayed since 2008.</p>
@@ -22,59 +22,61 @@ import PerspectiveMarquee from './PerspectiveMarquee.tsx';
 <style>
   .hero {
     position: relative;
-    min-height: 78vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 48px 40px 120px;
+    height: 100svh;
     overflow: hidden;
-    background: linear-gradient(165deg, #3457C6 0%, #2A3A6E 100%);
+    background: var(--bg-dark);
   }
 
-  .hero video {
+  @keyframes kenBurns {
+    from { transform: scale(1); }
+    to   { transform: scale(1.08); }
+  }
+
+  /* Applied when real video is wired in */
+  :global(.hero-video) {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
+    animation: kenBurns 8s linear forwards;
   }
 
   .scrim {
     position: absolute;
     inset: 0;
-    background: rgba(30, 38, 70, 0.42);
+    background: linear-gradient(to top, rgba(3,4,14,0.85) 0%, rgba(3,4,14,0.1) 60%);
+    z-index: 1;
   }
 
   .reel {
     position: absolute;
     top: 90px;
-    right: 40px;
+    right: clamp(16px, 4vw + 4px, 80px);
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: rgba(255,255,255,0.75);
     z-index: 2;
   }
 
   .inner {
-    position: relative;
+    position: absolute;
+    bottom: clamp(48px, 3vw + 38px, 96px);
+    left: clamp(16px, 4vw + 4px, 80px);
+    right: clamp(16px, 4vw + 4px, 80px);
     z-index: 2;
-    width: 100%;
-    padding-left: 0;
-    padding-right: 0;
+    max-width: 720px;
   }
 
   .ey {
-    color: rgba(201, 211, 244, 0.85);
     margin-bottom: 20px;
   }
 
   h1 {
     font-family: var(--disp);
-    font-size: clamp(36px, 6vw, 72px);
     font-weight: 200;
-    line-height: 1.04;
-    color: #fff;
+    color: var(--text-primary);
     margin-bottom: 20px;
   }
 
@@ -82,8 +84,9 @@ import PerspectiveMarquee from './PerspectiveMarquee.tsx';
     font-family: var(--body);
     font-size: clamp(13px, 1.3vw, 16px);
     font-weight: 300;
-    color: rgba(230, 234, 246, 0.85);
+    color: rgba(245, 244, 240, 0.7);
     max-width: 480px;
+    line-height: 1.65;
   }
 
   .pmarquee-overlay {
@@ -96,13 +99,8 @@ import PerspectiveMarquee from './PerspectiveMarquee.tsx';
     overflow: hidden;
   }
 
-  @media (max-width: 1024px) {
-    .hero { padding-left: 28px; padding-right: 28px; }
-    .reel { right: 28px; }
-  }
-
   @media (max-width: 680px) {
-    .hero { min-height: 62vh; padding-left: 20px; padding-right: 20px; padding-bottom: 140px; }
     .reel { display: none; }
+    .inner { right: clamp(16px, 4vw + 4px, 80px); }
   }
 </style>

@@ -1,17 +1,17 @@
 ---
 const quotes = [
   {
-    text: '"We have worked with David since 2008. He is dependable, professional and highly talented. He has helped us successfully brand our company."',
+    text: 'We have worked with David since 2008. He is dependable, professional and highly talented. He has helped us successfully brand our company.',
     name: 'Jessica Owen',
     role: 'Marketing Manager, Innotech',
   },
   {
-    text: '"David has to be one of the most talented graphic designers I have ever seen. I\'ve hired hundreds of designers. His talent is head and shoulders above the rest."',
+    text: 'David has to be one of the most talented graphic designers I have ever seen. I\'ve hired hundreds of designers. His talent is head and shoulders above the rest.',
     name: 'Kim Mullin',
     role: 'Business Development',
   },
   {
-    text: '"David Ediger Design is my first and only recommendation to professional business owners. His passion for design and branding is exceptional and consistent."',
+    text: 'David Ediger Design is my first and only recommendation to professional business owners. His passion for design and branding is exceptional and consistent.',
     name: 'Dave Fullerton',
     role: 'Investment Manager',
   },
@@ -19,11 +19,12 @@ const quotes = [
 ---
 <section class="quotes">
   <div class="wrap">
-    <span class="lab" style="color:var(--taupe);">What people say</span>
+    <span class="lab">What people say</span>
     <h2>Twenty years of working relationships</h2>
     <div class="qgrid">
       {quotes.map(q => (
         <div class="qcard">
+          <div class="qmark">"</div>
           <p>{q.text}</p>
           <div class="qn">{q.name}</div>
           <div class="qr lab">{q.role}</div>
@@ -35,50 +36,59 @@ const quotes = [
 
 <style>
   .quotes {
-    padding: 64px 0;
-    background: var(--sandlt);
+    padding: clamp(48px, 5vw, 96px) 0;
+    background: var(--bg-mid);
   }
 
   .quotes h2 {
     font-family: var(--mid);
-    font-weight: 700;
-    font-size: clamp(20px, 2.6vw, 28px);
-    color: var(--slatedk);
-    margin: 8px 0 30px;
+    font-weight: 300;
+    color: var(--text-primary);
+    margin: 8px 0 clamp(24px, 3vw, 40px);
   }
 
   .qgrid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 18px;
+    gap: 4px;
   }
 
   .qcard {
-    background: #fff;
-    border: 1px solid #e9e3d6;
-    border-radius: 14px;
-    padding: 26px;
+    background: var(--bg-surface);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 0;
+    padding: 32px;
+  }
+
+  .qmark {
+    font-family: var(--disp);
+    font-size: 56px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--accent);
+    margin-bottom: 16px;
+    user-select: none;
   }
 
   .qcard p {
     font-size: 14px;
-    line-height: 1.65;
-    color: var(--slate);
+    line-height: 1.7;
+    color: var(--text-primary);
     font-weight: 300;
-    margin-bottom: 18px;
+    margin-bottom: 24px;
   }
 
   .qn {
     font-family: var(--mid);
-    font-weight: 700;
-    font-size: 14px;
-    color: var(--slatedk);
+    font-weight: 500;
+    font-size: 13px;
+    color: var(--text-primary);
   }
 
   .qr {
-    color: var(--taupe);
+    color: var(--text-secondary);
     font-size: 10px;
-    margin-top: 2px;
+    margin-top: 4px;
   }
 
   @media (max-width: 1024px) {
@@ -86,7 +96,7 @@ const quotes = [
   }
 
   @media (max-width: 680px) {
-    .qgrid { grid-template-columns: 1fr; }
+    .qgrid { grid-template-columns: 1fr; gap: 4px; }
     .quotes { padding-top: 44px; padding-bottom: 46px; }
   }
 </style>

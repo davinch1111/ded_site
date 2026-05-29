@@ -47,18 +47,22 @@
     align-items: center;
     justify-content: space-between;
     padding: 18px 40px;
-    background: linear-gradient(to bottom, rgba(80,80,80,0.75) 0%, rgba(0,0,0,0) 100%);
+    /* Default: transparent dark gradient — works over dark hero/work/testimonials/footer */
+    background: linear-gradient(to bottom, rgba(3,4,14,0.8) 0%, transparent 100%);
     border-bottom: none;
-    transition: background 260ms ease-out, border-color 260ms ease-out;
+    transition: background 300ms cubic-bezier(.25,.1,.25,1),
+                border-color 300ms cubic-bezier(.25,.1,.25,1);
   }
 
-  .ded-nav.nav--dark {
-    background: rgba(246, 243, 236, 0.97);
-    border-bottom: 0.5px solid #ece7db;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+  /* Light section state — flips when over Contact (#ffffff) */
+  .ded-nav.nav--light {
+    background: rgba(246, 243, 236, 0.92);
+    border-bottom: 0.5px solid rgba(10,10,15,0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
   }
 
+  /* ── Brand ── */
   .brand {
     display: flex;
     align-items: center;
@@ -71,32 +75,34 @@
     justify-content: center;
     width: 32px;
     height: 27px;
-    border: 1.5px solid rgba(255,255,255,0.9);
+    border: 1.5px solid rgba(245,244,240,0.9);
     border-radius: 5px 5px 9px 9px;
     font-family: var(--mid);
     font-weight: 700;
     font-size: 11px;
     letter-spacing: 0.06em;
-    color: rgba(255,255,255,0.9);
-    transition: border-color 260ms ease-out, color 260ms ease-out;
+    color: rgba(245,244,240,0.9);
+    transition: border-color 300ms cubic-bezier(.25,.1,.25,1),
+                color 300ms cubic-bezier(.25,.1,.25,1);
   }
 
-  .nav--dark .badge {
-    border-color: var(--blue);
-    color: var(--blue);
+  .nav--light .badge {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
   .wordmark {
     font-family: var(--mid);
     font-size: 15px;
     font-weight: 400;
-    color: rgba(255,255,255,0.9);
+    color: rgba(245,244,240,0.9);
     letter-spacing: 0.08em;
-    transition: color 260ms ease-out;
+    transition: color 300ms cubic-bezier(.25,.1,.25,1);
   }
 
-  .nav--dark .wordmark { color: var(--slatedk); }
+  .nav--light .wordmark { color: var(--text-dark); }
 
+  /* ── Desktop menu ── */
   .menu {
     display: flex;
     gap: 24px;
@@ -104,17 +110,18 @@
   }
 
   .menu a {
-    color: rgba(255,255,255,0.85);
+    color: rgba(245,244,240,0.85);
     text-decoration: none;
     cursor: pointer;
-    transition: color 260ms ease-out;
+    transition: color 300ms cubic-bezier(.25,.1,.25,1);
   }
 
-  .nav--dark .menu a { color: var(--slate); }
+  .nav--light .menu a { color: rgba(10,10,15,0.65); }
 
-  .menu .contact-link { color: rgba(255,255,255,0.95); }
-  .nav--dark .menu .contact-link { color: var(--blue); }
+  .menu .contact-link { color: rgba(245,244,240,0.95); }
+  .nav--light .menu .contact-link { color: var(--accent); }
 
+  /* ── Dropdown ── */
   .ddwrap { position: relative; }
   .ddwrap > a {
     display: inline-flex;
@@ -128,14 +135,14 @@
     left: 50%;
     transform: translateX(-50%) translateY(-6px);
     background: #fff;
-    border: 1px solid #e6e0d3;
-    border-radius: 8px;
+    border: 1px solid rgba(10,10,15,0.1);
+    border-radius: 4px;
     padding: 8px;
     min-width: 140px;
     opacity: 0;
     visibility: hidden;
-    transition: all 180ms ease-out;
-    box-shadow: 0 8px 26px rgba(54, 61, 67, 0.12);
+    transition: all 200ms cubic-bezier(.25,.1,.25,1);
+    box-shadow: 0 8px 24px rgba(3,4,14,0.16);
   }
 
   .ddwrap:hover .dd {
@@ -150,33 +157,36 @@
     font-size: 13px;
     letter-spacing: 0;
     text-transform: none;
-    border-radius: 5px;
-    color: var(--slate) !important;
+    border-radius: 2px;
+    color: var(--text-dark) !important;
+    transition: background 0.2s ease-out;
   }
 
   .dd a:hover {
-    background: var(--sandlt);
-    color: var(--blue) !important;
+    background: var(--bg-light);
+    color: var(--accent) !important;
   }
 
+  /* ── Mobile burger ── */
   .burger {
     display: none;
     background: none;
     border: none;
     cursor: pointer;
-    color: rgba(255,255,255,0.9);
+    color: rgba(245,244,240,0.9);
     font-size: 24px;
     line-height: 1;
-    transition: color 260ms ease-out;
+    transition: color 300ms cubic-bezier(.25,.1,.25,1);
   }
 
-  .nav--dark .burger { color: var(--slatedk); }
+  .nav--light .burger { color: var(--text-dark); }
 
+  /* ── Mobile overlay ── */
   .mobmenu {
     position: fixed;
     inset: 0;
     z-index: 60;
-    background: var(--slatedk);
+    background: var(--bg-dark);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -184,7 +194,7 @@
     gap: 6px;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 260ms ease-out;
+    transition: opacity 260ms cubic-bezier(.25,.1,.25,1);
   }
 
   .mobmenu.open {
@@ -196,7 +206,7 @@
     font-family: var(--disp);
     font-size: 30px;
     font-weight: 300;
-    color: #fff;
+    color: var(--text-primary);
     text-decoration: none;
     padding: 8px 0;
   }
@@ -205,7 +215,7 @@
     font-family: var(--body);
     font-size: 15px;
     font-weight: 300;
-    color: #a7adb3;
+    color: var(--text-secondary);
     padding-left: 14px;
   }
 
@@ -215,7 +225,7 @@
     right: 30px;
     background: none;
     border: none;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 28px;
     cursor: pointer;
   }
@@ -242,16 +252,20 @@
   mobx?.addEventListener('click', () => mob?.classList.remove('open'));
   mob?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mob!.classList.remove('open')));
 
-  // Nav dark mode: watch hero — when hero leaves viewport, go dark
-  const hero = document.querySelector('header.hero');
-  if (hero && nav) {
-    const io = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting) {
-        nav.classList.remove('nav--dark');
-      } else {
-        nav.classList.add('nav--dark');
-      }
-    }, { threshold: 0.05 });
-    io.observe(hero);
+  // Toggle nav--light when scrolled over any light-bg section (Contact = white)
+  const lightSections = document.querySelectorAll('.contact');
+  if (nav && lightSections.length) {
+    const lightSet = new Set<Element>();
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) lightSet.add(entry.target);
+        else lightSet.delete(entry.target);
+        nav.classList.toggle('nav--light', lightSet.size > 0);
+      });
+    }, {
+      rootMargin: '-60px 0px -80% 0px',
+      threshold: 0,
+    });
+    lightSections.forEach(s => io.observe(s));
   }
 </script>
