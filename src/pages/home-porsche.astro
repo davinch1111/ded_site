@@ -1,0 +1,1016 @@
+---
+import Base from '../layouts/Base.astro';
+
+interface Project {
+  id: number;
+  title: string;
+  disciplines: string;
+  featuredImage: string | null;
+  fallbackBg: string;
+}
+
+const FALLBACK_BG = [
+  'linear-gradient(160deg,#0d1020 0%,#1a1f2e 100%)',
+  'linear-gradient(160deg,#0a0f0a 0%,#141a14 100%)',
+  'linear-gradient(160deg,#0a0d14 0%,#16192a 100%)',
+  'linear-gradient(160deg,#0d0d0d 0%,#1a1a1a 100%)',
+  'linear-gradient(160deg,#0d1212 0%,#181e1e 100%)',
+  'linear-gradient(160deg,#100e0a 0%,#1c1912 100%)',
+];
+
+const FALLBACK_PROJECTS: Project[] = [
+  { id: 1, title: 'Innotech Windows & Doors', disciplines: 'Print · Video · Wraps · Since 2008', featuredImage: null, fallbackBg: FALLBACK_BG[0] },
+  { id: 2, title: 'Chanvre Hemp',             disciplines: 'Brand · Packaging · Video',          featuredImage: null, fallbackBg: FALLBACK_BG[1] },
+  { id: 3, title: 'First Light Fishing',      disciplines: 'Brand · Web · Photography',          featuredImage: null, fallbackBg: FALLBACK_BG[2] },
+  { id: 4, title: 'RackOn',                   disciplines: 'Video · Brand · Mascot',             featuredImage: null, fallbackBg: FALLBACK_BG[3] },
+  { id: 5, title: 'Wayne Northey',            disciplines: 'Web · Identity',                     featuredImage: null, fallbackBg: FALLBACK_BG[4] },
+  { id: 6, title: 'Vindauga Windows',         disciplines: 'Web · Brand',                        featuredImage: null, fallbackBg: FALLBACK_BG[5] },
+];
+
+let projects: Project[] = FALLBACK_PROJECTS;
+
+try {
+  const res = await fetch(
+    'https://davidedigerdesign.in/wp-json/wp/v2/ded_project?per_page=6&_embed',
+    { signal: AbortSignal.timeout(8000) }
+  );
+  if (res.ok) {
+    const data = await res.json() as any[];
+    const mapped: Project[] = data.map((p: any, i: number) => {
+      const termGroups: any[][] = p._embedded?.['wp:term'] ?? [];
+      const disciplines = termGroups.flat()
+        .filter((t: any) => t.taxonomy === 'discipline')
+        .map((t: any) => t.name as string)
+        .join(' · ');
+      const featuredImage: string | null =
+        (p._embedded?.['wp:featuredmedia'] ?? [])[0]?.source_url ?? null;
+      return {
+        id: p.id as number,
+        title: (p.title?.rendered ?? 'Untitled') as string,
+        disciplines: disciplines || 'Design · 2026',
+        featuredImage,
+        fallbackBg: FALLBACK_BG[i % FALLBACK_BG.length],
+      };
+    });
+    if (mapped.length > 0) {
+      projects = mapped.length >= 6
+        ? mapped.slice(0, 6)
+        : [...mapped, ...FALLBACK_PROJECTS.slice(mapped.length)];
+    }
+  }
+} catch { /* WP unreachable — use fallback */ }
+
+const services = [
+  { name: 'Print', desc: 'Logos, brand systems, packaging, signage, vehicle wraps, tradeshow booths. The work people can hold and walk up to.' },
+  { name: 'Web',   desc: 'Websites that load fast and convert, plus the social campaigns to feed them. WordPress builds with the back end actually organised.' },
+  { name: 'Video', desc: 'Cinematic shoots, editing, colour, motion graphics. From hero films down to social cuts.' },
+  { name: 'Photo', desc: 'Product, portrait, and conceptual photography. Images built to sell, not just to sit there.' },
+  { name: 'Audio', desc: 'Music, soundtracks, sound design. Twenty years behind instruments, put to work on your brand.' },
+];
+
+const quotes = [
+  { text: 'We have worked with David since 2008. He is dependable, professional and highly talented. He has helped us successfully brand our company.',
+    name: 'Jessica Owen', role: 'Marketing Manager, Innotech' },
+  { text: "David has to be one of the most talented graphic designers I have ever seen. I've hired hundreds of designers. His talent is head and shoulders above the rest.",
+    name: 'Kim Mullin', role: 'Business Development' },
+  { text: 'David Ediger Design is my first and only recommendation to professional business owners. His passion for design and branding is exceptional and consistent.',
+    name: 'Dave Fullerton', role: 'Investment Manager' },
+];
+
+const year = new Date().getFullYear();
+---
+
+<Base title="David Ediger Design — Portfolio">
+<div class="hp">
+
+  <!-- ══════════════ NAV ══════════════ -->
+  <nav class="hp-nav" id="hp-nav">
+    <div class="hp-brand">
+      <div class="hp-badge">DED</div>
+      <span class="hp-wordmark">DAVID <strong>EDIGER</strong> DESIGN</span>
+    </div>
+    <div class="hp-menu">
+      <a href="#work">Work</a>
+      <a href="#services">Services</a>
+      <a href="#about">About</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </nav>
+
+  <!-- ══════════════ HERO ══════════════ -->
+  <section class="hp-hero">
+    <div class="hero-showreel">
+      <i class="fa-solid fa-play" style="font-size:9px;margin-right:6px;"></i>Showreel
+    </div>
+    <div class="hero-text">
+      <p class="hero-ey">David Ediger · Creative Director</p>
+      <h1>Brands that<br>refuse to blend in</h1>
+      <p class="hero-sub">Twenty-three years of print, web, video, photo, and audio. Some of these clients have stayed since 2008.</p>
+    </div>
+  </section>
+
+  <!-- ══════════════ WORK ══════════════ -->
+  <section id="work">
+    <!-- Part A — white header -->
+    <div class="work-header">
+      <p class="work-label">Selected work</p>
+      <h2 class="work-heading">Twenty-three years of making<br>things worth looking at</h2>
+    </div>
+
+    <!-- Part B — dark card grid -->
+    <div class="work-grid-wrap">
+      <div class="work-grid" id="work-grid">
+        {projects.map((p, i) => (
+          <div
+            class="card"
+            style={!p.featuredImage ? `background:${p.fallbackBg};` : ''}
+            data-idx={i}
+          >
+            {p.featuredImage && (
+              <img src={p.featuredImage} alt={p.title} loading={i < 2 ? 'eager' : 'lazy'} />
+            )}
+            <div class="card-top-scrim"></div>
+            <div class="card-title">{p.title}</div>
+            <div class="card-info">
+              <span class="card-desc">{p.disciplines}</span>
+              <div class="card-cta-area">
+                <button class="card-arrow" aria-label="View project">
+                  <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i>
+                </button>
+                <a class="card-cta" href="#contact">
+                  View project <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ SERVICES ══════════════ -->
+  <section class="services-section" id="services">
+    <p class="s-label">What I make</p>
+    <h2 class="s-heading">Five ways I can help</h2>
+    <div class="srows">
+      {services.map(s => (
+        <div class="srow">
+          <div class="sname">{s.name}</div>
+          <p class="sdesc">{s.desc}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ══════════════ TESTIMONIALS ══════════════ -->
+  <section class="quotes-section">
+    <div class="quotes-inner">
+      <p class="q-label">What people say</p>
+      <h2 class="q-heading">Twenty years of working relationships</h2>
+      <div class="qgrid">
+        {quotes.map(q => (
+          <div class="qcard">
+            <div class="qmark">"</div>
+            <p class="qtext">{q.text}</p>
+            <div class="qname">{q.name}</div>
+            <div class="qrole">{q.role}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ CONTACT ══════════════ -->
+  <section class="contact-section" id="contact">
+    <div class="contact-inner">
+      <p class="c-label">Start a project</p>
+      <h2 class="c-heading">Tell me what you're building</h2>
+      <p class="c-sub">I take on a small number of new projects each year. A few quick questions and I'll know if I'm the right fit.</p>
+      <form class="c-form" action="mailto:info@davidedigerdesign.com" method="get" enctype="text/plain">
+        <div class="c-row">
+          <input class="c-inp" type="text"  name="name"  placeholder="Your name" required />
+          <input class="c-inp" type="email" name="email" placeholder="Email"      required />
+        </div>
+        <input class="c-inp" type="text" name="company" placeholder="Business or company" style="margin-bottom:18px;" />
+
+        <div class="c-flabel">What can I help with?</div>
+        <div class="c-chips">
+          {['Print','Web','Video','Photo','Audio','Not sure yet'].map((chip, i) => (
+            <span class:list={['c-chip', { on: i === 0 }]} data-chip>{chip}</span>
+          ))}
+        </div>
+
+        <div class="c-row">
+          <div>
+            <div class="c-flabel">Budget</div>
+            <select class="c-inp" name="budget">
+              <option>Under $5,000</option>
+              <option>$5,000 – $15,000</option>
+              <option>$15,000 – $40,000</option>
+              <option>$40,000+</option>
+              <option>Let's talk</option>
+            </select>
+          </div>
+          <div>
+            <div class="c-flabel">Timeline</div>
+            <select class="c-inp" name="timeline">
+              <option>As soon as possible</option>
+              <option>1 – 3 months</option>
+              <option>3 – 6 months</option>
+              <option>Flexible</option>
+            </select>
+          </div>
+        </div>
+
+        <textarea class="c-inp" name="description" rows="4"
+          placeholder="Tell me about the project. What does success look like?"
+          style="margin-top:16px;margin-bottom:24px;resize:vertical;"></textarea>
+
+        <button class="c-submit" type="submit">
+          Send it over <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ══════════════ FOOTER ══════════════ -->
+  <footer class="hp-footer">
+    <div class="foot-wrap">
+      <div class="foot-grid">
+        <div>
+          <div class="foot-brand">
+            <div class="hp-badge">DED</div>
+            <span class="hp-wordmark">DAVID <strong>EDIGER</strong> DESIGN</span>
+          </div>
+          <p class="foot-tag">Creative direction since 2003.<br>Print, web, video, photo, audio.</p>
+        </div>
+        <div>
+          <div class="foot-section-label">Site</div>
+          <a class="foot-link" href="#work">Work</a>
+          <a class="foot-link" href="#services">Services</a>
+          <a class="foot-link" href="#contact">Contact</a>
+        </div>
+        <div>
+          <div class="foot-section-label">Get in touch</div>
+          <a class="foot-link" href="mailto:info@davidedigerdesign.com">info@davidedigerdesign.com</a>
+          <div class="foot-social">
+            <a href="https://www.instagram.com/david.ediger.design" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+            <a href="https://www.linkedin.com/in/david-ediger-b402a914/"  aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+            <a href="https://vimeo.com/davidediger/"                      aria-label="Vimeo"><i class="fa-brands fa-vimeo"></i></a>
+            <a href="https://www.youtube.com/channel/UCVzIVyhZouAq7VjKLsuCPyQ" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+          </div>
+        </div>
+      </div>
+      <div class="foot-copy">© {year} David Ediger Design</div>
+    </div>
+  </footer>
+
+</div><!-- /.hp -->
+</Base>
+
+<!-- ══════════════════════════════════════════════════════════
+     ALL CSS — single block, is:global to support :has() selectors
+════════════════════════════════════════════════════════════ -->
+<style is:global>
+
+/* ── Variables (inherited by all children of .hp) ── */
+.hp {
+  --black:      #03040E;
+  --dark:       #0F1014;
+  --card-bg:    #141519;
+  --white:      #FAFAFA;
+  --text-white: #F5F4F0;
+  --text-muted: rgba(245,244,240,0.5);
+  --text-dark:  #0F1014;
+  --accent:     #3457C6;
+  --gap:        12px;
+  font-family: 'Montserrat', -apple-system, system-ui, sans-serif;
+}
+
+/* ═══ NAV ═══ */
+.hp-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 20px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+  transition: background 300ms cubic-bezier(.25,.1,.25,1),
+              border-color 300ms cubic-bezier(.25,.1,.25,1);
+}
+
+.hp-nav.nav--light {
+  background: rgba(250,250,250,0.95);
+  border-bottom: 0.5px solid rgba(15,16,20,0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.hp-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.hp-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 27px;
+  border: 1.5px solid rgba(245,244,240,0.9);
+  border-radius: 5px 5px 9px 9px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: rgba(245,244,240,0.9);
+  flex-shrink: 0;
+  transition: border-color 300ms, color 300ms;
+}
+
+.hp-nav.nav--light .hp-badge {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.hp-wordmark {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: rgba(245,244,240,0.9);
+  white-space: nowrap;
+  transition: color 300ms;
+}
+
+.hp-nav.nav--light .hp-wordmark { color: var(--text-dark); }
+
+.hp-menu {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+}
+
+.hp-menu a {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(245,244,240,0.85);
+  text-decoration: none;
+  transition: color 300ms;
+}
+
+.hp-nav.nav--light .hp-menu a { color: rgba(15,16,20,0.65); }
+
+/* ═══ HERO ═══ */
+.hp-hero {
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--black);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-showreel {
+  position: absolute;
+  top: 90px;
+  right: clamp(24px, 5vw, 80px);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  z-index: 2;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.hero-text {
+  position: absolute;
+  bottom: clamp(48px, 4vw, 80px);
+  left: clamp(24px, 5vw, 80px);
+  right: clamp(24px, 5vw, 80px);
+  max-width: 700px;
+  z-index: 2;
+}
+
+.hero-ey {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+
+/* Override Base.astro's global h1 for this hero */
+.hp-hero h1 {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: clamp(2.4rem, 5.5vw + 0.5rem, 6rem) !important;
+  font-weight: 300 !important;
+  color: var(--text-white) !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.04 !important;
+  margin-bottom: 22px;
+}
+
+.hero-sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--text-muted);
+  line-height: 1.65;
+  max-width: 420px;
+}
+
+/* ═══ WORK — Part A: white header ═══ */
+.work-header {
+  background: var(--white);
+  padding: 64px clamp(24px,5vw,80px) 32px;
+}
+
+.work-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 14px;
+}
+
+.work-heading {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  font-weight: 300;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+/* ═══ WORK — Part B: dark grid ═══ */
+.work-grid-wrap {
+  background: var(--black);
+  padding: 0 clamp(24px,5vw,80px) 80px;
+}
+
+/* ── The Grid ── */
+.work-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: repeat(3, 460px);
+  gap: var(--gap);
+  transition: grid-template-columns 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* Column expansion — left-column cards hovered */
+.work-grid:has(.card:nth-child(1):hover),
+.work-grid:has(.card:nth-child(3):hover),
+.work-grid:has(.card:nth-child(5):hover) {
+  grid-template-columns: 1.4fr 0.6fr;
+}
+
+/* Right-column cards hovered */
+.work-grid:has(.card:nth-child(2):hover),
+.work-grid:has(.card:nth-child(4):hover),
+.work-grid:has(.card:nth-child(6):hover) {
+  grid-template-columns: 0.6fr 1.4fr;
+}
+
+/* JS :has() fallback */
+.work-grid.expand-left  { grid-template-columns: 1.4fr 0.6fr; }
+.work-grid.expand-right { grid-template-columns: 0.6fr 1.4fr; }
+
+.card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--card-bg);
+  cursor: pointer;
+}
+
+.card img {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 600ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.card:hover img { transform: scale(1.04); }
+
+/* Top gradient so card-title reads over dark or photo backgrounds */
+.card-top-scrim {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 140px;
+  background: linear-gradient(to bottom, rgba(3,4,14,0.65) 0%, transparent 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Project name — top-centre, Porsche model-name style */
+.card-title {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 24px;
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.1rem, 2vw, 1.6rem);
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  color: var(--text-white);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+  z-index: 2;
+}
+
+/* Dark info strip — bottom of card */
+.card-info {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(10,10,15,0.88);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2;
+}
+
+.card-desc {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--text-muted);
+  flex: 1;
+  margin-right: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* CTA area — circle arrow fades to text button on hover */
+.card-cta-area {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.card-arrow {
+  position: absolute;
+  top: 0; right: 0;
+  width: 36px; height: 36px;
+  border: 1px solid rgba(245,244,240,0.4);
+  border-radius: 50%;
+  background: none;
+  color: var(--text-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1;
+  transition: opacity 250ms cubic-bezier(.25,.1,.25,1);
+}
+
+.card-cta {
+  position: absolute;
+  top: 50%; right: 0;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-white);
+  border: 1px solid rgba(245,244,240,0.3);
+  padding: 8px 14px;
+  border-radius: 4px;
+  white-space: nowrap;
+  text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 250ms cubic-bezier(.25,.1,.25,1),
+              border-color 200ms,
+              background 200ms;
+}
+
+.card:hover .card-arrow { opacity: 0; pointer-events: none; }
+.card:hover .card-cta   { opacity: 1; pointer-events: auto; }
+.card-cta:hover { background: rgba(255,255,255,0.08); border-color: rgba(245,244,240,0.6); }
+
+/* ═══ SERVICES ═══ */
+.services-section {
+  background: var(--white);
+  padding: 80px clamp(24px,5vw,80px);
+}
+
+.s-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(15,16,20,0.4);
+  margin-bottom: 12px;
+}
+
+.s-heading {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  font-weight: 300;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: 40px;
+}
+
+.srows { border-top: 1px solid rgba(15,16,20,0.1); }
+
+.srow {
+  display: grid;
+  grid-template-columns: minmax(200px, 35%) 1fr;
+  gap: 24px;
+  align-items: center;
+  padding: 28px 0;
+  border-bottom: 1px solid rgba(15,16,20,0.1);
+  transition: background 250ms cubic-bezier(.25,.1,.25,1);
+}
+
+.srow:hover { background: rgba(15,16,20,0.04); }
+
+.sname {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  font-weight: 300;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+  transition: color 250ms cubic-bezier(.25,.1,.25,1);
+}
+
+.srow:hover .sname { color: var(--accent); }
+
+.sdesc {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  color: rgba(15,16,20,0.55);
+  line-height: 1.6;
+}
+
+/* ═══ TESTIMONIALS ═══ */
+.quotes-section {
+  background: var(--dark);
+  padding: 80px clamp(24px,5vw,80px);
+}
+
+.quotes-inner {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.q-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.q-heading {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  font-weight: 300;
+  color: var(--text-white);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: 40px;
+}
+
+.qgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+}
+
+.qcard {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 32px;
+}
+
+.qmark {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  margin-bottom: 16px;
+  user-select: none;
+}
+
+.qtext {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.72;
+  color: var(--text-white);
+  margin-bottom: 24px;
+}
+
+.qname {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-white);
+}
+
+.qrole {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ═══ CONTACT ═══ */
+.contact-section {
+  background: var(--white);
+  padding: 80px clamp(24px,5vw,80px);
+}
+
+.contact-inner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.c-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(15,16,20,0.4);
+  margin-bottom: 12px;
+}
+
+.c-heading {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 300;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: 14px;
+}
+
+.c-sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+  font-weight: 300;
+  color: rgba(15,16,20,0.55);
+  line-height: 1.65;
+  max-width: 520px;
+  margin-bottom: 40px;
+}
+
+.c-form { width: 100%; }
+
+.c-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.c-flabel {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(15,16,20,0.4);
+  margin-bottom: 8px;
+}
+
+.c-inp {
+  width: 100%;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  padding: 13px 15px;
+  border: 1px solid rgba(15,16,20,0.2);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text-dark);
+  transition: border-color 0.25s cubic-bezier(.25,.1,.25,1);
+}
+
+.c-inp:focus { outline: none; border-color: var(--accent); }
+.c-inp::placeholder { color: rgba(15,16,20,0.3); }
+
+.c-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 24px;
+}
+
+.c-chip {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  padding: 8px 16px;
+  border: 1px solid rgba(15,16,20,0.2);
+  border-radius: 2px;
+  color: rgba(15,16,20,0.55);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.22s cubic-bezier(.25,.1,.25,1);
+}
+
+.c-chip:hover, .c-chip.on {
+  background: var(--text-dark);
+  border-color: var(--text-dark);
+  color: var(--white);
+}
+
+.c-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  background: var(--text-dark);
+  color: var(--white);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.25s, transform 120ms;
+}
+
+.c-submit:hover  { opacity: 0.8; }
+.c-submit:active { transform: scale(0.97); }
+
+/* ═══ FOOTER ═══ */
+.hp-footer {
+  background: var(--black);
+  padding: 48px clamp(24px,5vw,80px) 28px;
+}
+
+.foot-wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.foot-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 32px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid rgba(245,244,240,0.08);
+}
+
+.foot-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.foot-tag {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.foot-section-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(245,244,240,0.3);
+  margin-bottom: 12px;
+}
+
+.foot-link {
+  display: block;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  color: rgba(245,244,240,0.6);
+  text-decoration: none;
+  padding: 4px 0;
+  transition: color 160ms;
+}
+
+.foot-link:hover { color: var(--text-white); }
+
+.foot-social {
+  display: flex;
+  gap: 18px;
+  margin-top: 10px;
+}
+
+.foot-social a {
+  font-size: 18px;
+  color: rgba(245,244,240,0.4);
+  text-decoration: none;
+  transition: color 160ms;
+}
+
+.foot-social a:hover { color: var(--text-white); }
+
+.foot-copy {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 300;
+  color: rgba(245,244,240,0.25);
+  padding-top: 20px;
+}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 1024px) {
+  .work-grid { grid-template-rows: repeat(3, 360px); }
+  .qgrid     { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .hp-nav { padding: 18px 20px; }
+  .hp-menu { display: none; }
+
+  /* Mobile grid — forced single column */
+  .work-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: repeat(6, 340px);
+    transition: none;
+  }
+
+  .work-grid.expand-left,
+  .work-grid.expand-right { grid-template-columns: 1fr !important; }
+
+  .srow   { grid-template-columns: 1fr; gap: 8px; }
+  .qgrid  { grid-template-columns: 1fr; }
+  .c-row  { grid-template-columns: 1fr; }
+  .foot-grid { grid-template-columns: 1fr; gap: 24px; }
+}
+
+</style>
+
+<script>
+  // ── Nav: flip to light when scrolling over white sections ──
+  const hpNav = document.getElementById('hp-nav');
+  const lightSections = document.querySelectorAll('.work-header, .services-section, .contact-section');
+
+  if (hpNav && lightSections.length) {
+    const lightSet = new Set();
+    const navObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) lightSet.add(e.target);
+        else lightSet.delete(e.target);
+        hpNav.classList.toggle('nav--light', lightSet.size > 0);
+      });
+    }, { rootMargin: '-60px 0px -80% 0px', threshold: 0 });
+    lightSections.forEach(s => navObs.observe(s));
+  }
+
+  // ── Chip toggles ──
+  document.querySelectorAll('[data-chip]').forEach(c => {
+    c.addEventListener('click', () => c.classList.toggle('on'));
+  });
+
+  // ── :has() fallback for older browsers ──
+  const supportsHas = CSS.supports('selector(:has(div))');
+  if (!supportsHas) {
+    const grid = document.getElementById('work-grid');
+    const cards = grid ? Array.from(grid.querySelectorAll('.card')) : [];
+    cards.forEach((card, i) => {
+      card.addEventListener('mouseenter', () => {
+        grid.classList.remove('expand-left', 'expand-right');
+        grid.classList.add(i % 2 === 0 ? 'expand-left' : 'expand-right');
+      });
+      card.addEventListener('mouseleave', () => {
+        grid.classList.remove('expand-left', 'expand-right');
+      });
+    });
+  }
+</script>
