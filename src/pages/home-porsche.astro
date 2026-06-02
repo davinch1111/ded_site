@@ -86,8 +86,8 @@ const year = new Date().getFullYear();
   <!-- ══════════════ NAV ══════════════ -->
   <nav class="hp-nav" id="hp-nav">
     <div class="hp-brand">
-      <div class="hp-badge">DED</div>
-      <span class="hp-wordmark">DAVID <strong>EDIGER</strong> DESIGN</span>
+      <img src="/images/ded-logo-2026-white.svg"  alt="David Ediger Design" class="nav-logo nav-logo--dark" />
+      <img src="/images/ded-logo-2026-colour.svg" alt="David Ediger Design" class="nav-logo nav-logo--light" aria-hidden="true" />
     </div>
     <div class="hp-menu">
       <a href="#work">Work</a>
@@ -102,6 +102,7 @@ const year = new Date().getFullYear();
     <div class="hero-showreel">
       <i class="fa-solid fa-play" style="font-size:9px;margin-right:6px;"></i>Showreel
     </div>
+    <img src="/images/ded-logo-emblem.svg" alt="" aria-hidden="true" class="hero-emblem" />
     <div class="hero-text">
       <p class="hero-ey">DAVID EDIGER DESIGN &nbsp;|&nbsp; brands worth a second look</p>
       <h1>Brands that<br>refuse to blend in</h1>
@@ -247,8 +248,7 @@ const year = new Date().getFullYear();
       <div class="foot-grid">
         <div>
           <div class="foot-brand">
-            <div class="hp-badge">DED</div>
-            <span class="hp-wordmark">DAVID <strong>EDIGER</strong> DESIGN</span>
+            <img src="/images/ded-logo-2026-white.svg" alt="David Ediger Design" class="foot-logo" />
           </div>
           <p class="foot-tag">Creative direction since 2003.<br>Print, web, video, photo, audio.</p>
         </div>
@@ -329,41 +329,21 @@ body.dark-zone-active {
 .hp-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
 }
 
-.hp-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px; height: 27px;
-  border: 1.5px solid rgba(245,244,240,0.9);
-  border-radius: 5px 5px 9px 9px;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 700;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  color: rgba(245,244,240,0.9);
-  flex-shrink: 0;
-  transition: border-color 300ms, color 300ms;
+/* Two-image logo swap: dark version shown by default, colour version on light nav */
+.nav-logo {
+  height: 28px;
+  width: auto;
+  display: block;
+  transition: opacity 300ms cubic-bezier(.25,.1,.25,1);
 }
 
-.hp-nav.nav--light .hp-badge {
-  border-color: var(--accent);
-  color: var(--accent);
-}
+.nav-logo--dark  { opacity: 1; }
+.nav-logo--light { opacity: 0; position: absolute; }
 
-.hp-wordmark {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  color: rgba(245,244,240,0.9);
-  white-space: nowrap;
-  transition: color 300ms;
-}
-
-.hp-nav.nav--light .hp-wordmark { color: var(--text-dark); }
+.hp-nav.nav--light .nav-logo--dark  { opacity: 0; }
+.hp-nav.nav--light .nav-logo--light { opacity: 1; }
 
 .hp-menu {
   display: flex;
@@ -447,6 +427,19 @@ body.dark-zone-active {
   color: var(--text-muted);
   line-height: 1.65;
   max-width: 480px;
+}
+
+.hero-emblem {
+  position: absolute;
+  bottom: clamp(48px, 4vw, 80px);
+  right: clamp(24px, 5vw, 80px);
+  width: clamp(80px, 10vw, 140px);
+  height: auto;
+  opacity: 0.22;
+  pointer-events: none;
+  user-select: none;
+  filter: brightness(0) invert(1);
+  z-index: 2;
 }
 
 /* ═══ DARK ZONE ═══ */
@@ -929,10 +922,13 @@ body.dark-zone-active {
 }
 
 .foot-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   margin-bottom: 14px;
+}
+
+.foot-logo {
+  height: 32px;
+  width: auto;
+  display: block;
 }
 
 .foot-tag {
