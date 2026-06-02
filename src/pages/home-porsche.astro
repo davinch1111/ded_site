@@ -103,62 +103,70 @@ const year = new Date().getFullYear();
       <i class="fa-solid fa-play" style="font-size:9px;margin-right:6px;"></i>Showreel
     </div>
     <div class="hero-text">
-      <p class="hero-ey">David Ediger · Creative Director</p>
+      <p class="hero-ey">DAVID EDIGER DESIGN &nbsp;|&nbsp; brands worth a second look</p>
       <h1>Brands that<br>refuse to blend in</h1>
       <p class="hero-sub">Twenty-three years of print, web, video, photo, and audio. Some of these clients have stayed since 2008.</p>
     </div>
   </section>
 
-  <!-- ══════════════ WORK ══════════════ -->
-  <section id="work">
-    <!-- Part A — white header -->
-    <div class="work-header">
-      <p class="work-label">Selected work</p>
-      <h2 class="work-heading">Twenty-three years of making<br>things worth looking at</h2>
-    </div>
+  <!-- ══════════════ WORK — dark-zone wrapper ══════════════ -->
+  <div class="dark-zone" id="work">
 
-    <!-- Part B — dark card grid -->
-    <div class="work-grid-wrap">
-      <div class="work-grid" id="work-grid">
-        {projects.map((p, i) => (
-          <div
-            class="card"
-            style={!p.featuredImage ? `background:${p.fallbackBg};` : ''}
-            data-idx={i}
-          >
-            {p.featuredImage && (
-              <img src={p.featuredImage} alt={p.title} loading={i < 2 ? 'eager' : 'lazy'} />
-            )}
-            <div class="card-top-scrim"></div>
-            <div class="card-title">{p.title}</div>
-            <div class="card-info">
-              <span class="card-desc">{p.disciplines}</span>
-              <div class="card-cta-area">
-                <button class="card-arrow" aria-label="View project">
-                  <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i>
-                </button>
-                <a class="card-cta" href="#contact">
-                  View project <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i>
-                </a>
+    <!-- Part A — header (transparent over body) -->
+    <section class="work-header">
+      <div class="work-header-inner">
+        <p class="work-label">Selected work</p>
+        <h2 class="work-heading reveal">Twenty-three years of making<br>things worth looking at</h2>
+      </div>
+    </section>
+
+    <!-- Part B — card grid (transparent over body) -->
+    <section class="work-grid-wrap">
+      <div class="work-grid-inner">
+        <div class="work-grid" id="work-grid">
+          {projects.map((p, i) => (
+            <div
+              class="card reveal"
+              style={!p.featuredImage ? `background:${p.fallbackBg};` : ''}
+              data-idx={i}
+            >
+              {p.featuredImage && (
+                <img src={p.featuredImage} alt={p.title} loading={i < 2 ? 'eager' : 'lazy'} />
+              )}
+              <div class="card-top-scrim"></div>
+              <div class="card-title">{p.title}</div>
+              <div class="card-info">
+                <span class="card-desc">{p.disciplines}</span>
+                <div class="card-cta-area">
+                  <button class="card-arrow" aria-label="View project">
+                    <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i>
+                  </button>
+                  <a class="card-cta" href="#contact">
+                    View project <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i>
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
+
+  </div><!-- /.dark-zone -->
 
   <!-- ══════════════ SERVICES ══════════════ -->
   <section class="services-section" id="services">
-    <p class="s-label">What I make</p>
-    <h2 class="s-heading">Five ways I can help</h2>
-    <div class="srows">
-      {services.map(s => (
-        <div class="srow">
-          <div class="sname">{s.name}</div>
-          <p class="sdesc">{s.desc}</p>
-        </div>
-      ))}
+    <div class="services-inner">
+      <p class="s-label">What I make</p>
+      <h2 class="s-heading">Five ways I can help</h2>
+      <div class="srows">
+        {services.map(s => (
+          <div class="srow reveal">
+            <div class="sname">{s.name}</div>
+            <p class="sdesc">{s.desc}</p>
+          </div>
+        ))}
+      </div>
     </div>
   </section>
 
@@ -169,7 +177,7 @@ const year = new Date().getFullYear();
       <h2 class="q-heading">Twenty years of working relationships</h2>
       <div class="qgrid">
         {quotes.map(q => (
-          <div class="qcard">
+          <div class="qcard reveal">
             <div class="qmark">"</div>
             <p class="qtext">{q.text}</p>
             <div class="qname">{q.name}</div>
@@ -184,7 +192,7 @@ const year = new Date().getFullYear();
   <section class="contact-section" id="contact">
     <div class="contact-inner">
       <p class="c-label">Start a project</p>
-      <h2 class="c-heading">Tell me what you're building</h2>
+      <h2 class="c-heading reveal">Tell me what you're building</h2>
       <p class="c-sub">I take on a small number of new projects each year. A few quick questions and I'll know if I'm the right fit.</p>
       <form class="c-form" action="mailto:info@davidedigerdesign.com" method="get" enctype="text/plain">
         <div class="c-row">
@@ -287,6 +295,16 @@ const year = new Date().getFullYear();
   font-family: 'Montserrat', -apple-system, system-ui, sans-serif;
 }
 
+/* ── Body: starts white, transitions dark when dark-zone active ── */
+body {
+  background-color: #FAFAFA !important;
+  transition: background-color 1800ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+body.dark-zone-active {
+  background-color: #03040E !important;
+}
+
 /* ═══ NAV ═══ */
 .hp-nav {
   position: fixed;
@@ -378,7 +396,7 @@ const year = new Date().getFullYear();
 .hero-showreel {
   position: absolute;
   top: 90px;
-  right: clamp(24px, 5vw, 80px);
+  right: clamp(40px, 5vw, 100px);
   font-family: 'Montserrat', sans-serif;
   font-size: 10px;
   font-weight: 400;
@@ -394,8 +412,8 @@ const year = new Date().getFullYear();
 .hero-text {
   position: absolute;
   bottom: clamp(48px, 4vw, 80px);
-  left: clamp(24px, 5vw, 80px);
-  right: clamp(24px, 5vw, 80px);
+  left: clamp(40px, 5vw, 100px);
+  right: clamp(40px, 5vw, 100px);
   max-width: 700px;
   z-index: 2;
 }
@@ -418,22 +436,36 @@ const year = new Date().getFullYear();
   color: var(--text-white) !important;
   letter-spacing: -0.02em !important;
   line-height: 1.04 !important;
+  text-wrap: balance !important;
   margin-bottom: 22px;
 }
 
 .hero-sub {
   font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 300;
   color: var(--text-muted);
   line-height: 1.65;
-  max-width: 420px;
+  max-width: 480px;
 }
 
-/* ═══ WORK — Part A: white header ═══ */
+/* ═══ DARK ZONE ═══ */
+.dark-zone {
+  background: transparent;
+}
+
+.dark-zone > section {
+  background: transparent !important;
+}
+
+/* ═══ WORK — Part A: header ═══ */
 .work-header {
-  background: var(--white);
-  padding: 64px clamp(24px,5vw,80px) 32px;
+  padding: 80px clamp(40px,5vw,100px) 32px;
+}
+
+.work-header-inner {
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 .work-label {
@@ -457,17 +489,21 @@ const year = new Date().getFullYear();
 
 /* ═══ WORK — Part B: dark grid ═══ */
 .work-grid-wrap {
-  background: var(--black);
-  padding: 0 clamp(24px,5vw,80px) 80px;
+  padding: 0 clamp(40px,5vw,100px) 80px;
+}
+
+.work-grid-inner {
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 /* ── The Grid ── */
 .work-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: repeat(3, 460px);
+  grid-template-rows: repeat(3, 600px);
   gap: var(--gap);
-  transition: grid-template-columns 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  transition: grid-template-columns 550ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Column expansion — left-column cards hovered */
@@ -501,7 +537,7 @@ const year = new Date().getFullYear();
   inset: 0;
   width: 100%; height: 100%;
   object-fit: cover;
-  transition: transform 600ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  transition: transform 550ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .card:hover img { transform: scale(1.04); }
@@ -609,8 +645,13 @@ const year = new Date().getFullYear();
 
 /* ═══ SERVICES ═══ */
 .services-section {
-  background: var(--white);
-  padding: 80px clamp(24px,5vw,80px);
+  background: #FAFAFA;
+  padding: 80px clamp(40px,5vw,100px);
+}
+
+.services-inner {
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 .s-label {
@@ -668,12 +709,12 @@ const year = new Date().getFullYear();
 
 /* ═══ TESTIMONIALS ═══ */
 .quotes-section {
-  background: var(--dark);
-  padding: 80px clamp(24px,5vw,80px);
+  background: #0F1014;
+  padding: 140px clamp(40px,5vw,100px);
 }
 
 .quotes-inner {
-  max-width: 1180px;
+  max-width: 1600px;
   margin: 0 auto;
 }
 
@@ -707,7 +748,7 @@ const year = new Date().getFullYear();
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
-  padding: 32px;
+  padding: 40px 32px;
 }
 
 .qmark {
@@ -748,8 +789,8 @@ const year = new Date().getFullYear();
 
 /* ═══ CONTACT ═══ */
 .contact-section {
-  background: var(--white);
-  padding: 80px clamp(24px,5vw,80px);
+  background: #FAFAFA;
+  padding: 80px clamp(40px,5vw,100px);
 }
 
 .contact-inner {
@@ -871,7 +912,7 @@ const year = new Date().getFullYear();
 /* ═══ FOOTER ═══ */
 .hp-footer {
   background: var(--black);
-  padding: 48px clamp(24px,5vw,80px) 28px;
+  padding: 48px clamp(40px,5vw,100px) 28px;
 }
 
 .foot-wrap {
@@ -948,9 +989,22 @@ const year = new Date().getFullYear();
   padding-top: 20px;
 }
 
+/* ═══ SCROLL REVEAL ═══ */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 800ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 800ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 1024px) {
-  .work-grid { grid-template-rows: repeat(3, 360px); }
+  .work-grid { grid-template-rows: repeat(3, 460px); }
   .qgrid     { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -993,6 +1047,18 @@ const year = new Date().getFullYear();
     lightSections.forEach(s => navObs.observe(s));
   }
 
+  // ── Scroll-driven dark body background ──
+  const darkZone = document.querySelector('.dark-zone');
+  if (darkZone) {
+    const darkObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) document.body.classList.add('dark-zone-active');
+        else document.body.classList.remove('dark-zone-active');
+      });
+    }, { threshold: 0, rootMargin: '-25% 0px -25% 0px' });
+    darkObs.observe(darkZone);
+  }
+
   // ── Chip toggles ──
   document.querySelectorAll('[data-chip]').forEach(c => {
     c.addEventListener('click', () => c.classList.toggle('on'));
@@ -1013,4 +1079,11 @@ const year = new Date().getFullYear();
       });
     });
   }
+
+  // ── Scroll reveal ──
+  const reveals = document.querySelectorAll('.reveal');
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('is-visible'); });
+  }, { threshold: 0.15 });
+  reveals.forEach(el => revealObs.observe(el));
 </script>
