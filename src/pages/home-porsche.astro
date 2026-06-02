@@ -291,7 +291,7 @@ const year = new Date().getFullYear();
   --text-muted: rgba(245,244,240,0.5);
   --text-dark:  #0F1014;
   --accent:     #3457C6;
-  --gap:        12px;
+  --gap:        20px;
   font-family: 'Montserrat', -apple-system, system-ui, sans-serif;
 }
 
@@ -329,6 +329,7 @@ body.dark-zone-active {
 .hp-brand {
   display: flex;
   align-items: center;
+  position: relative;
 }
 
 /* Two-image logo swap: dark version shown by default, colour version on light nav */
@@ -340,7 +341,7 @@ body.dark-zone-active {
 }
 
 .nav-logo--dark  { opacity: 1; }
-.nav-logo--light { opacity: 0; position: absolute; }
+.nav-logo--light { opacity: 0; position: absolute; top: 50%; left: 0; transform: translateY(-50%); }
 
 .hp-nav.nav--light .nav-logo--dark  { opacity: 0; }
 .hp-nav.nav--light .nav-logo--light { opacity: 1; }
@@ -523,6 +524,7 @@ body.dark-zone-active {
   border-radius: 14px;
   background: var(--card-bg);
   cursor: pointer;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
 }
 
 .card img {
