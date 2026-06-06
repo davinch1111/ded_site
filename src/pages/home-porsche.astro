@@ -441,7 +441,7 @@ body.dark-zone-active {
   position: absolute;
   right: clamp(40px, 5vw, 120px);
   bottom: clamp(48px, 4vw, 80px);
-  width: clamp(200px, 26vw, 360px);
+  width: 190px;
   height: auto;
   opacity: 0.5;
   pointer-events: none;
@@ -460,7 +460,7 @@ body.dark-zone-active {
 
 /* ═══ WORK — Part A: header ═══ */
 .work-header {
-  padding: 600px clamp(40px,5vw,100px) 32px;
+  padding: 350px clamp(40px,5vw,100px) 32px;
 }
 
 .work-header-inner {
@@ -1068,17 +1068,30 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
     lightSections.forEach(s => navObs.observe(s));
   }
 
-  // ── Scroll-driven dark body background ──
-  const darkZone = document.querySelector('.dark-zone');
-  if (darkZone) {
-    const darkObs = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) document.body.classList.add('dark-zone-active');
-        else document.body.classList.remove('dark-zone-active');
-      });
-    }, { threshold: 0, rootMargin: '-25% 0px -25% 0px' });
-    darkObs.observe(darkZone);
+  // ── Scroll-driven dark body background:
+  //    activate after the first row has scrolled past viewport mid,
+  //    deactivate as the services section rises into view.
+  const firstRow = document.querySelector('.work-row');
+  const services = document.querySelector('.services-section');
+  let ticking = false;
+  function updateDarkZone() {
+    if (!firstRow || !services) return;
+    const firstRowBottom = firstRow.getBoundingClientRect().bottom;
+    const servicesTop    = services.getBoundingClientRect().top;
+    const vh = window.innerHeight;
+    if (firstRowBottom < vh * 0.5 && servicesTop > vh * 0.3) {
+      document.body.classList.add('dark-zone-active');
+    } else {
+      document.body.classList.remove('dark-zone-active');
+    }
   }
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => { updateDarkZone(); ticking = false; });
+      ticking = true;
+    }
+  }, { passive: true });
+  updateDarkZone();
 
   // ── Chip toggles ──
   document.querySelectorAll('[data-chip]').forEach(c => {
