@@ -1049,6 +1049,20 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
   .foot-grid { grid-template-columns: 1fr; gap: 24px; }
 }
 
+/* Hero emblem: shrink + move to top-right on tablets, hide on small phones */
+@media (max-width: 900px) {
+  .hero-emblem {
+    width: 110px;
+    bottom: auto;
+    top: clamp(64px, 11vw, 100px);
+    right: clamp(16px, 4vw, 28px);
+    opacity: 0.32;
+  }
+}
+@media (max-width: 560px) {
+  .hero-emblem { display: none; }
+}
+
 </style>
 
 <script>
