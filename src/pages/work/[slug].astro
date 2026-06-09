@@ -1,0 +1,1292 @@
+---
+import Base from '../../layouts/Base.astro';
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+interface WPImage {
+  ID?: number;
+  id?: number;
+  url: string;
+  alt?: string;
+  width?: number;
+  height?: number;
+  sizes?: Record<string, string | number>;
+}
+interface WPTerm { id: number; name: string; slug: string; taxonomy: string; }
+interface GalleryItem { g_image: WPImage | false | null; g_title?: string; g_caption?: string; }
+interface ACF {
+  hero_animate?: boolean;
+  master_image?: WPImage | false | null;
+  project_logo?: WPImage | false | null;
+  tagline?: string;
+  fact_client?: string;
+  fact_since?: string;
+  fact_engagement?: string;
+  fact_role?: string;
+  show_brief?: boolean;
+  brief_text?: string;
+  show_approach?: boolean;
+  approach_text?: string;
+  show_gallery?: boolean;
+  gallery_items?: GalleryItem[] | false;
+  show_video?: boolean;
+  video_url?: string;
+  show_outcome?: boolean;
+  outcome_text?: string;
+  show_testimonial?: boolean;
+  t_quote?: string;
+  t_name?: string;
+  t_role?: string;
+  show_related?: boolean;
+  related_projects?: number[] | false;
+  show_cta?: boolean;
+  cta_heading?: string;
+}
+interface ProjectLite {
+  id: number;
+  slug: string;
+  title: string;
+  featuredImage: string | null;
+  discipline: WPTerm[];
+  skill: WPTerm[];
+}
+
+// ─── Build-time fetch ────────────────────────────────────────────────────────
+export async function getStaticPaths() {
+  const API_BASE = 'https://davidedigerdesign.in/wp-json/wp/v2';
+  const ENDPOINT = `${API_BASE}/ded_project?_embed&per_page=100`;
+
+  let res: Response;
+  try {
+    res = await fetch(ENDPOINT, { signal: AbortSignal.timeout(12000) });
+  } catch (e) {
+    throw new Error(
+      `[work/[slug]] Network error fetching ${ENDPOINT}: ${(e as Error).message}. ` +
+      `WordPress at davidedigerdesign.in must be reachable at build time.`
+    );
+  }
+  if (!res.ok) {
+    throw new Error(
+      `[work/[slug]] WP REST returned ${res.status} ${res.statusText} from ${ENDPOINT}. ` +
+      `Cannot generate project pages.`
+    );
+  }
+  const raw: any[] = await res.json();
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw new Error(`[work/[slug]] WP returned no projects. Aborting build to avoid silent empty site.`);
+  }
+
+  // ── Collect all numeric image IDs across projects (handles legacy data
+  //    where ACF stored attachment IDs before return_format=array was set on
+  //    the matching field keys). Batch-resolve via the media endpoint.
+  const ids = new Set<number>();
+  const isNumericId = (v: any): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0;
+  for (const p of raw) {
+    const a = p.acf ?? {};
+    if (isNumericId(a.master_image)) ids.add(a.master_image);
+    if (isNumericId(a.project_logo)) ids.add(a.project_logo);
+    if (Array.isArray(a.gallery_items)) {
+      for (const g of a.gallery_items) if (isNumericId(g?.g_image)) ids.add(g.g_image);
+    }
+  }
+
+  const mediaMap = new Map<number, WPImage>();
+  if (ids.size > 0) {
+    const chunks: number[][] = [];
+    const all = Array.from(ids);
+    for (let i = 0; i < all.length; i += 80) chunks.push(all.slice(i, i + 80));
+    for (const chunk of chunks) {
+      const url = `${API_BASE}/media?include=${chunk.join(',')}&per_page=100&orderby=include`;
+      const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
+      if (!r.ok) {
+        throw new Error(`[work/[slug]] Failed to resolve media batch (${r.status}) from ${url}`);
+      }
+      const items: any[] = await r.json();
+      for (const m of items) {
+        mediaMap.set(m.id, {
+          id: m.id,
+          url: m.source_url,
+          alt: m.alt_text ?? '',
+          width: m.media_details?.width,
+          height: m.media_details?.height,
+          sizes: m.media_details?.sizes ? Object.fromEntries(
+            Object.entries(m.media_details.sizes).map(([k, v]: [string, any]) => [k, v.source_url])
+          ) : undefined,
+        });
+      }
+    }
+  }
+
+  const resolveImg = (v: any): WPImage | null => {
+    if (!v) return null;
+    if (typeof v === 'object' && v.url) return v as WPImage;
+    if (isNumericId(v)) return mediaMap.get(v) ?? null;
+    return null;
+  };
+
+  // Build a slim siblings list for related-projects lookup on each page.
+  const siblings: ProjectLite[] = raw.map((p: any) => {
+    const terms: WPTerm[] = (p._embedded?.['wp:term'] ?? []).flat();
+    return {
+      id: p.id,
+      slug: p.slug,
+      title: p.title?.rendered ?? 'Untitled',
+      featuredImage: p._embedded?.['wp:featuredmedia']?.[0]?.source_url ?? null,
+      discipline: terms.filter(t => t.taxonomy === 'discipline'),
+      skill:      terms.filter(t => t.taxonomy === 'skill'),
+    };
+  });
+
+  return raw.map((p: any) => {
+    const terms: WPTerm[] = (p._embedded?.['wp:term'] ?? []).flat();
+    const a = (p.acf ?? {}) as ACF;
+    // Rewrite any numeric image IDs to full WPImage objects.
+    const acfResolved: ACF = {
+      ...a,
+      master_image: resolveImg(a.master_image),
+      project_logo: resolveImg(a.project_logo),
+      gallery_items: Array.isArray(a.gallery_items)
+        ? a.gallery_items.map(g => ({ ...g, g_image: resolveImg(g.g_image) }))
+        : a.gallery_items,
+    };
+    return {
+      params: { slug: p.slug },
+      props: {
+        project: {
+          id: p.id,
+          slug: p.slug,
+          title: (p.title?.rendered ?? 'Untitled') as string,
+          acf: acfResolved,
+          featuredImage: p._embedded?.['wp:featuredmedia']?.[0]?.source_url ?? null,
+          discipline: terms.filter(t => t.taxonomy === 'discipline'),
+          skill:      terms.filter(t => t.taxonomy === 'skill'),
+        },
+        siblings,
+      },
+    };
+  });
+}
+
+const { project, siblings } = Astro.props;
+const acf = project.acf;
+
+// ─── Derived ─────────────────────────────────────────────────────────────────
+const heroBg = (acf.master_image && (acf.master_image as WPImage).url)
+  || project.featuredImage
+  || null;
+
+const heroAnimate = acf.hero_animate !== false;
+const showFacts = !!(acf.fact_client || acf.fact_since || acf.fact_engagement || acf.fact_role);
+const showBrief       = acf.show_brief       !== false && !!acf.brief_text;
+const showApproach    = acf.show_approach    !== false && !!acf.approach_text;
+const galleryItems    = Array.isArray(acf.gallery_items) ? acf.gallery_items.filter(g => g && g.g_image && (g.g_image as WPImage).url) : [];
+const showGallery     = acf.show_gallery     !== false && galleryItems.length > 0;
+const showVideo       = acf.show_video       === true  && !!acf.video_url;
+const showOutcome     = acf.show_outcome     !== false && !!acf.outcome_text;
+const showTestimonial = acf.show_testimonial === true  && !!acf.t_quote;
+const showRelated     = acf.show_related     !== false;
+const showCta         = acf.show_cta         !== false;
+const skillsList      = project.skill;
+const showSkills      = skillsList.length > 0;
+
+// Related: explicit IDs, else fall back to projects sharing a skill term, dedupe self.
+let related: ProjectLite[] = [];
+const explicitIds = Array.isArray(acf.related_projects) ? acf.related_projects : [];
+if (explicitIds.length > 0) {
+  related = explicitIds
+    .map(id => siblings.find(s => s.id === id))
+    .filter(Boolean) as ProjectLite[];
+} else {
+  const mySkills = new Set(project.skill.map(s => s.slug));
+  related = siblings.filter(s =>
+    s.id !== project.id && s.skill.some(sk => mySkills.has(sk.slug))
+  );
+}
+related = related.filter(s => s.id !== project.id).slice(0, 2);
+
+// Video URL → embed URL
+function normalizeVideoEmbed(url: string): { type: 'iframe' | 'video'; src: string } {
+  // YouTube
+  let m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if (m) return { type: 'iframe', src: `https://www.youtube-nocookie.com/embed/${m[1]}` };
+  // Vimeo
+  m = url.match(/vimeo\.com\/(\d+)/);
+  if (m) return { type: 'iframe', src: `https://player.vimeo.com/video/${m[1]}` };
+  // Direct mp4/webm (R2, etc.)
+  return { type: 'video', src: url };
+}
+const video = showVideo && acf.video_url ? normalizeVideoEmbed(acf.video_url) : null;
+
+// ─── SEO ─────────────────────────────────────────────────────────────────────
+const cleanTitle  = project.title.replace(/&amp;/g, '&').replace(/<[^>]+>/g, '').trim();
+const pageTitle   = `${cleanTitle} — David Ediger Design`;
+const rawDesc     = (acf.tagline || acf.brief_text || `${cleanTitle}: creative work by David Ediger Design.`).replace(/<[^>]+>/g, '').trim();
+const metaDesc    = rawDesc.length > 155 ? rawDesc.slice(0, 152).trimEnd() + '…' : rawDesc;
+const ogImage     = heroBg || null;
+const canonical   = `https://davidedigerdesign.com/work/${project.slug}/`;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CreativeWork',
+  'name': cleanTitle,
+  'description': metaDesc,
+  'image': ogImage || undefined,
+  'url': canonical,
+  'creator': {
+    '@type': 'Person',
+    'name': 'David Ediger',
+    'jobTitle': 'Creative Director',
+    'worksFor': {
+      '@type': 'Organization',
+      'name': 'David Ediger Design',
+      'url': 'https://davidedigerdesign.com/',
+    },
+  },
+  'keywords': [...project.discipline, ...project.skill].map(t => t.name).join(', ') || undefined,
+};
+---
+
+<Base title={pageTitle} description={metaDesc}>
+
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <!-- Per-page SEO + OG/Twitter + JSON-LD -->
+  <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+  <Fragment slot="head">
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={metaDesc} />
+    <meta property="og:url" content={canonical} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={metaDesc} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  </Fragment>
+
+  <a href="#main" class="skiplink">Skip to content</a>
+
+  <article class="work" data-slug={project.slug} data-animate={heroAnimate ? '1' : '0'} id="main">
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- Hero -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <section class="w-hero" aria-label={`${cleanTitle} hero`}>
+      {heroBg && (
+        <div class="w-hero-bg-wrap">
+          <img
+            class="w-hero-bg"
+            src={heroBg}
+            alt={(acf.master_image as WPImage)?.alt || `${cleanTitle} hero image`}
+            loading="eager"
+            fetchpriority="high"
+          />
+        </div>
+      )}
+      <div class="w-hero-scrim"></div>
+
+      <a href="#brief" class="w-scroll-cue" aria-label="Scroll to brief">
+        <i class="fa-solid fa-arrow-down" style="font-size:13px;"></i>
+      </a>
+
+      <div class="w-hero-inner">
+        {acf.project_logo && (acf.project_logo as WPImage).url && (
+          <img
+            class="w-project-logo"
+            src={(acf.project_logo as WPImage).url}
+            alt={(acf.project_logo as WPImage).alt || `${cleanTitle} logo`}
+            width={(acf.project_logo as WPImage).width || undefined}
+            height={(acf.project_logo as WPImage).height || undefined}
+          />
+        )}
+
+        {acf.fact_client && (
+          <p class="w-hero-eyebrow">{acf.fact_client}</p>
+        )}
+
+        <h1 class="w-hero-h1" set:html={acf.tagline || cleanTitle} />
+
+        {project.discipline.length > 0 && (
+          <ul class="w-pills" aria-label="Disciplines">
+            {project.discipline.map(t => (
+              <li class="w-pill">{t.name}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- Quick facts -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    {showFacts && (
+      <section class="w-facts reveal" aria-label="Project facts">
+        <div class="w-wrap">
+          <dl class="w-facts-row">
+            {acf.fact_client && (
+              <div class="w-fact">
+                <dt>Client</dt>
+                <dd>{acf.fact_client}</dd>
+              </div>
+            )}
+            {acf.fact_since && (
+              <div class="w-fact">
+                <dt>Since</dt>
+                <dd>{acf.fact_since}</dd>
+              </div>
+            )}
+            {acf.fact_engagement && (
+              <div class="w-fact">
+                <dt>Engagement</dt>
+                <dd>{acf.fact_engagement}</dd>
+              </div>
+            )}
+            {acf.fact_role && (
+              <div class="w-fact">
+                <dt>Role</dt>
+                <dd>{acf.fact_role}</dd>
+              </div>
+            )}
+          </dl>
+        </div>
+      </section>
+    )}
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- Brief — label left, copy right -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    {showBrief && (
+      <section class="w-blocked w-blocked--left reveal" id="brief" aria-labelledby="brief-h">
+        <div class="w-wrap">
+          <span class="w-index" aria-hidden="true">01</span>
+          <div class="w-blocked-grid">
+            <header class="w-blocked-label">
+              <p class="w-eyebrow">The brief</p>
+              <h2 id="brief-h" class="w-h2">Where it started</h2>
+            </header>
+            <div class="w-blocked-body">
+              <p>{acf.brief_text}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- Approach — copy left, label right, accent glow -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    {showApproach && (
+      <section class="w-blocked w-blocked--right w-blocked--glow reveal" aria-labelledby="approach-h">
+        <div class="w-glow" aria-hidden="true"></div>
+        <div class="w-wrap">
+          <span class="w-index w-index--right" aria-hidden="true">02</span>
+          <div class="w-blocked-grid w-blocked-grid--right">
+            <div class="w-blocked-body">
+              <p>{acf.approach_text}</p>
+            </div>
+            <header class="w-blocked-label w-blocked-label--right">
+              <p class="w-eyebrow">The approach</p>
+              <h2 id="approach-h" class="w-h2">How I tackled it</h2>
+            </header>
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- Gallery — mixed proportions -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    {showGallery && (
+      <section class="w-gallery reveal" aria-labelledby="gallery-h">
+        <div class="w-wrap">
+          <header class="w-gallery-head">
+            <p class="w-eyebrow">The work</p>
+            <h2 id="gallery-h" class="w-h2">What I made</h2>
+          </header>
+
+          <div class="w-gallery-stack">
+            {galleryItems.map((item, i) => {
+              const img = item.g_image as WPImage;
+              const total = galleryItems.length;
+              const isFirst = i === 0;
+              // Pair index after the first: 0,1 then 2,3 then 4,5...
+              // first item of each pair = wide-left, second = wide-right
+              const pairIdx = (i - 1);
+              const isWideLeft  = !isFirst && pairIdx % 2 === 0;
+              const isWideRight = !isFirst && pairIdx % 2 === 1;
+              // The last orphan item (odd count after the hero) → full-width.
+              const isOrphan = !isFirst && i === total - 1 && (total - 1) % 2 === 1;
+
+              if (isFirst || isOrphan) {
+                return (
+                  <figure class="w-g-card w-g-card--full reveal">
+                    <img src={img.url} alt={img.alt || item.g_title || `${cleanTitle} gallery item ${i + 1}`} loading={i < 2 ? 'eager' : 'lazy'} />
+                    {(item.g_title || item.g_caption) && (
+                      <figcaption>
+                        {item.g_title && <strong>{item.g_title}</strong>}
+                        {item.g_caption && <span>{item.g_caption}</span>}
+                      </figcaption>
+                    )}
+                  </figure>
+                );
+              }
+              // pair start (wide-left)
+              if (isWideLeft) {
+                const next = galleryItems[i + 1];
+                const nextImg = next?.g_image as WPImage | undefined;
+                return (
+                  <div class="w-g-pair w-g-pair--wide-left reveal">
+                    <figure class="w-g-card">
+                      <img src={img.url} alt={img.alt || item.g_title || `${cleanTitle} gallery item ${i + 1}`} loading="lazy" />
+                      {(item.g_title || item.g_caption) && (
+                        <figcaption>
+                          {item.g_title && <strong>{item.g_title}</strong>}
+                          {item.g_caption && <span>{item.g_caption}</span>}
+                        </figcaption>
+                      )}
+                    </figure>
+                    {next && nextImg && (
+                      <figure class="w-g-card">
+                        <img src={nextImg.url} alt={nextImg.alt || next.g_title || `${cleanTitle} gallery item ${i + 2}`} loading="lazy" />
+                        {(next.g_title || next.g_caption) && (
+                          <figcaption>
+                            {next.g_title && <strong>{next.g_title}</strong>}
+                            {next.g_caption && <span>{next.g_caption}</span>}
+                          </figcaption>
+                        )}
+                      </figure>
+                    )}
+                  </div>
+                );
+              }
+              // even index inside a pair is rendered by its predecessor (wide-left). Skip.
+              return null;
+            })}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- Video (16:9 responsive) -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    {showVideo && video && (
+      <section class="w-video reveal" aria-labelledby="video-h">
+        <div class="w-wrap">
+          <header class="w-video-head">
+            <p class="w-eyebrow">In motion</p>
+            <h2 id="video-h" class="w-h2">See it move</h2>
+          </header>
+          <div class="w-video-frame">
+            {video.type === 'iframe' ? (
+              <iframe
+                src={video.src}
+                title={`${cleanTitle} project video`}
+                loading="lazy"
+                allow="autoplay; fullscreen; picture-in-picture"
+                allowfullscreen
+                referrerpolicy="strict-origin-when-cross-origin"
+              />
+            ) : (
+              <video src={video.src} controls playsinline preload="metadata" aria-label={`${cleanTitle} project video`} />
+            )}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- Outcome -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    {showOutcome && (
+      <section class="w-outcome reveal" aria-labelledby="outcome-h">
+        <div class="w-wrap">
+          <p class="w-eyebrow">The outcome</p>
+          <h2 id="outcome-h" class="w-h2">How it landed</h2>
+          <p class="w-outcome-statement">{acf.outcome_text}</p>
+        </div>
+      </section>
+    )}
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- Testimonial -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    {showTestimonial && (
+      <section class="w-testimonial reveal" aria-label="Client testimonial">
+        <div class="w-wrap">
+          <blockquote class="w-quote-card">
+            <span class="w-quote-mark" aria-hidden="true">“</span>
+            <p class="w-quote-text">{acf.t_quote}</p>
+            {(acf.t_name || acf.t_role) && (
+              <footer class="w-quote-meta">
+                {acf.t_name && <span class="w-quote-name">{acf.t_name}</span>}
+                {acf.t_role && <span class="w-quote-role">{acf.t_role}</span>}
+              </footer>
+            )}
+          </blockquote>
+        </div>
+      </section>
+    )}
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- Skills used -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    {showSkills && (
+      <section class="w-skills reveal" aria-labelledby="skills-h">
+        <div class="w-wrap">
+          <p class="w-eyebrow">What it took</p>
+          <h2 id="skills-h" class="w-h2">Skills used</h2>
+          <ul class="w-pills" aria-label="Skills used on this project">
+            {skillsList.map(t => <li class="w-pill w-pill--ghost">{t.name}</li>)}
+          </ul>
+        </div>
+      </section>
+    )}
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- Related projects -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    {showRelated && related.length > 0 && (
+      <section class="w-related reveal" aria-labelledby="related-h">
+        <div class="w-wrap">
+          <header class="w-related-head">
+            <p class="w-eyebrow">Keep going</p>
+            <h2 id="related-h" class="w-h2">More work</h2>
+          </header>
+          <div class="w-related-grid">
+            {related.map(r => (
+              <a class="w-related-card" href={`/work/${r.slug}/`} aria-label={`View project: ${r.title.replace(/<[^>]+>/g,'')}`}>
+                {r.featuredImage && (
+                  <img class="w-related-img" src={r.featuredImage} alt={r.title.replace(/<[^>]+>/g,'')} loading="lazy" />
+                )}
+                <div class="w-related-overlay">
+                  <div class="w-related-meta">
+                    {r.discipline.length > 0 && (
+                      <ul class="w-pills w-pills--sm" aria-hidden="true">
+                        {r.discipline.slice(0, 3).map(t => <li class="w-pill w-pill--ghost">{t.name}</li>)}
+                      </ul>
+                    )}
+                    <h3 class="w-related-title" set:html={r.title} />
+                  </div>
+                  <span class="w-related-arrow" aria-hidden="true">
+                    <i class="fa-solid fa-arrow-right"></i>
+                  </span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    <!-- CTA -->
+    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
+    {showCta && (
+      <section class="w-cta reveal" aria-labelledby="cta-h">
+        <div class="w-wrap">
+          <h2 id="cta-h" class="w-cta-h">
+            {acf.cta_heading || "Got a project like this one?"}
+          </h2>
+          <a href="/#contact" class="w-cta-btn">
+            Tell me what you're building
+            <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i>
+          </a>
+        </div>
+      </section>
+    )}
+
+  </article>
+
+</Base>
+
+<style is:global>
+  /* ═══════════════════════════════════════════════════════════════════════
+     WORK / PROJECT PAGE
+     Reuses Base.astro tokens (--bg-dark, --text-primary, --accent, Montserrat).
+     Adds its own scoped palette for surfaces, hairlines, and the accent glow.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  .work {
+    --w-bg:        #03040E;
+    --w-surface:   #0F1116;
+    --w-card:      #141519;
+    --w-text:      #F5F4F0;
+    --w-muted:     rgba(245,244,240,0.62);
+    --w-faint:     rgba(245,244,240,0.32);
+    --w-hairline:  rgba(255,255,255,0.09);
+    --w-hairline-strong: rgba(255,255,255,0.16);
+    --w-accent:    #3457C6;
+    --w-accent-soft: rgba(52,87,198,0.18);
+    --w-ease-out:  cubic-bezier(0.23, 1, 0.32, 1);
+
+    background: var(--w-bg);
+    color: var(--w-text);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* Skip link for keyboard users */
+  .skiplink {
+    position: absolute;
+    left: -9999px;
+    top: 12px;
+    background: var(--w-accent);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 4px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    z-index: 200;
+    text-decoration: none;
+  }
+  .skiplink:focus { left: 12px; }
+
+  /* Shared wrap */
+  .work .w-wrap {
+    width: 100%;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 0 clamp(24px, 5vw, 100px);
+    position: relative;
+  }
+
+  /* Shared typography */
+  .work .w-eyebrow {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--w-faint);
+    margin-bottom: 14px;
+  }
+  .work .w-h2 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(1.6rem, 2.4vw + 0.4rem, 2.8rem);
+    font-weight: 300;
+    letter-spacing: -0.018em;
+    line-height: 1.1;
+    color: var(--w-text);
+    text-wrap: balance;
+  }
+
+  /* Pills (Porsche-style) */
+  .work .w-pills {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0;
+    margin: 0;
+  }
+  .work .w-pill {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--w-text);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--w-hairline);
+    padding: 8px 14px;
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .work .w-pill--ghost {
+    background: transparent;
+    color: var(--w-muted);
+    border-color: var(--w-hairline-strong);
+  }
+  .work .w-pills--sm .w-pill { font-size: 10px; padding: 6px 11px; }
+
+  /* ─── HERO ─────────────────────────────────────────────────────────────── */
+  .w-hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+    isolation: isolate;
+    padding: clamp(120px, 14vh, 200px) 0 clamp(48px, 7vh, 96px);
+  }
+  .w-hero-bg-wrap {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    overflow: hidden;
+  }
+  .w-hero-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    will-change: transform;
+    transform: scale(1.06);
+  }
+  .w-hero-scrim {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(180deg, rgba(3,4,14,0.35) 0%, rgba(3,4,14,0.1) 22%, rgba(3,4,14,0.55) 65%, rgba(3,4,14,0.95) 100%),
+      radial-gradient(120% 60% at 50% 100%, rgba(3,4,14,0.6) 0%, transparent 70%);
+  }
+  .w-hero-inner {
+    position: relative;
+    width: 100%;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 0 clamp(24px, 5vw, 100px);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .w-project-logo {
+    align-self: flex-start;
+    height: 44px;
+    width: auto;
+    margin-bottom: 4px;
+    opacity: 0.95;
+    filter: drop-shadow(0 2px 12px rgba(0,0,0,0.4));
+  }
+  .w-hero-eyebrow {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(245,244,240,0.78);
+  }
+  .w-hero-h1 {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(2.4rem, 4.8vw + 0.4rem, 5.6rem);
+    font-weight: 300;
+    letter-spacing: -0.025em;
+    line-height: 1.02;
+    color: var(--w-text);
+    text-wrap: balance;
+    max-width: 18ch;
+  }
+  .w-hero .w-pills { margin-top: 12px; }
+
+  /* Scroll cue — circular arrow, top-right */
+  .w-scroll-cue {
+    position: absolute;
+    top: clamp(96px, 11vh, 132px);
+    right: clamp(24px, 5vw, 100px);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--w-hairline-strong);
+    color: var(--w-text);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 200ms var(--w-ease-out),
+                background 200ms var(--w-ease-out),
+                border-color 200ms var(--w-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .w-scroll-cue:hover {
+      background: rgba(255,255,255,0.10);
+      border-color: rgba(255,255,255,0.32);
+      transform: translateY(2px);
+    }
+  }
+  .w-scroll-cue:active { transform: scale(0.96) translateY(2px); }
+
+  /* ─── FACTS ─────────────────────────────────────────────────────────────── */
+  .w-facts {
+    padding: clamp(72px, 10vh, 140px) 0 clamp(48px, 7vh, 96px);
+    background: var(--w-bg);
+  }
+  .w-facts-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0;
+    border-top: 1px solid var(--w-hairline);
+    border-bottom: 1px solid var(--w-hairline);
+  }
+  .w-fact {
+    padding: 28px 24px;
+    border-right: 1px solid var(--w-hairline);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .w-fact:last-child { border-right: none; }
+  .w-fact dt {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--w-faint);
+  }
+  .w-fact dd {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 17px;
+    font-weight: 400;
+    color: var(--w-text);
+    margin: 0;
+  }
+  @media (max-width: 720px) {
+    .w-fact { border-right: none; border-bottom: 1px solid var(--w-hairline); }
+    .w-fact:last-child { border-bottom: none; }
+  }
+
+  /* ─── BLOCKED (brief + approach) ───────────────────────────────────────── */
+  .w-blocked {
+    position: relative;
+    padding: clamp(96px, 13vh, 180px) 0;
+    overflow: hidden;
+  }
+  .w-blocked--glow .w-glow {
+    position: absolute;
+    inset: auto -10% 10% auto;
+    width: 80vmax;
+    height: 80vmax;
+    pointer-events: none;
+    background: radial-gradient(closest-side, var(--w-accent-soft) 0%, transparent 70%);
+    z-index: 0;
+    filter: blur(20px);
+  }
+  .w-blocked .w-wrap { z-index: 1; }
+  .w-index {
+    position: absolute;
+    top: 50%;
+    left: clamp(-24px, -1vw, -8px);
+    transform: translateY(-50%);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: clamp(180px, 28vw, 360px);
+    line-height: 0.85;
+    color: rgba(245,244,240,0.055);
+    letter-spacing: -0.04em;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+  }
+  .w-index--right { left: auto; right: clamp(-24px, -1vw, -8px); }
+
+  .w-blocked-grid {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: clamp(40px, 6vw, 120px);
+    align-items: start;
+  }
+  .w-blocked-grid--right { grid-template-columns: 1.6fr 1fr; }
+
+  .w-blocked-label .w-eyebrow,
+  .w-blocked-label .w-h2 { text-align: left; }
+  .w-blocked-label--right { text-align: right; }
+  .w-blocked-label--right .w-eyebrow,
+  .w-blocked-label--right .w-h2 { text-align: right; }
+
+  .w-blocked-body {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(1.05rem, 1vw + 0.55rem, 1.4rem);
+    font-weight: 300;
+    line-height: 1.55;
+    color: var(--w-muted);
+    max-width: 60ch;
+  }
+  .w-blocked-body p + p { margin-top: 1em; }
+
+  @media (max-width: 880px) {
+    .w-blocked-grid,
+    .w-blocked-grid--right { grid-template-columns: 1fr; gap: 28px; }
+    .w-blocked-label--right { text-align: left; }
+    .w-blocked-label--right .w-eyebrow,
+    .w-blocked-label--right .w-h2 { text-align: left; }
+    .w-blocked--right .w-blocked-grid--right > * { order: 0; }
+    .w-blocked--right .w-blocked-grid--right .w-blocked-label { order: -1; }
+    .w-index { font-size: clamp(140px, 36vw, 220px); }
+  }
+
+  /* ─── GALLERY ──────────────────────────────────────────────────────────── */
+  .w-gallery {
+    padding: clamp(96px, 13vh, 180px) 0;
+    background: var(--w-bg);
+  }
+  .w-gallery-head { margin-bottom: clamp(40px, 6vh, 64px); }
+
+  .w-gallery-stack {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(20px, 3vw, 40px);
+  }
+  .w-g-pair {
+    display: grid;
+    gap: clamp(20px, 3vw, 40px);
+  }
+  .w-g-pair--wide-left  { grid-template-columns: 1.3fr 1fr; }
+  .w-g-pair--wide-right { grid-template-columns: 1fr 1.3fr; }
+
+  .w-g-card {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    background: var(--w-card);
+    box-shadow: 0 30px 60px -24px rgba(6,10,30,0.8);
+    isolation: isolate;
+  }
+  .w-g-card--full { width: 100%; }
+  .w-g-card img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    aspect-ratio: 16 / 10;
+    transition: transform 600ms var(--w-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .w-g-card:hover img { transform: scale(1.03); }
+  }
+  .w-g-card figcaption {
+    padding: 18px 22px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: linear-gradient(180deg, rgba(20,21,25,0) 0%, rgba(20,21,25,0.92) 100%);
+    color: var(--w-muted);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+  }
+  .w-g-card figcaption strong {
+    color: var(--w-text);
+    font-weight: 500;
+    font-size: 15px;
+    letter-spacing: -0.005em;
+  }
+
+  @media (max-width: 880px) {
+    .w-g-pair--wide-left,
+    .w-g-pair--wide-right { grid-template-columns: 1fr; }
+  }
+
+  /* ─── VIDEO ────────────────────────────────────────────────────────────── */
+  .w-video {
+    padding: clamp(72px, 10vh, 140px) 0;
+    background: var(--w-bg);
+  }
+  .w-video-head { margin-bottom: clamp(32px, 5vh, 56px); }
+  .w-video-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 30px 60px -24px rgba(6,10,30,0.8);
+  }
+  .w-video-frame iframe,
+  .w-video-frame video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+
+  /* ─── OUTCOME ──────────────────────────────────────────────────────────── */
+  .w-outcome {
+    padding: clamp(96px, 13vh, 180px) 0;
+    background: var(--w-bg);
+  }
+  .w-outcome .w-h2 { margin-bottom: 24px; }
+  .w-outcome-statement {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(1.6rem, 2.2vw + 0.4rem, 2.6rem);
+    font-weight: 300;
+    line-height: 1.18;
+    letter-spacing: -0.018em;
+    color: var(--w-text);
+    max-width: 18ch;
+    text-wrap: balance;
+  }
+
+  /* ─── TESTIMONIAL ──────────────────────────────────────────────────────── */
+  .w-testimonial {
+    padding: clamp(72px, 10vh, 140px) 0;
+    background: var(--w-bg);
+  }
+  .w-quote-card {
+    background: var(--w-surface);
+    border-radius: 16px;
+    padding: clamp(36px, 5vw, 72px);
+    border: 1px solid var(--w-hairline);
+    box-shadow: 0 30px 60px -24px rgba(6,10,30,0.7);
+    margin: 0;
+    position: relative;
+  }
+  .w-quote-mark {
+    position: absolute;
+    top: 12px;
+    left: clamp(24px, 4vw, 48px);
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(80px, 8vw, 140px);
+    line-height: 1;
+    color: var(--w-accent);
+    opacity: 0.7;
+    font-weight: 700;
+    pointer-events: none;
+  }
+  .w-quote-text {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(1.2rem, 1.4vw + 0.4rem, 1.8rem);
+    font-weight: 300;
+    line-height: 1.45;
+    color: var(--w-text);
+    text-wrap: balance;
+    max-width: 38ch;
+    margin-top: clamp(24px, 3vh, 40px);
+  }
+  .w-quote-meta {
+    margin-top: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: baseline;
+    font-family: 'Montserrat', sans-serif;
+  }
+  .w-quote-name { color: var(--w-text); font-weight: 500; font-size: 14px; }
+  .w-quote-role { color: var(--w-muted); font-size: 13px; }
+  .w-quote-role::before { content: "·"; margin-right: 8px; color: var(--w-faint); }
+
+  /* ─── SKILLS USED ──────────────────────────────────────────────────────── */
+  .w-skills {
+    padding: clamp(72px, 10vh, 140px) 0;
+    background: var(--w-bg);
+  }
+  .w-skills .w-h2 { margin-bottom: 24px; }
+
+  /* ─── RELATED ──────────────────────────────────────────────────────────── */
+  .w-related {
+    padding: clamp(96px, 13vh, 180px) 0;
+    background: var(--w-bg);
+  }
+  .w-related-head { margin-bottom: clamp(32px, 5vh, 56px); }
+  .w-related-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(20px, 3vw, 40px);
+  }
+  .w-related-card {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    aspect-ratio: 4 / 3;
+    text-decoration: none;
+    color: inherit;
+    background: var(--w-card);
+    box-shadow: 0 30px 60px -24px rgba(6,10,30,0.8);
+    isolation: isolate;
+    transition: transform 220ms var(--w-ease-out);
+  }
+  .w-related-img {
+    position: absolute;
+    inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 600ms var(--w-ease-out);
+  }
+  .w-related-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    padding: clamp(20px, 3vw, 36px);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    background: linear-gradient(180deg, rgba(3,4,14,0.1) 0%, rgba(3,4,14,0.85) 100%);
+  }
+  .w-related-meta { display: flex; flex-direction: column; gap: 12px; }
+  .w-related-title {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(1.15rem, 1.4vw + 0.3rem, 1.7rem);
+    font-weight: 400;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    color: var(--w-text);
+    margin: 0;
+  }
+  .w-related-arrow {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--w-hairline-strong);
+    color: var(--w-text);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    flex-shrink: 0;
+    transition: transform 200ms var(--w-ease-out), background 200ms var(--w-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .w-related-card:hover .w-related-img { transform: scale(1.04); }
+    .w-related-card:hover .w-related-arrow { transform: translateX(4px); background: rgba(255,255,255,0.12); }
+  }
+  .w-related-card:active { transform: scale(0.997); }
+  @media (max-width: 720px) {
+    .w-related-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ─── CTA ──────────────────────────────────────────────────────────────── */
+  .w-cta {
+    padding: clamp(96px, 13vh, 180px) 0;
+    background: #F4F2EC;
+    color: #0F1014;
+  }
+  .w-cta .w-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 28px;
+  }
+  .w-cta-h {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(1.8rem, 2.6vw + 0.4rem, 3rem);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: #0F1014;
+    text-wrap: balance;
+    max-width: 22ch;
+    margin: 0;
+  }
+  .w-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: #0F1014;
+    color: #F5F4F0;
+    padding: 16px 28px;
+    border-radius: 6px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    transition: transform 160ms var(--w-ease-out), background 220ms var(--w-ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .w-cta-btn:hover { background: var(--w-accent); }
+  }
+  .w-cta-btn:active { transform: scale(0.97); }
+
+  /* ─── REVEAL pattern (mirrors home-porsche.astro) ──────────────────────── */
+  .work .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 800ms var(--w-ease-out), transform 800ms var(--w-ease-out);
+  }
+  .work .reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* prefers-reduced-motion — strip transforms, keep opacity for legibility */
+  @media (prefers-reduced-motion: reduce) {
+    .work .reveal {
+      transition: opacity 240ms ease;
+      transform: none !important;
+    }
+    .w-hero-bg { transform: none !important; }
+    .w-g-card img,
+    .w-related-img { transition: none; }
+  }
+</style>
+
+<script>
+  // ─── Motion ──────────────────────────────────────────────────────────────
+  const root = document.querySelector('.work') as HTMLElement | null;
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (root) {
+    const heroAnimate = root.getAttribute('data-animate') === '1';
+
+    // Hero entrance — GSAP if available + opted in + motion allowed
+    if (heroAnimate && !reducedMotion) {
+      (async () => {
+        try {
+          const { gsap } = await import('gsap');
+
+          const heroBg = root.querySelector('.w-hero-bg') as HTMLElement | null;
+          const eyebrow = root.querySelector('.w-hero-eyebrow') as HTMLElement | null;
+          const logo = root.querySelector('.w-project-logo') as HTMLElement | null;
+          const h1 = root.querySelector('.w-hero-h1') as HTMLElement | null;
+          const pills = root.querySelectorAll('.w-hero .w-pill');
+
+          const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
+
+          if (heroBg) {
+            tl.fromTo(heroBg,
+              { scale: 1.12, opacity: 0.6 },
+              { scale: 1.0, opacity: 1, duration: 2.4, ease: 'expo.out' },
+              0
+            );
+          }
+          if (logo) {
+            tl.fromTo(logo,
+              { y: 12, opacity: 0 },
+              { y: 0, opacity: 0.95, duration: 0.8 },
+              0.15
+            );
+          }
+          if (eyebrow) {
+            tl.fromTo(eyebrow,
+              { y: 14, opacity: 0 },
+              { y: 0, opacity: 1, duration: 0.7 },
+              0.2
+            );
+          }
+          if (h1) {
+            tl.fromTo(h1,
+              { y: 28, opacity: 0 },
+              { y: 0, opacity: 1, duration: 1.0 },
+              0.28
+            );
+          }
+          if (pills.length) {
+            tl.fromTo(pills,
+              { y: 14, opacity: 0 },
+              { y: 0, opacity: 1, duration: 0.6, stagger: 0.05 },
+              0.5
+            );
+          }
+        } catch {
+          /* GSAP unavailable — page renders fully without entrance, reveals still run */
+        }
+      })();
+    }
+
+    // Scroll reveal observer (always on; no transforms if reduced-motion via CSS)
+    const reveals = root.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    reveals.forEach(el => io.observe(el));
+  }
+</script>

@@ -132,7 +132,7 @@ function ded_register_project_fields() {
                 'name'         => 'gallery_items',
                 'type'         => 'repeater',
                 'min'          => 0,
-                'max'          => 8,
+                'max'          => 10,
                 'layout'       => 'block',
                 'button_label' => 'Add gallery item',
                 'sub_fields'   => [
