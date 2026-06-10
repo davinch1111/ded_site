@@ -58,7 +58,10 @@ import IntroSequence from '../components/IntroSequence.tsx';
       --body: 'Montserrat', -apple-system, system-ui, sans-serif;
     }
 
-    html { scroll-behavior: smooth; }
+    /* No global `scroll-behavior: smooth` — it makes mouse-wheel ticks
+       animate, which reads as sticky/jerky scrolling. Modern browsers
+       handle anchor jumps with a native instant scroll; if a specific
+       link needs a smooth target, do it on the click handler. */
 
     body {
       background: var(--bg-dark);
