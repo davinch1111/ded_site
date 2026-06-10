@@ -1,27 +1,63 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+
+/**
+ * IntroSequence — deterministic, timer-driven intro.
+ *
+ * Timeline (clock-driven, no animation/transition callbacks):
+ *
+ *   0 ms        mount, overlay full-cover, text starts CSS fade-in
+ *   ~1400 ms    text fully visible (CSS keyframe completes on its own)
+ *   3500 ms     wipe starts (CSS transition on clip-path, 800 ms duration)
+ *   4300 ms     overlay unmounted, 'ded-intro-done' event dispatched,
+ *               sessionStorage.hasSeenIntro set
+ *
+ * The previous version used framer-motion's onAnimationComplete to detect
+ * the wipe end. Some Chromium-based browsers (notably Brave with shields
+ * enabled) short-circuited the clip-path animation and fired the callback
+ * almost immediately, collapsing the intro to ~0.5s. This rebuild uses
+ * pure setTimeout for all phase changes, so the timeline is identical
+ * regardless of how the browser handles the underlying CSS transition.
+ *
+ * Session guard preserved: if sessionStorage.hasSeenIntro is set, the
+ * overlay is skipped entirely and 'ded-intro-done' fires on next frame so
+ * downstream listeners attached after mount still catch it.
+ */
+
+const HOLD_MS = 3500; // text holds visible after fade-in completes
+const WIPE_MS = 800;  // clip-path wipe duration
 
 export default function IntroSequence() {
-  const [show, setShow] = useState(true);
-  const [wiping, setWiping] = useState(false);
+  const [phase, setPhase] = useState<'init' | 'showing' | 'wiping' | 'done'>('init');
 
   useEffect(() => {
+    // Repeat visit: skip the intro entirely.
     if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('hasSeenIntro')) {
-      setShow(false);
-      // Fire on next frame so listeners attached after mount still catch it.
+      setPhase('done');
       requestAnimationFrame(() => {
         window.dispatchEvent(new CustomEvent('ded-intro-done', { detail: { skipped: true } }));
       });
       return;
     }
+
     document.body.style.overflow = 'hidden';
-    // Hold the wordmark visible for ~4s after it finishes fading in (at ~1.4s),
-    // then trigger the clip-path wipe.
-    const timer = setTimeout(() => setWiping(true), 5500);
-    return () => clearTimeout(timer);
+    setPhase('showing');
+
+    const wipeTimer = window.setTimeout(() => setPhase('wiping'), HOLD_MS);
+    const doneTimer = window.setTimeout(() => {
+      sessionStorage.setItem('hasSeenIntro', '1');
+      document.body.style.overflow = '';
+      setPhase('done');
+      window.dispatchEvent(new CustomEvent('ded-intro-done', { detail: { skipped: false } }));
+    }, HOLD_MS + WIPE_MS);
+
+    return () => {
+      window.clearTimeout(wipeTimer);
+      window.clearTimeout(doneTimer);
+      document.body.style.overflow = '';
+    };
   }, []);
 
-  if (!show) return null;
+  if (phase === 'done' || phase === 'init') return null;
 
   return (
     <>
@@ -34,6 +70,15 @@ export default function IntroSequence() {
           display: flex;
           align-items: center;
           justify-content: center;
+          /* Wipe uses a plain CSS transition. Browsers must paint a 0→100%
+             inset on clip-path; if any browser short-circuits that paint,
+             the visual is cut off but the surrounding setTimeout still
+             keeps the timeline correct. */
+          clip-path: inset(0 0% 0 0%);
+          transition: clip-path ${WIPE_MS}ms cubic-bezier(0.76, 0, 0.24, 1);
+        }
+        .intro-overlay.intro-wiping {
+          clip-path: inset(0 0% 0 100%);
         }
         .intro-text {
           color: #fff;
@@ -76,26 +121,13 @@ export default function IntroSequence() {
           to { opacity: 0.9; }
         }
       `}</style>
-      <motion.div
-        className="intro-overlay"
-        animate={
-          wiping
-            ? { clipPath: 'inset(0 0% 0 100%)' }
-            : { clipPath: 'inset(0 0% 0 0%)' }
-        }
-        transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-        onAnimationComplete={() => {
-          if (wiping) {
-            sessionStorage.setItem('hasSeenIntro', '1');
-            document.body.style.overflow = '';
-            setShow(false);
-            window.dispatchEvent(new CustomEvent('ded-intro-done', { detail: { skipped: false } }));
-          }
-        }}
+      <div
+        className={`intro-overlay${phase === 'wiping' ? ' intro-wiping' : ''}`}
+        aria-hidden="true"
       >
         <div className="intro-text">DAVID EDIGER DESIGN</div>
         <div className="intro-badge">DED</div>
-      </motion.div>
+      </div>
     </>
   );
 }

@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import SiteNav from '../../components/SiteNav.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
+import ScrollCue from '../../components/ScrollCue.astro';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface WPImage {
@@ -190,6 +191,18 @@ const showCta         = acf.show_cta         !== false;
 const skillsList      = project.skill;
 const showSkills      = skillsList.length > 0;
 
+// First visible content section — used as the hero scroll-cue target.
+const firstSectionHref =
+  showFacts       ? '#facts'       :
+  showBrief       ? '#brief'       :
+  showApproach    ? '#approach'    :
+  showGallery     ? '#gallery'     :
+  showVideo       ? '#video'       :
+  showOutcome     ? '#outcome'     :
+  showTestimonial ? '#testimonial' :
+  showSkills      ? '#skills'      :
+  '#related';
+
 // Related: explicit IDs, else fall back to projects sharing a skill term, dedupe self.
 let related: ProjectLite[] = [];
 const explicitIds = Array.isArray(acf.related_projects) ? acf.related_projects : [];
@@ -289,12 +302,7 @@ const jsonLd = {
       )}
       <div class="w-hero-scrim"></div>
 
-      <a href="#brief" class="w-scroll-cue" aria-label="Scroll to brief">
-        <span class="w-scroll-line" aria-hidden="true">
-          <span class="w-scroll-pulse"></span>
-        </span>
-        <span class="w-scroll-label">Scroll</span>
-      </a>
+      <ScrollCue href={firstSectionHref} />
 
       <div class="w-hero-inner">
         {acf.project_logo && (acf.project_logo as WPImage).url && (
@@ -327,7 +335,7 @@ const jsonLd = {
     <!-- Quick facts -->
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     {showFacts && (
-      <section class="w-facts reveal" aria-label="Project facts">
+      <section class="w-facts reveal" id="facts" aria-label="Project facts">
         <div class="w-wrap">
           <dl class="w-facts-row">
             {acf.fact_client && (
@@ -383,7 +391,7 @@ const jsonLd = {
     <!-- Approach — copy left, label right, accent glow -->
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     {showApproach && (
-      <section class="w-blocked w-blocked--right w-blocked--glow reveal" aria-labelledby="approach-h">
+      <section class="w-blocked w-blocked--right w-blocked--glow reveal" id="approach" aria-labelledby="approach-h">
         <div class="w-glow" aria-hidden="true"></div>
         <div class="w-wrap">
           <span class="w-index w-index--right" aria-hidden="true">02</span>
@@ -404,7 +412,7 @@ const jsonLd = {
     <!-- Gallery — mixed proportions -->
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     {showGallery && (
-      <section class="w-gallery reveal" aria-labelledby="gallery-h">
+      <section class="w-gallery reveal" id="gallery" aria-labelledby="gallery-h">
         <div class="w-wrap">
           <header class="w-gallery-head">
             <p class="w-eyebrow">The work</p>
@@ -478,7 +486,7 @@ const jsonLd = {
     <!-- Video (16:9 responsive) -->
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     {showVideo && video && (
-      <section class="w-video reveal" aria-labelledby="video-h">
+      <section class="w-video reveal" id="video" aria-labelledby="video-h">
         <div class="w-wrap">
           <header class="w-video-head">
             <p class="w-eyebrow">In motion</p>
@@ -506,7 +514,7 @@ const jsonLd = {
     <!-- Outcome -->
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     {showOutcome && (
-      <section class="w-outcome reveal" aria-labelledby="outcome-h">
+      <section class="w-outcome reveal" id="outcome" aria-labelledby="outcome-h">
         <div class="w-wrap">
           <p class="w-eyebrow">The outcome</p>
           <h2 id="outcome-h" class="w-h2">How it landed</h2>
@@ -519,7 +527,7 @@ const jsonLd = {
     <!-- Testimonial -->
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     {showTestimonial && (
-      <section class="w-testimonial reveal" aria-label="Client testimonial">
+      <section class="w-testimonial reveal" id="testimonial" aria-label="Client testimonial">
         <div class="w-wrap">
           <blockquote class="w-quote-card">
             <span class="w-quote-mark" aria-hidden="true">“</span>
@@ -539,7 +547,7 @@ const jsonLd = {
     <!-- Skills used -->
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     {showSkills && (
-      <section class="w-skills reveal" aria-labelledby="skills-h">
+      <section class="w-skills reveal" id="skills" aria-labelledby="skills-h">
         <div class="w-wrap">
           <p class="w-eyebrow">What it took</p>
           <h2 id="skills-h" class="w-h2">Skills used</h2>
@@ -554,7 +562,7 @@ const jsonLd = {
     <!-- Related projects -->
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     {showRelated && related.length > 0 && (
-      <section class="w-related reveal" aria-labelledby="related-h">
+      <section class="w-related reveal" id="related" aria-labelledby="related-h">
         <div class="w-wrap">
           <header class="w-related-head">
             <p class="w-eyebrow">Keep going</p>
@@ -782,65 +790,7 @@ const jsonLd = {
   }
   .w-hero .w-pills { margin-top: 12px; }
 
-  /* Scroll cue — vertical line + travelling pulse + label, bottom-centre */
-  .w-scroll-cue {
-    position: absolute;
-    bottom: clamp(24px, 4vh, 48px);
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 3;
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    color: rgba(245,244,240,0.7);
-    text-decoration: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    transition: color 200ms var(--w-ease-out);
-  }
-  .w-scroll-line {
-    position: relative;
-    display: block;
-    width: 1px;
-    height: 44px;
-    background: rgba(245,244,240,0.4);
-    overflow: hidden;
-  }
-  .w-scroll-pulse {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 14px;
-    background: linear-gradient(180deg, rgba(245,244,240,0) 0%, rgba(245,244,240,0.95) 50%, rgba(245,244,240,0) 100%);
-    transform: translateY(-100%);
-    animation: w-scroll-pulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-  }
-  @keyframes w-scroll-pulse {
-    0%   { transform: translateY(-100%); }
-    100% { transform: translateY(calc(44px + 4px)); }
-  }
-  .w-scroll-label {
-    font-family: 'Montserrat', sans-serif;
-    font-size: 10px;
-    font-weight: 500;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: rgba(245,244,240,0.55);
-  }
-  @media (hover: hover) and (pointer: fine) {
-    .w-scroll-cue:hover { color: var(--w-text); }
-    .w-scroll-cue:hover .w-scroll-line { background: rgba(245,244,240,0.6); }
-    .w-scroll-cue:hover .w-scroll-label { color: rgba(245,244,240,0.85); }
-  }
-  .w-scroll-cue:focus-visible {
-    outline: 2px solid var(--w-accent);
-    outline-offset: 6px;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .w-scroll-pulse { animation: none; display: none; }
-  }
+  /* Scroll cue lives in src/components/ScrollCue.astro */
 
   /* ─── FACTS ─────────────────────────────────────────────────────────────── */
   .w-facts {
@@ -968,7 +918,18 @@ const jsonLd = {
   .w-g-pair {
     display: grid;
     gap: clamp(20px, 3vw, 40px);
-    transition: grid-template-columns 550ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  /* Higher specificity (.work .w-gallery .w-g-pair) so this transition
+     beats `.work .reveal`'s shorthand, which would otherwise clobber
+     `grid-template-columns` with `opacity, transform`. Column-grow
+     matches the homepage work grid exactly: 550ms cubic-bezier(.4,0,.2,1).
+     Opacity + transform carried alongside so the reveal entrance still
+     plays. */
+  .work .w-gallery .w-g-pair {
+    transition:
+      grid-template-columns 550ms cubic-bezier(0.4, 0, 0.2, 1),
+      opacity   800ms cubic-bezier(0.23, 1, 0.32, 1),
+      transform 800ms cubic-bezier(0.23, 1, 0.32, 1);
   }
   .w-g-pair--wide-left  { grid-template-columns: 1.3fr 1fr; }
   .w-g-pair--wide-right { grid-template-columns: 1fr 1.3fr; }

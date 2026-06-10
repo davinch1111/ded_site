@@ -1,20 +1,1017 @@
 ---
 import Base from '../layouts/Base.astro';
-import Nav from '../components/Nav.astro';
-import Hero from '../components/Hero.astro';
-import WorkGrid from '../components/WorkGrid.astro';
-import Services from '../components/Services.astro';
-import Testimonials from '../components/Testimonials.astro';
-import Contact from '../components/Contact.astro';
-import Footer from '../components/Footer.astro';
-// Marquee replaced by PerspectiveMarquee inside Hero.astro
+import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import ScrollCue from '../components/ScrollCue.astro';
+
+interface Project {
+  id: number;
+  slug: string;
+  title: string;
+  disciplines: string;
+  featuredImage: string | null;
+  fallbackBg: string;
+}
+
+const FALLBACK_BG = [
+  'linear-gradient(160deg,#0d1020 0%,#1a1f2e 100%)',
+  'linear-gradient(160deg,#0a0f0a 0%,#141a14 100%)',
+  'linear-gradient(160deg,#0a0d14 0%,#16192a 100%)',
+  'linear-gradient(160deg,#0d0d0d 0%,#1a1a1a 100%)',
+  'linear-gradient(160deg,#0d1212 0%,#181e1e 100%)',
+  'linear-gradient(160deg,#100e0a 0%,#1c1912 100%)',
+];
+
+const FALLBACK_PROJECTS: Project[] = [
+  { id: 1, slug: 'innotech-windows-and-doors', title: 'Innotech Windows & Doors', disciplines: 'Print · Video · Wraps · Since 2008', featuredImage: null, fallbackBg: FALLBACK_BG[0] },
+  { id: 2, slug: 'chanvre-hemp',               title: 'Chanvre Hemp',             disciplines: 'Brand · Packaging · Video',          featuredImage: null, fallbackBg: FALLBACK_BG[1] },
+  { id: 3, slug: 'first-light-fishing',        title: 'First Light Fishing',      disciplines: 'Brand · Web · Photography',          featuredImage: null, fallbackBg: FALLBACK_BG[2] },
+  { id: 4, slug: 'rackon',                     title: 'RackOn',                   disciplines: 'Video · Brand · Mascot',             featuredImage: null, fallbackBg: FALLBACK_BG[3] },
+  { id: 5, slug: 'wayne-northey',              title: 'Wayne Northey',            disciplines: 'Web · Identity',                     featuredImage: null, fallbackBg: FALLBACK_BG[4] },
+  { id: 6, slug: 'vindauga-windows',           title: 'Vindauga Windows',         disciplines: 'Web · Brand',                        featuredImage: null, fallbackBg: FALLBACK_BG[5] },
+];
+
+let projects: Project[] = FALLBACK_PROJECTS;
+
+try {
+  const res = await fetch(
+    'https://davidedigerdesign.in/wp-json/wp/v2/ded_project?per_page=6&_embed',
+    { signal: AbortSignal.timeout(8000) }
+  );
+  if (res.ok) {
+    const data = await res.json() as any[];
+    const mapped: Project[] = data.map((p: any, i: number) => {
+      const termGroups: any[][] = p._embedded?.['wp:term'] ?? [];
+      const disciplines = termGroups.flat()
+        .filter((t: any) => t.taxonomy === 'discipline')
+        .map((t: any) => t.name as string)
+        .join(' · ');
+      const featuredImage: string | null =
+        (p._embedded?.['wp:featuredmedia'] ?? [])[0]?.source_url ?? null;
+      return {
+        id: p.id as number,
+        slug: (p.slug ?? '') as string,
+        title: (p.title?.rendered ?? 'Untitled') as string,
+        disciplines: disciplines || 'Design · 2026',
+        featuredImage,
+        fallbackBg: FALLBACK_BG[i % FALLBACK_BG.length],
+      };
+    });
+    if (mapped.length > 0) {
+      projects = mapped.length >= 6
+        ? mapped.slice(0, 6)
+        : [...mapped, ...FALLBACK_PROJECTS.slice(mapped.length)];
+    }
+  }
+} catch { /* WP unreachable — use fallback */ }
+
+const services = [
+  { name: 'Print', desc: 'Logos, brand systems, packaging, signage, vehicle wraps, tradeshow booths. The work people can hold and walk up to.' },
+  { name: 'Web',   desc: 'Websites that load fast and convert, plus the social campaigns to feed them. WordPress builds with the back end actually organised.' },
+  { name: 'Video', desc: 'Cinematic shoots, editing, colour, motion graphics. From hero films down to social cuts.' },
+  { name: 'Photo', desc: 'Product, portrait, and conceptual photography. Images built to sell, not just to sit there.' },
+  { name: 'Audio', desc: 'Music, soundtracks, sound design. Twenty years behind instruments, put to work on your brand.' },
+];
+
+const quotes = [
+  { text: 'We have worked with David since 2008. He is dependable, professional and highly talented. He has helped us successfully brand our company.',
+    name: 'Jessica Owen', role: 'Marketing Manager, Innotech' },
+  { text: "David has to be one of the most talented graphic designers I have ever seen. I've hired hundreds of designers. His talent is head and shoulders above the rest.",
+    name: 'Kim Mullin', role: 'Business Development' },
+  { text: 'David Ediger Design is my first and only recommendation to professional business owners. His passion for design and branding is exceptional and consistent.',
+    name: 'Dave Fullerton', role: 'Investment Manager' },
+];
+
 ---
-<Base>
-  <Nav />
-  <Hero />
-  <WorkGrid />
-  <Services />
-  <Testimonials />
-  <Contact />
-  <Footer />
+
+<Base title="David Ediger Design — Portfolio">
+<div class="hp">
+
+  <SiteNav />
+
+  <!-- ══════════════ HERO ══════════════ -->
+  <section class="hp-hero">
+    <div class="hero-showreel">
+      <i class="fa-solid fa-play" style="font-size:9px;margin-right:6px;"></i>Showreel
+    </div>
+    <img src="/images/ded_emblem_white.svg" class="hero-emblem" alt="" aria-hidden="true" />
+    <div class="hero-text">
+      <p class="hero-ey">DAVID EDIGER DESIGN&nbsp;&nbsp;|&nbsp;&nbsp;CREATED FOR YOU IN: PRINT. WEB. VIDEO. PHOTO. AUDIO.</p>
+      <h1 class="hero-h1">Brands that<br><strong>refuse</strong> to blend in</h1>
+      <p class="hero-sub">Twenty-three years of print, web, video, photo, and audio. Some of these clients have stayed since 2008.</p>
+    </div>
+    <ScrollCue href="#work" />
+  </section>
+
+  <!-- ══════════════ WORK — dark-zone wrapper ══════════════ -->
+  <div class="dark-zone" id="work">
+
+    <!-- Part A — header (transparent over body) -->
+    <section class="work-header">
+      <div class="work-header-inner">
+        <p class="work-label work-eyebrow">Selected work</p>
+        <h2 class="work-heading reveal">Twenty-three years of making<br>things worth looking at</h2>
+        <p class="work-subhead reveal">A selection of recent work across identity, packaging, web, video, and print. Each one built to do a specific job for a specific audience.</p>
+      </div>
+    </section>
+
+    <!-- Part B — card grid (transparent over body) -->
+    <section class="work-grid-wrap">
+      <div class="work-grid-inner">
+        <div class="work-rows" id="work-grid">
+          {[0, 2, 4].map(start => (
+            <div class="work-row">
+              {projects.slice(start, start + 2).map((p, j) => {
+                const i = start + j;
+                const href = p.slug ? `/work/${p.slug}/` : '#work';
+                const cleanTitle = p.title.replace(/<[^>]+>/g, '');
+                return (
+                  <a
+                    class="card reveal"
+                    href={href}
+                    style={!p.featuredImage ? `background:${p.fallbackBg};` : ''}
+                    data-idx={i}
+                    aria-label={`View project: ${cleanTitle}`}
+                  >
+                    {p.featuredImage && (
+                      <img src={p.featuredImage} alt={cleanTitle} loading={i < 2 ? 'eager' : 'lazy'} />
+                    )}
+                    <div class="card-top-scrim"></div>
+                    <div class="card-title" set:html={p.title} />
+                    <div class="card-info">
+                      <span class="card-desc">{p.disciplines}</span>
+                      <div class="card-cta-area">
+                        <span class="card-arrow" aria-hidden="true">
+                          <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i>
+                        </span>
+                        <span class="card-cta" aria-hidden="true">
+                          View project <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i>
+                        </span>
+                      </div>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /.dark-zone -->
+
+  <!-- ══════════════ SERVICES ══════════════ -->
+  <section class="services-section" id="services">
+    <div class="services-inner">
+      <p class="s-label">What I make</p>
+      <h2 class="s-heading">Five ways I can help</h2>
+      <div class="srows">
+        {services.map(s => (
+          <div class="srow reveal">
+            <div class="sname">{s.name}</div>
+            <p class="sdesc">{s.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ TESTIMONIALS ══════════════ -->
+  <section class="quotes-section">
+    <div class="quotes-inner">
+      <p class="q-label">What people say</p>
+      <h2 class="q-heading">Twenty years of working relationships</h2>
+      <div class="qgrid">
+        {quotes.map(q => (
+          <div class="qcard reveal">
+            <div class="qmark">"</div>
+            <p class="qtext">{q.text}</p>
+            <div class="qname">{q.name}</div>
+            <div class="qrole">{q.role}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ CONTACT ══════════════ -->
+  <section class="contact-section" id="contact">
+    <div class="contact-inner">
+      <p class="c-label">Start a project</p>
+      <h2 class="c-heading reveal">Tell me what you're building</h2>
+      <p class="c-sub">I take on a small number of new projects each year. A few quick questions and I'll know if I'm the right fit.</p>
+      <form class="c-form" action="mailto:info@davidedigerdesign.com" method="get" enctype="text/plain">
+        <div class="c-row">
+          <input class="c-inp" type="text"  name="name"  placeholder="Your name" required />
+          <input class="c-inp" type="email" name="email" placeholder="Email"      required />
+        </div>
+        <input class="c-inp" type="text" name="company" placeholder="Business or company" style="margin-bottom:18px;" />
+
+        <div class="c-flabel">What can I help with?</div>
+        <div class="c-chips">
+          {['Print','Web','Video','Photo','Audio','Not sure yet'].map((chip, i) => (
+            <span class:list={['c-chip', { on: i === 0 }]} data-chip>{chip}</span>
+          ))}
+        </div>
+
+        <div class="c-row">
+          <div>
+            <div class="c-flabel">Budget</div>
+            <select class="c-inp" name="budget">
+              <option>Under $5,000</option>
+              <option>$5,000 – $15,000</option>
+              <option>$15,000 – $40,000</option>
+              <option>$40,000+</option>
+              <option>Let's talk</option>
+            </select>
+          </div>
+          <div>
+            <div class="c-flabel">Timeline</div>
+            <select class="c-inp" name="timeline">
+              <option>As soon as possible</option>
+              <option>1 – 3 months</option>
+              <option>3 – 6 months</option>
+              <option>Flexible</option>
+            </select>
+          </div>
+        </div>
+
+        <textarea class="c-inp" name="description" rows="4"
+          placeholder="Tell me about the project. What does success look like?"
+          style="margin-top:16px;margin-bottom:24px;resize:vertical;"></textarea>
+
+        <button class="c-submit" type="submit">
+          Send it over <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+    </div>
+  </section>
+
+  <SiteFooter />
+
+</div><!-- /.hp -->
 </Base>
+
+<!-- ══════════════════════════════════════════════════════════
+     ALL CSS — single block, is:global to support :has() selectors
+════════════════════════════════════════════════════════════ -->
+<style is:global>
+
+/* ── Variables (inherited by all children of .hp) ── */
+.hp {
+  --black:      #03040E;
+  --dark:       #0F1014;
+  --card-bg:    #141519;
+  --white:      #FAFAFA;
+  --text-white: #F5F4F0;
+  --text-muted: rgba(245,244,240,0.5);
+  --text-dark:  #0F1014;
+  --accent:     #3457C6;
+  --gap:        20px;
+  font-family: 'Montserrat', -apple-system, system-ui, sans-serif;
+}
+
+/* ── Body: starts white, transitions dark when dark-zone active ── */
+body {
+  background-color: #FAFAFA !important;
+  transition: background-color 1800ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+body.dark-zone-active {
+  background-color: #03040E !important;
+}
+
+/* Nav rules now live in src/components/SiteNav.astro */
+
+/* ═══ HERO ═══ */
+.hp-hero {
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--black);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-showreel {
+  position: absolute;
+  top: 90px;
+  right: clamp(40px, 5vw, 100px);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  z-index: 2;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.hero-text {
+  position: absolute;
+  bottom: clamp(48px, 4vw, 80px);
+  left: clamp(40px, 5vw, 100px);
+  right: clamp(40px, 5vw, 100px);
+  max-width: 700px;
+  z-index: 2;
+}
+
+.hero-ey {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+
+/* Override Base.astro's global h1 for this hero */
+.hp-hero h1 {
+  font-family: 'Montserrat', sans-serif !important;
+  font-size: clamp(2.4rem, 5vw + 0.3rem, 5rem) !important;
+  font-weight: 300 !important;
+  color: var(--text-white) !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1.04 !important;
+  margin-bottom: 22px;
+}
+
+.hp-hero h1 strong {
+  font-weight: 600;
+  /* Same colour as the rest of the headline — emphasis through weight only,
+     never colour, so we don't introduce a second accent on the hero. */
+  color: inherit;
+}
+
+.hero-sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 17px;
+  font-weight: 300;
+  color: var(--text-muted);
+  line-height: 1.65;
+  max-width: 480px;
+}
+
+/* ── Hero entrance: rise-up after intro wipe completes ── */
+.hero-ey,
+.hp-hero h1,
+.hero-sub {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 600ms cubic-bezier(.4, 0, .2, 1),
+              transform 600ms cubic-bezier(.4, 0, .2, 1);
+  will-change: opacity, transform;
+}
+.hp-hero.intro-done .hero-ey   { transition-delay: 0ms;   }
+.hp-hero.intro-done .hero-h1   { transition-delay: 120ms; }
+.hp-hero.intro-done .hero-sub  { transition-delay: 240ms; }
+.hp-hero.intro-done .hero-ey,
+.hp-hero.intro-done .hero-h1,
+.hp-hero.intro-done .hero-sub {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ey,
+  .hp-hero h1,
+  .hero-sub {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+.hero-emblem {
+  position: absolute;
+  right: clamp(40px, 5vw, 120px);
+  bottom: clamp(48px, 4vw, 80px);
+  width: 190px;
+  height: auto;
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+  z-index: 2;
+}
+
+/* ═══ DARK ZONE ═══ */
+.dark-zone {
+  background: transparent;
+}
+
+.dark-zone > section {
+  background: transparent !important;
+}
+
+/* ═══ WORK — Part A: header ═══ */
+.work-header {
+  padding: 350px clamp(40px,5vw,100px) 32px;
+}
+
+.work-header-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.work-label,
+.work-eyebrow {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #999;
+  margin-bottom: 14px;
+  transition: color 1800ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.work-heading {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.8rem, 3vw, 2.8rem);
+  font-weight: 300;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  transition: color 1800ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.work-subhead {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 17px;
+  font-weight: 300;
+  line-height: 1.5;
+  max-width: 620px;
+  margin-top: 16px;
+  color: rgba(15,16,20,0.65);
+  transition: color 1800ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Fade work-header text colours in sync with body dark transition */
+body.dark-zone-active .work-heading { color: var(--text-white); }
+body.dark-zone-active .work-eyebrow,
+body.dark-zone-active .work-label   { color: rgba(245,244,240,0.5); }
+body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
+
+/* ═══ WORK — Part B: dark grid ═══ */
+.work-grid-wrap {
+  padding: 0 clamp(40px,5vw,100px) 80px;
+}
+
+.work-grid-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* ── The Grid: 3 independent rows ── */
+.work-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.work-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+  height: 600px;
+  transition: grid-template-columns 550ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Per-row column expansion — only the hovered row changes */
+.work-row:has(.card:nth-child(1):hover) { grid-template-columns: 1.4fr 0.6fr; }
+.work-row:has(.card:nth-child(2):hover) { grid-template-columns: 0.6fr 1.4fr; }
+
+/* JS :has() fallback (per-row) */
+.work-row.expand-left  { grid-template-columns: 1.4fr 0.6fr; }
+.work-row.expand-right { grid-template-columns: 0.6fr 1.4fr; }
+
+.card {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--card-bg);
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.06);
+}
+.card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.card img {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transition: transform 550ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover img { transform: scale(1.04); }
+
+/* Top gradient so card-title reads over dark or photo backgrounds */
+.card-top-scrim {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 140px;
+  background: linear-gradient(to bottom, rgba(3,4,14,0.65) 0%, transparent 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Project name — top-centre, Porsche model-name style */
+.card-title {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 24px;
+  text-align: center;
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.1rem, 2vw, 1.6rem);
+  font-weight: 300;
+  letter-spacing: 0.04em;
+  color: var(--text-white);
+  text-shadow: 0 1px 8px rgba(0,0,0,0.6);
+  z-index: 2;
+}
+
+/* Dark info strip — bottom of card */
+.card-info {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(10,10,15,0.88);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 2;
+}
+
+.card-desc {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--text-muted);
+  flex: 1;
+  margin-right: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* CTA area — circle arrow fades to text button on hover */
+.card-cta-area {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.card-arrow {
+  position: absolute;
+  top: 0; right: 0;
+  width: 36px; height: 36px;
+  border: 1px solid rgba(245,244,240,0.4);
+  border-radius: 50%;
+  background: none;
+  color: var(--text-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1;
+  transition: opacity 250ms cubic-bezier(.25,.1,.25,1);
+}
+
+.card-cta {
+  position: absolute;
+  top: 50%; right: 0;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-white);
+  border: 1px solid rgba(245,244,240,0.3);
+  padding: 8px 14px;
+  border-radius: 4px;
+  white-space: nowrap;
+  text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 250ms cubic-bezier(.25,.1,.25,1),
+              border-color 200ms,
+              background 200ms;
+}
+
+.card:hover .card-arrow { opacity: 0; pointer-events: none; }
+.card:hover .card-cta   { opacity: 1; pointer-events: auto; }
+.card-cta:hover { background: rgba(255,255,255,0.08); border-color: rgba(245,244,240,0.6); }
+
+/* ═══ SERVICES ═══ */
+.services-section {
+  background: #FAFAFA;
+  padding: 80px clamp(40px,5vw,100px);
+}
+
+.services-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.s-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(15,16,20,0.4);
+  margin-bottom: 12px;
+}
+
+.s-heading {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  font-weight: 300;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: 40px;
+}
+
+.srows { border-top: 1px solid rgba(15,16,20,0.1); }
+
+.srow {
+  display: grid;
+  grid-template-columns: minmax(200px, 35%) 1fr;
+  gap: 24px;
+  align-items: center;
+  padding: 28px 0;
+  border-bottom: 1px solid rgba(15,16,20,0.1);
+  transition: background 250ms cubic-bezier(.25,.1,.25,1);
+}
+
+.srow:hover { background: rgba(15,16,20,0.04); }
+
+.sname {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.8rem, 3vw, 3rem);
+  font-weight: 300;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+  transition: color 250ms cubic-bezier(.25,.1,.25,1);
+}
+
+.srow:hover .sname { color: var(--accent); }
+
+.sdesc {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  color: rgba(15,16,20,0.55);
+  line-height: 1.6;
+}
+
+/* ═══ TESTIMONIALS ═══ */
+.quotes-section {
+  background: #0F1014;
+  padding: 140px clamp(40px,5vw,100px);
+}
+
+.quotes-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.q-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.q-heading {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  font-weight: 300;
+  color: var(--text-white);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: 40px;
+}
+
+.qgrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--gap);
+}
+
+.qcard {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  padding: 40px 32px;
+}
+
+.qmark {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  margin-bottom: 16px;
+  user-select: none;
+}
+
+.qtext {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.72;
+  color: var(--text-white);
+  margin-bottom: 24px;
+}
+
+.qname {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-white);
+}
+
+.qrole {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ═══ CONTACT ═══ */
+.contact-section {
+  background: #FAFAFA;
+  padding: 80px clamp(40px,5vw,100px);
+}
+
+.contact-inner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.c-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(15,16,20,0.4);
+  margin-bottom: 12px;
+}
+
+.c-heading {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 300;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: 14px;
+}
+
+.c-sub {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+  font-weight: 300;
+  color: rgba(15,16,20,0.55);
+  line-height: 1.65;
+  max-width: 520px;
+  margin-bottom: 40px;
+}
+
+.c-form { width: 100%; }
+
+.c-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.c-flabel {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(15,16,20,0.4);
+  margin-bottom: 8px;
+}
+
+.c-inp {
+  width: 100%;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  padding: 13px 15px;
+  border: 1px solid rgba(15,16,20,0.2);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text-dark);
+  transition: border-color 0.25s cubic-bezier(.25,.1,.25,1);
+}
+
+.c-inp:focus { outline: none; border-color: var(--accent); }
+.c-inp::placeholder { color: rgba(15,16,20,0.3); }
+
+.c-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 24px;
+}
+
+.c-chip {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  padding: 8px 16px;
+  border: 1px solid rgba(15,16,20,0.2);
+  border-radius: 2px;
+  color: rgba(15,16,20,0.55);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.22s cubic-bezier(.25,.1,.25,1);
+}
+
+.c-chip:hover, .c-chip.on {
+  background: var(--text-dark);
+  border-color: var(--text-dark);
+  color: var(--white);
+}
+
+.c-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 32px;
+  background: var(--text-dark);
+  color: var(--white);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.25s, transform 120ms;
+}
+
+.c-submit:hover  { opacity: 0.8; }
+.c-submit:active { transform: scale(0.97); }
+
+/* Footer rules now live in src/components/SiteFooter.astro */
+
+/* ═══ SCROLL REVEAL ═══ */
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 800ms cubic-bezier(0.4, 0, 0.2, 1),
+              transform 800ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 1024px) {
+  .work-row { height: 460px; }
+  .qgrid    { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  /* Mobile grid — each row becomes a single column, two stacked cards */
+  .work-row {
+    grid-template-columns: 1fr !important;
+    height: auto;
+    transition: none;
+  }
+  .work-row .card { height: 340px; }
+
+  .work-row.expand-left,
+  .work-row.expand-right { grid-template-columns: 1fr !important; }
+
+  .srow   { grid-template-columns: 1fr; gap: 8px; }
+  .qgrid  { grid-template-columns: 1fr; }
+  .c-row  { grid-template-columns: 1fr; }
+}
+
+/* Hero emblem: shrink + move to top-right on tablets, hide on small phones */
+@media (max-width: 900px) {
+  .hero-emblem {
+    width: 110px;
+    bottom: auto;
+    top: clamp(64px, 11vw, 100px);
+    right: clamp(16px, 4vw, 28px);
+    opacity: 0.32;
+  }
+}
+@media (max-width: 560px) {
+  .hero-emblem { display: none; }
+}
+
+</style>
+
+<script>
+  // ── Hero rise-in: triggered when the intro overlay finishes wiping.
+  //    IntroSequence dispatches 'ded-intro-done' on wipe-complete or, on
+  //    repeat-visit (sessionStorage already set), immediately on mount.
+  //    Fallback timer fires the same trigger if the event never lands.
+  (() => {
+    const hero = document.querySelector('.hp-hero');
+    if (!hero) return;
+    const reveal = () => hero.classList.add('intro-done');
+    if (sessionStorage.getItem('hasSeenIntro')) {
+      reveal();
+    } else {
+      window.addEventListener('ded-intro-done', reveal, { once: true });
+      // Safety net: if intro never reports back, reveal anyway after the
+      // intro's max runtime (3.5s hold + 0.8s wipe + 1s slack ≈ 5.3s).
+      setTimeout(reveal, 5500);
+    }
+  })();
+
+  // Nav light/dark flip lives in src/components/SiteNav.astro
+
+  // ── Scroll-driven dark body background:
+  //    activate once the user is ~a quarter of the way into the SECOND
+  //    row of cards, deactivate as the services section rises into view.
+  //    Sentinel moved up from row 1 to row 2 — fires when row 2's top
+  //    crosses half of the viewport height, which lands ~1/4 of the way
+  //    through the user's visit-scroll across row 2 (it begins entering
+  //    at top = vh, exits at top = 0; firing at vh*0.5 means we've
+  //    scrolled ~30% of the time row 2 is on screen).
+  const workRows = document.querySelectorAll('.work-row');
+  const secondRow = workRows[1] as HTMLElement | undefined;
+  const services = document.querySelector('.services-section');
+  let ticking = false;
+  function updateDarkZone() {
+    if (!secondRow || !services) return;
+    const secondRowTop = secondRow.getBoundingClientRect().top;
+    const servicesTop  = services.getBoundingClientRect().top;
+    const vh = window.innerHeight;
+    if (secondRowTop < vh * 0.5 && servicesTop > vh * 0.3) {
+      document.body.classList.add('dark-zone-active');
+    } else {
+      document.body.classList.remove('dark-zone-active');
+    }
+  }
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(() => { updateDarkZone(); ticking = false; });
+      ticking = true;
+    }
+  }, { passive: true });
+  updateDarkZone();
+
+  // ── Chip toggles ──
+  document.querySelectorAll('[data-chip]').forEach(c => {
+    c.addEventListener('click', () => c.classList.toggle('on'));
+  });
+
+  // ── :has() fallback for older browsers (per-row) ──
+  const supportsHas = CSS.supports('selector(:has(div))');
+  if (!supportsHas) {
+    document.querySelectorAll('.work-row').forEach(row => {
+      const cards = Array.from(row.querySelectorAll('.card'));
+      cards.forEach((card, i) => {
+        card.addEventListener('mouseenter', () => {
+          row.classList.remove('expand-left', 'expand-right');
+          row.classList.add(i === 0 ? 'expand-left' : 'expand-right');
+        });
+        card.addEventListener('mouseleave', () => {
+          row.classList.remove('expand-left', 'expand-right');
+        });
+      });
+    });
+  }
+
+  // ── Scroll reveal ──
+  const reveals = document.querySelectorAll('.reveal');
+  const revealObs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('is-visible'); });
+  }, { threshold: 0.15 });
+  reveals.forEach(el => revealObs.observe(el));
+</script>
