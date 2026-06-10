@@ -1,5 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
+import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
 
 interface Project {
   id: number;
@@ -79,27 +81,12 @@ const quotes = [
     name: 'Dave Fullerton', role: 'Investment Manager' },
 ];
 
-const year = new Date().getFullYear();
 ---
 
 <Base title="David Ediger Design — Portfolio">
 <div class="hp">
 
-  <!-- ══════════════ NAV ══════════════ -->
-  <nav class="hp-nav" id="hp-nav">
-    <a href="/" class="nav-brand">
-      <img src="/images/ded_emblem_white.svg"     class="nav-emblem nav-mark-dark-bg"   alt="" />
-      <img src="/images/ded_emblem-coloured.svg"  class="nav-emblem nav-mark-light-bg"  alt="" />
-      <img src="/images/ded_logotype-white.svg"   class="nav-logotype nav-mark-dark-bg"  alt="David Ediger Design" />
-      <img src="/images/ded_logotype_black.svg"   class="nav-logotype nav-mark-light-bg" alt="David Ediger Design" />
-    </a>
-    <div class="hp-menu">
-      <a href="#work">Work</a>
-      <a href="#services">Services</a>
-      <a href="#about">About</a>
-      <a href="#contact">Contact</a>
-    </div>
-  </nav>
+  <SiteNav />
 
   <!-- ══════════════ HERO ══════════════ -->
   <section class="hp-hero">
@@ -258,37 +245,7 @@ const year = new Date().getFullYear();
     </div>
   </section>
 
-  <!-- ══════════════ FOOTER ══════════════ -->
-  <footer class="hp-footer">
-    <div class="foot-wrap">
-      <div class="foot-grid">
-        <div>
-          <div class="footer-brand">
-            <img src="/images/ded_emblem_white.svg"   class="footer-emblem"   alt="" />
-            <img src="/images/ded_logotype-white.svg" class="footer-logotype" alt="David Ediger Design" />
-          </div>
-          <p class="foot-tag">Creative direction since 2003.<br>Print, web, video, photo, audio.</p>
-        </div>
-        <div>
-          <div class="foot-section-label">Site</div>
-          <a class="foot-link" href="#work">Work</a>
-          <a class="foot-link" href="#services">Services</a>
-          <a class="foot-link" href="#contact">Contact</a>
-        </div>
-        <div>
-          <div class="foot-section-label">Get in touch</div>
-          <a class="foot-link" href="mailto:info@davidedigerdesign.com">info@davidedigerdesign.com</a>
-          <div class="foot-social">
-            <a href="https://www.instagram.com/david.ediger.design" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-            <a href="https://www.linkedin.com/in/david-ediger-b402a914/"  aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
-            <a href="https://vimeo.com/davidediger/"                      aria-label="Vimeo"><i class="fa-brands fa-vimeo"></i></a>
-            <a href="https://www.youtube.com/channel/UCVzIVyhZouAq7VjKLsuCPyQ" aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
-          </div>
-        </div>
-      </div>
-      <div class="foot-copy">© {year} David Ediger Design</div>
-    </div>
-  </footer>
+  <SiteFooter />
 
 </div><!-- /.hp -->
 </Base>
@@ -322,62 +279,7 @@ body.dark-zone-active {
   background-color: #03040E !important;
 }
 
-/* ═══ NAV ═══ */
-.hp-nav {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 100;
-  padding: 20px 48px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: transparent;
-  transition: background 300ms cubic-bezier(.25,.1,.25,1),
-              border-color 300ms cubic-bezier(.25,.1,.25,1);
-}
-
-.hp-nav.nav--light {
-  background: rgba(250,250,250,0.95);
-  border-bottom: 0.5px solid rgba(15,16,20,0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.nav-brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  text-decoration: none;
-}
-
-.nav-emblem   { height: 42px; width: auto; display: block; }
-.nav-logotype { height: 22px; width: auto; display: block; }
-
-/* Default: show dark-bg variants (white over dark hero) */
-.nav-mark-light-bg { display: none; }
-
-/* Light nav: swap to colour/black variants */
-.hp-nav.nav--light .nav-mark-dark-bg  { display: none; }
-.hp-nav.nav--light .nav-mark-light-bg { display: block; }
-
-.hp-menu {
-  display: flex;
-  gap: 28px;
-  align-items: center;
-}
-
-.hp-menu a {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(245,244,240,0.85);
-  text-decoration: none;
-  transition: color 300ms;
-}
-
-.hp-nav.nav--light .hp-menu a { color: rgba(15,16,20,0.65); }
+/* Nav rules now live in src/components/SiteNav.astro */
 
 /* ═══ HERO ═══ */
 .hp-hero {
@@ -441,6 +343,36 @@ body.dark-zone-active {
   color: var(--text-muted);
   line-height: 1.65;
   max-width: 480px;
+}
+
+/* ── Hero entrance: rise-up after intro wipe completes ── */
+.hero-ey,
+.hp-hero h1,
+.hero-sub {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 600ms cubic-bezier(.4, 0, .2, 1),
+              transform 600ms cubic-bezier(.4, 0, .2, 1);
+  will-change: opacity, transform;
+}
+.hp-hero.intro-done .hero-ey   { transition-delay: 0ms;   }
+.hp-hero.intro-done .hero-h1   { transition-delay: 120ms; }
+.hp-hero.intro-done .hero-sub  { transition-delay: 240ms; }
+.hp-hero.intro-done .hero-ey,
+.hp-hero.intro-done .hero-h1,
+.hp-hero.intro-done .hero-sub {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-ey,
+  .hp-hero h1,
+  .hero-sub {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
 
 .hero-emblem {
@@ -939,88 +871,7 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
 .c-submit:hover  { opacity: 0.8; }
 .c-submit:active { transform: scale(0.97); }
 
-/* ═══ FOOTER ═══ */
-.hp-footer {
-  background: var(--black);
-  padding: 48px clamp(40px,5vw,100px) 28px;
-}
-
-.foot-wrap {
-  max-width: 1180px;
-  margin: 0 auto;
-}
-
-.foot-grid {
-  display: grid;
-  grid-template-columns: 1.5fr 1fr 1fr;
-  gap: 32px;
-  padding-bottom: 32px;
-  border-bottom: 1px solid rgba(245,244,240,0.08);
-}
-
-.footer-brand {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-bottom: 16px;
-}
-
-.footer-emblem   { height: 56px; width: auto; display: block; }
-.footer-logotype { height: 28px; width: auto; display: block; }
-
-.foot-tag {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 13px;
-  font-weight: 300;
-  line-height: 1.65;
-  color: var(--text-muted);
-}
-
-.foot-section-label {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(245,244,240,0.3);
-  margin-bottom: 12px;
-}
-
-.foot-link {
-  display: block;
-  font-family: 'Montserrat', sans-serif;
-  font-size: 13px;
-  font-weight: 300;
-  color: rgba(245,244,240,0.6);
-  text-decoration: none;
-  padding: 4px 0;
-  transition: color 160ms;
-}
-
-.foot-link:hover { color: var(--text-white); }
-
-.foot-social {
-  display: flex;
-  gap: 18px;
-  margin-top: 10px;
-}
-
-.foot-social a {
-  font-size: 18px;
-  color: rgba(245,244,240,0.4);
-  text-decoration: none;
-  transition: color 160ms;
-}
-
-.foot-social a:hover { color: var(--text-white); }
-
-.foot-copy {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 11px;
-  font-weight: 300;
-  color: rgba(245,244,240,0.25);
-  padding-top: 20px;
-}
+/* Footer rules now live in src/components/SiteFooter.astro */
 
 /* ═══ SCROLL REVEAL ═══ */
 .reveal {
@@ -1042,9 +893,6 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
 }
 
 @media (max-width: 768px) {
-  .hp-nav { padding: 18px 20px; }
-  .hp-menu { display: none; }
-
   /* Mobile grid — each row becomes a single column, two stacked cards */
   .work-row {
     grid-template-columns: 1fr !important;
@@ -1059,7 +907,6 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
   .srow   { grid-template-columns: 1fr; gap: 8px; }
   .qgrid  { grid-template-columns: 1fr; }
   .c-row  { grid-template-columns: 1fr; }
-  .foot-grid { grid-template-columns: 1fr; gap: 24px; }
 }
 
 /* Hero emblem: shrink + move to top-right on tablets, hide on small phones */
@@ -1079,21 +926,25 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
 </style>
 
 <script>
-  // ── Nav: flip to light when scrolling over white sections ──
-  const hpNav = document.getElementById('hp-nav');
-  const lightSections = document.querySelectorAll('.work-header, .services-section, .contact-section');
+  // ── Hero rise-in: triggered when the intro overlay finishes wiping.
+  //    IntroSequence dispatches 'ded-intro-done' on wipe-complete or, on
+  //    repeat-visit (sessionStorage already set), immediately on mount.
+  //    Fallback timer fires the same trigger if the event never lands.
+  (() => {
+    const hero = document.querySelector('.hp-hero');
+    if (!hero) return;
+    const reveal = () => hero.classList.add('intro-done');
+    if (sessionStorage.getItem('hasSeenIntro')) {
+      reveal();
+    } else {
+      window.addEventListener('ded-intro-done', reveal, { once: true });
+      // Safety net: if intro never reports back, reveal anyway after the
+      // intro's max runtime (1.4s fade + 4.1s hold + 0.8s wipe ≈ 6.5s).
+      setTimeout(reveal, 7500);
+    }
+  })();
 
-  if (hpNav && lightSections.length) {
-    const lightSet = new Set();
-    const navObs = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) lightSet.add(e.target);
-        else lightSet.delete(e.target);
-        hpNav.classList.toggle('nav--light', lightSet.size > 0);
-      });
-    }, { rootMargin: '-60px 0px -80% 0px', threshold: 0 });
-    lightSections.forEach(s => navObs.observe(s));
-  }
+  // Nav light/dark flip lives in src/components/SiteNav.astro
 
   // ── Scroll-driven dark body background:
   //    activate after the first row has scrolled past viewport mid,

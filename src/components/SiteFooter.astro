@@ -1,0 +1,129 @@
+---
+// SiteFooter — shared site footer.
+// Used on home-porsche.astro and src/pages/work/[slug].astro.
+const year = new Date().getFullYear();
+---
+<footer class="hp-footer">
+  <div class="foot-wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="footer-brand">
+          <img src="/images/ded_emblem_white.svg"   class="footer-emblem"   alt="" />
+          <img src="/images/ded_logotype-white.svg" class="footer-logotype" alt="David Ediger Design" />
+        </div>
+        <p class="foot-tag">Creative direction since 2003.<br>Print, web, video, photo, audio.</p>
+      </div>
+      <div>
+        <div class="foot-section-label">Site</div>
+        <a class="foot-link" href="/#work">Work</a>
+        <a class="foot-link" href="/#services">Services</a>
+        <a class="foot-link" href="/#contact">Contact</a>
+      </div>
+      <div>
+        <div class="foot-section-label">Get in touch</div>
+        <a class="foot-link" href="mailto:info@davidedigerdesign.com">info@davidedigerdesign.com</a>
+        <div class="foot-social">
+          <a href="https://www.instagram.com/david.ediger.design"               aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+          <a href="https://www.linkedin.com/in/david-ediger-b402a914/"          aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+          <a href="https://vimeo.com/davidediger/"                              aria-label="Vimeo"><i class="fa-brands fa-vimeo"></i></a>
+          <a href="https://www.youtube.com/channel/UCVzIVyhZouAq7VjKLsuCPyQ"    aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-copy">© {year} David Ediger Design</div>
+  </div>
+</footer>
+
+<style is:global>
+  .hp-footer {
+    background: #03040E;
+    padding: 48px clamp(40px,5vw,100px) 28px;
+  }
+
+  .foot-wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  .foot-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr;
+    gap: 32px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid rgba(245,244,240,0.08);
+  }
+
+  .footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 16px;
+  }
+
+  .footer-emblem   { height: 56px; width: auto; display: block; }
+  .footer-logotype { height: 28px; width: auto; display: block; }
+
+  .foot-tag {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    line-height: 1.65;
+    color: rgba(245,244,240,0.5);
+  }
+
+  .foot-section-label {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,244,240,0.3);
+    margin-bottom: 12px;
+  }
+
+  .foot-link {
+    display: block;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    color: rgba(245,244,240,0.6);
+    text-decoration: none;
+    padding: 4px 0;
+    transition: color 160ms;
+  }
+
+  .foot-link:hover { color: #F5F4F0; }
+
+  .foot-social {
+    display: flex;
+    gap: 18px;
+    margin-top: 10px;
+  }
+
+  .foot-social a {
+    font-size: 18px;
+    color: rgba(245,244,240,0.4);
+    text-decoration: none;
+    transition: color 160ms;
+  }
+
+  .foot-social a:hover { color: #F5F4F0; }
+
+  .foot-copy {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 300;
+    color: rgba(245,244,240,0.25);
+    padding-top: 20px;
+  }
+
+  .hp-footer a:focus-visible {
+    outline: 2px solid #3457C6;
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  @media (max-width: 768px) {
+    .foot-grid { grid-template-columns: 1fr; gap: 24px; }
+  }
+</style>

@@ -8,10 +8,16 @@ export default function IntroSequence() {
   useEffect(() => {
     if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('hasSeenIntro')) {
       setShow(false);
+      // Fire on next frame so listeners attached after mount still catch it.
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new CustomEvent('ded-intro-done', { detail: { skipped: true } }));
+      });
       return;
     }
     document.body.style.overflow = 'hidden';
-    const timer = setTimeout(() => setWiping(true), 5000);
+    // Hold the wordmark visible for ~4s after it finishes fading in (at ~1.4s),
+    // then trigger the clip-path wipe.
+    const timer = setTimeout(() => setWiping(true), 5500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -83,6 +89,7 @@ export default function IntroSequence() {
             sessionStorage.setItem('hasSeenIntro', '1');
             document.body.style.overflow = '';
             setShow(false);
+            window.dispatchEvent(new CustomEvent('ded-intro-done', { detail: { skipped: false } }));
           }
         }}
       >

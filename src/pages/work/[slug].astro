@@ -1,5 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
+import SiteNav from '../../components/SiteNav.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface WPImage {
@@ -266,6 +268,8 @@ const jsonLd = {
 
   <a href="#main" class="skiplink">Skip to content</a>
 
+  <SiteNav />
+
   <article class="work" data-slug={project.slug} data-animate={heroAnimate ? '1' : '0'} id="main">
 
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
@@ -286,7 +290,10 @@ const jsonLd = {
       <div class="w-hero-scrim"></div>
 
       <a href="#brief" class="w-scroll-cue" aria-label="Scroll to brief">
-        <i class="fa-solid fa-arrow-down" style="font-size:13px;"></i>
+        <span class="w-scroll-line" aria-hidden="true">
+          <span class="w-scroll-pulse"></span>
+        </span>
+        <span class="w-scroll-label">Scroll</span>
       </a>
 
       <div class="w-hero-inner">
@@ -598,6 +605,8 @@ const jsonLd = {
 
   </article>
 
+  <SiteFooter />
+
 </Base>
 
 <style is:global>
@@ -773,39 +782,69 @@ const jsonLd = {
   }
   .w-hero .w-pills { margin-top: 12px; }
 
-  /* Scroll cue — circular arrow, top-right */
+  /* Scroll cue — vertical line + travelling pulse + label, bottom-centre */
   .w-scroll-cue {
     position: absolute;
-    top: clamp(96px, 11vh, 132px);
-    right: clamp(24px, 5vw, 100px);
-    width: 44px;
-    height: 44px;
-    border-radius: 50%;
-    border: 1px solid var(--w-hairline-strong);
-    color: var(--w-text);
+    bottom: clamp(24px, 4vh, 48px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
     display: inline-flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
+    gap: 12px;
+    color: rgba(245,244,240,0.7);
     text-decoration: none;
-    background: rgba(255,255,255,0.04);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: transform 200ms var(--w-ease-out),
-                background 200ms var(--w-ease-out),
-                border-color 200ms var(--w-ease-out);
+    padding: 8px 12px;
+    border-radius: 4px;
+    transition: color 200ms var(--w-ease-out);
+  }
+  .w-scroll-line {
+    position: relative;
+    display: block;
+    width: 1px;
+    height: 44px;
+    background: rgba(245,244,240,0.4);
+    overflow: hidden;
+  }
+  .w-scroll-pulse {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 14px;
+    background: linear-gradient(180deg, rgba(245,244,240,0) 0%, rgba(245,244,240,0.95) 50%, rgba(245,244,240,0) 100%);
+    transform: translateY(-100%);
+    animation: w-scroll-pulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  }
+  @keyframes w-scroll-pulse {
+    0%   { transform: translateY(-100%); }
+    100% { transform: translateY(calc(44px + 4px)); }
+  }
+  .w-scroll-label {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: rgba(245,244,240,0.55);
   }
   @media (hover: hover) and (pointer: fine) {
-    .w-scroll-cue:hover {
-      background: rgba(255,255,255,0.10);
-      border-color: rgba(255,255,255,0.32);
-      transform: translateY(2px);
-    }
+    .w-scroll-cue:hover { color: var(--w-text); }
+    .w-scroll-cue:hover .w-scroll-line { background: rgba(245,244,240,0.6); }
+    .w-scroll-cue:hover .w-scroll-label { color: rgba(245,244,240,0.85); }
   }
-  .w-scroll-cue:active { transform: scale(0.96) translateY(2px); }
+  .w-scroll-cue:focus-visible {
+    outline: 2px solid var(--w-accent);
+    outline-offset: 6px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .w-scroll-pulse { animation: none; display: none; }
+  }
 
   /* ─── FACTS ─────────────────────────────────────────────────────────────── */
   .w-facts {
-    padding: clamp(72px, 10vh, 140px) 0 clamp(48px, 7vh, 96px);
+    padding: clamp(48px, 7vh, 96px) 0 clamp(32px, 5vh, 64px);
     background: var(--w-bg);
   }
   .w-facts-row {
@@ -846,7 +885,7 @@ const jsonLd = {
   /* ─── BLOCKED (brief + approach) ───────────────────────────────────────── */
   .w-blocked {
     position: relative;
-    padding: clamp(96px, 13vh, 180px) 0;
+    padding: clamp(64px, 9vh, 120px) 0;
     overflow: hidden;
   }
   .w-blocked--glow .w-glow {
@@ -916,10 +955,10 @@ const jsonLd = {
 
   /* ─── GALLERY ──────────────────────────────────────────────────────────── */
   .w-gallery {
-    padding: clamp(96px, 13vh, 180px) 0;
+    padding: clamp(64px, 9vh, 120px) 0;
     background: var(--w-bg);
   }
-  .w-gallery-head { margin-bottom: clamp(40px, 6vh, 64px); }
+  .w-gallery-head { margin-bottom: clamp(28px, 4vh, 44px); }
 
   .w-gallery-stack {
     display: flex;
@@ -929,9 +968,15 @@ const jsonLd = {
   .w-g-pair {
     display: grid;
     gap: clamp(20px, 3vw, 40px);
+    transition: grid-template-columns 550ms cubic-bezier(0.4, 0, 0.2, 1);
   }
   .w-g-pair--wide-left  { grid-template-columns: 1.3fr 1fr; }
   .w-g-pair--wide-right { grid-template-columns: 1fr 1.3fr; }
+
+  /* Column-grow on hover — mirrors the homepage work grid treatment.
+     Hovered card grows, neighbour shrinks, gap maintained. */
+  .w-g-pair:has(.w-g-card:nth-child(1):hover) { grid-template-columns: 1.6fr 0.6fr; }
+  .w-g-pair:has(.w-g-card:nth-child(2):hover) { grid-template-columns: 0.6fr 1.6fr; }
 
   .w-g-card {
     position: relative;
@@ -950,8 +995,11 @@ const jsonLd = {
     aspect-ratio: 16 / 10;
     transition: transform 600ms var(--w-ease-out);
   }
+  /* Full-width gallery cards: subtle image zoom on hover.
+     Paired cards get the column-grow effect above (no zoom — the
+     proportion change is the interaction). */
   @media (hover: hover) and (pointer: fine) {
-    .w-g-card:hover img { transform: scale(1.03); }
+    .w-g-card--full:hover img { transform: scale(1.04); }
   }
   .w-g-card figcaption {
     padding: 18px 22px 22px;
@@ -971,16 +1019,19 @@ const jsonLd = {
   }
 
   @media (max-width: 880px) {
+    .w-g-pair,
     .w-g-pair--wide-left,
-    .w-g-pair--wide-right { grid-template-columns: 1fr; }
+    .w-g-pair--wide-right { grid-template-columns: 1fr; transition: none; }
+    .w-g-pair:has(.w-g-card:nth-child(1):hover),
+    .w-g-pair:has(.w-g-card:nth-child(2):hover) { grid-template-columns: 1fr; }
   }
 
   /* ─── VIDEO ────────────────────────────────────────────────────────────── */
   .w-video {
-    padding: clamp(72px, 10vh, 140px) 0;
+    padding: clamp(48px, 7vh, 96px) 0;
     background: var(--w-bg);
   }
-  .w-video-head { margin-bottom: clamp(32px, 5vh, 56px); }
+  .w-video-head { margin-bottom: clamp(22px, 3.5vh, 40px); }
   .w-video-frame {
     position: relative;
     width: 100%;
@@ -1002,7 +1053,7 @@ const jsonLd = {
 
   /* ─── OUTCOME ──────────────────────────────────────────────────────────── */
   .w-outcome {
-    padding: clamp(96px, 13vh, 180px) 0;
+    padding: clamp(64px, 9vh, 120px) 0;
     background: var(--w-bg);
   }
   .w-outcome .w-h2 { margin-bottom: 24px; }
@@ -1019,7 +1070,7 @@ const jsonLd = {
 
   /* ─── TESTIMONIAL ──────────────────────────────────────────────────────── */
   .w-testimonial {
-    padding: clamp(72px, 10vh, 140px) 0;
+    padding: clamp(48px, 7vh, 96px) 0;
     background: var(--w-bg);
   }
   .w-quote-card {
@@ -1067,17 +1118,17 @@ const jsonLd = {
 
   /* ─── SKILLS USED ──────────────────────────────────────────────────────── */
   .w-skills {
-    padding: clamp(72px, 10vh, 140px) 0;
+    padding: clamp(48px, 7vh, 96px) 0;
     background: var(--w-bg);
   }
   .w-skills .w-h2 { margin-bottom: 24px; }
 
   /* ─── RELATED ──────────────────────────────────────────────────────────── */
   .w-related {
-    padding: clamp(96px, 13vh, 180px) 0;
+    padding: clamp(64px, 9vh, 120px) 0;
     background: var(--w-bg);
   }
-  .w-related-head { margin-bottom: clamp(32px, 5vh, 56px); }
+  .w-related-head { margin-bottom: clamp(22px, 3.5vh, 40px); }
   .w-related-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -1149,7 +1200,7 @@ const jsonLd = {
 
   /* ─── CTA ──────────────────────────────────────────────────────────────── */
   .w-cta {
-    padding: clamp(96px, 13vh, 180px) 0;
+    padding: clamp(64px, 9vh, 120px) 0;
     background: #F4F2EC;
     color: #0F1014;
   }
@@ -1222,9 +1273,12 @@ const jsonLd = {
   if (root) {
     const heroAnimate = root.getAttribute('data-animate') === '1';
 
-    // Hero entrance — GSAP if available + opted in + motion allowed
+    // Hero entrance — GSAP if available + opted in + motion allowed.
+    // Wait for the intro overlay to finish wiping before firing, so the
+    // entrance is actually visible. If the intro has already been seen
+    // this session (sessionStorage), fire immediately.
     if (heroAnimate && !reducedMotion) {
-      (async () => {
+      const runHeroEntrance = async () => {
         try {
           const { gsap } = await import('gsap');
 
@@ -1274,7 +1328,16 @@ const jsonLd = {
         } catch {
           /* GSAP unavailable — page renders fully without entrance, reveals still run */
         }
-      })();
+      };
+
+      if (sessionStorage.getItem('hasSeenIntro')) {
+        runHeroEntrance();
+      } else {
+        // Decorative entrance — only fires once the intro reports it's done.
+        // If IntroSequence fails to load, the hero is already at its final
+        // state (no flicker), the entrance is simply skipped.
+        window.addEventListener('ded-intro-done', runHeroEntrance, { once: true });
+      }
     }
 
     // Scroll reveal observer (always on; no transforms if reduced-motion via CSS)

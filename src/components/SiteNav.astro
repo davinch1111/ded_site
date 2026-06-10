@@ -1,0 +1,112 @@
+---
+// SiteNav — shared site navigation.
+// Used on home-porsche.astro and src/pages/work/[slug].astro.
+// Stays transparent over dark sections, flips to a light/blurred state
+// over any element matching its observed selector list.
+---
+<nav class="hp-nav" id="hp-nav" aria-label="Primary">
+  <a href="/" class="nav-brand">
+    <img src="/images/ded_emblem_white.svg"     class="nav-emblem nav-mark-dark-bg"   alt="" />
+    <img src="/images/ded_emblem-coloured.svg"  class="nav-emblem nav-mark-light-bg"  alt="" />
+    <img src="/images/ded_logotype-white.svg"   class="nav-logotype nav-mark-dark-bg"  alt="David Ediger Design" />
+    <img src="/images/ded_logotype_black.svg"   class="nav-logotype nav-mark-light-bg" alt="David Ediger Design" />
+  </a>
+  <div class="hp-menu">
+    <a href="/#work">Work</a>
+    <a href="/#services">Services</a>
+    <a href="/#about">About</a>
+    <a href="/#contact">Contact</a>
+  </div>
+</nav>
+
+<style is:global>
+  .hp-nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 20px 48px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: transparent;
+    transition: background 300ms cubic-bezier(.25,.1,.25,1),
+                border-color 300ms cubic-bezier(.25,.1,.25,1);
+  }
+
+  .hp-nav.nav--light {
+    background: rgba(250,250,250,0.95);
+    border-bottom: 0.5px solid rgba(15,16,20,0.1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    text-decoration: none;
+  }
+
+  .nav-emblem   { height: 42px; width: auto; display: block; }
+  .nav-logotype { height: 22px; width: auto; display: block; }
+
+  /* Default: white-on-dark variants visible */
+  .nav-mark-light-bg { display: none; }
+
+  /* Light nav: swap to coloured/black variants */
+  .hp-nav.nav--light .nav-mark-dark-bg  { display: none; }
+  .hp-nav.nav--light .nav-mark-light-bg { display: block; }
+
+  .hp-menu {
+    display: flex;
+    gap: 28px;
+    align-items: center;
+  }
+
+  .hp-menu a {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(245,244,240,0.85);
+    text-decoration: none;
+    transition: color 300ms;
+  }
+
+  .hp-nav.nav--light .hp-menu a { color: rgba(15,16,20,0.65); }
+
+  .hp-nav a:focus-visible {
+    outline: 2px solid #3457C6;
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+
+  @media (max-width: 768px) {
+    .hp-nav { padding: 18px 20px; }
+    .hp-menu { display: none; }
+  }
+</style>
+
+<script>
+  // Flip nav to light over light-background sections. Observer is shared
+  // across pages: the selector list covers homepage sections AND the
+  // project page CTA. Stale targets that aren't on a given page are ignored
+  // by the observer (querySelectorAll returns 0 matches).
+  const hpNav = document.getElementById('hp-nav');
+  const lightSections = document.querySelectorAll(
+    '.work-header, .services-section, .contact-section, .w-cta'
+  );
+
+  if (hpNav && lightSections.length) {
+    const lightSet = new Set<Element>();
+    const navObs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) lightSet.add(e.target);
+        else lightSet.delete(e.target);
+        hpNav.classList.toggle('nav--light', lightSet.size > 0);
+      });
+    }, { rootMargin: '-60px 0px -80% 0px', threshold: 0 });
+    lightSections.forEach(s => navObs.observe(s));
+  }
+</script>
