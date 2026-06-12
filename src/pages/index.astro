@@ -97,7 +97,6 @@ const homeTitle = 'David Ediger Design — Portfolio';
 const homeDesc =
   'Twenty-three years of print, web, video, photo, and audio. Brands that refuse to blend in.';
 const canonical = new URL('/', Astro.site).href;
-// Interim share image — a proper 1200×630 OG asset still needs to be produced.
 const ogImage = new URL('/apple-touch-icon.png', Astro.site).href;
 
 const personId = new URL('/#david-ediger', Astro.site).href;
@@ -389,11 +388,21 @@ body.dark-zone-active {
 
 .hero-text {
   position: absolute;
-  bottom: clamp(48px, 4vw, 80px);
+  /* Lifted above the old 48–80px floor so the subhead clears the
+     bottom-anchored scroll cue (see .hp-hero .scroll-cue below). Stays
+     left-aligned to the left content margin. */
+  bottom: clamp(120px, 6vw + 60px, 164px);
   left: clamp(40px, 5vw, 100px);
   right: clamp(40px, 5vw, 100px);
   max-width: 700px;
   z-index: 2;
+}
+
+/* Scroll cue (shared component) on the homepage hero only: pushed toward
+   the floor so there's clear space between the lifted subhead and the cue —
+   it no longer overlaps "…stayed since 2008." */
+.hp-hero .scroll-cue {
+  bottom: clamp(18px, 3vh, 32px);
 }
 
 .hero-ey {
@@ -418,6 +427,9 @@ body.dark-zone-active {
 }
 
 .hp-hero h1 strong {
+  /* True 600 (Montserrat 600 is now loaded in Base.astro's font URL). Before
+     600 was loaded the browser rounded this request up to 700, which read
+     too heavy. Drop to 500 as the fallback if 600 still feels heavy. */
   font-weight: 600;
   /* Same colour as the rest of the headline — emphasis through weight only,
      never colour, so we don't introduce a second accent on the hero. */
@@ -468,12 +480,24 @@ html.js-hero .hero-sub {
   }
 }
 
+/* Hero emblem (≥901px). First pass — positions to be fine-tuned from a
+   screenshot.
+   • Right edge aligns to the same right content margin as the hero text
+     (matching clamp), so emblem and copy share the right boundary.
+   • Bottom-anchored up into the eyebrow→headline band: lifted off the text
+     bottom by ~the subhead height so its top sits near the eyebrow line and
+     its base near the end of the headline.
+   • Height is tied to the headline scale — the headline grows on a 5vw axis,
+     so the two-line block grows ~2× that; the emblem height uses a
+     compatible ~10.5vw clamp so it scales in proportion with the type
+     instead of ballooning, staying balanced at every width. width follows
+     the SVG aspect ratio (≈0.92). */
 .hero-emblem {
   position: absolute;
-  right: clamp(40px, 5vw, 120px);
-  bottom: clamp(48px, 4vw, 80px);
-  width: 190px;
-  height: auto;
+  right: clamp(40px, 5vw, 100px);
+  bottom: clamp(186px, 6vw + 138px, 248px);
+  height: clamp(140px, 10.5vw + 52px, 215px);
+  width: auto;
   opacity: 0.5;
   pointer-events: none;
   user-select: none;
@@ -1088,6 +1112,7 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
 @media (max-width: 900px) {
   .hero-emblem {
     width: 110px;
+    height: auto;
     bottom: auto;
     top: clamp(64px, 11vw, 100px);
     right: clamp(16px, 4vw, 28px);
