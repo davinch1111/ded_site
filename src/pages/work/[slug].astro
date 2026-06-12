@@ -705,12 +705,14 @@ const jsonLd = {
   /* ─── HERO ─────────────────────────────────────────────────────────────── */
   .w-hero {
     position: relative;
-    min-height: 100svh;
+    /* Shorter than a full viewport so the quick-facts row clears the fold
+       and sits close under the discipline pills. */
+    min-height: clamp(520px, 74svh, 760px);
     display: flex;
     align-items: flex-end;
     overflow: hidden;
     isolation: isolate;
-    padding: clamp(120px, 14vh, 200px) 0 clamp(48px, 7vh, 96px);
+    padding: clamp(104px, 12vh, 168px) 0 clamp(32px, 4.5vh, 56px);
   }
   .w-hero-bg-wrap {
     position: absolute;
@@ -747,7 +749,10 @@ const jsonLd = {
   }
   .w-project-logo {
     align-self: flex-start;
-    height: 44px;
+    /* Larger client logo — was 44px, too small for the hero. Scales with
+       the viewport; width follows the logo's aspect (Base's global
+       img{max-width:100%} prevents overflow on wide wordmarks). */
+    height: clamp(60px, 6vw, 92px);
     width: auto;
     margin-bottom: 4px;
     opacity: 0.95;
@@ -777,24 +782,25 @@ const jsonLd = {
 
   /* ─── FACTS ─────────────────────────────────────────────────────────────── */
   .w-facts {
-    padding: clamp(48px, 7vh, 96px) 0 clamp(32px, 5vh, 64px);
+    /* Tight top padding so the facts sit just under the pills, above the fold. */
+    padding: clamp(24px, 3.5vh, 40px) 0 clamp(32px, 5vh, 64px);
     background: var(--w-bg);
   }
+  /* Four evenly-distributed columns across the content width, flush to the
+     same left/right edges as the hero copy, separated by consistent gaps. */
   .w-facts-row {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 0;
+    grid-template-columns: repeat(4, 1fr);
+    gap: clamp(24px, 3vw, 48px);
     border-top: 1px solid var(--w-hairline);
     border-bottom: 1px solid var(--w-hairline);
   }
   .w-fact {
-    padding: 28px 24px;
-    border-right: 1px solid var(--w-hairline);
+    padding: clamp(20px, 3vh, 28px) 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
-  .w-fact:last-child { border-right: none; }
   .w-fact dt {
     font-family: 'Montserrat', sans-serif;
     font-size: 10px;
@@ -811,8 +817,10 @@ const jsonLd = {
     margin: 0;
   }
   @media (max-width: 720px) {
-    .w-fact { border-right: none; border-bottom: 1px solid var(--w-hairline); }
-    .w-fact:last-child { border-bottom: none; }
+    .w-facts-row { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 420px) {
+    .w-facts-row { grid-template-columns: 1fr; }
   }
 
   /* ─── BLOCKED (brief + approach) ───────────────────────────────────────── */
