@@ -3,7 +3,6 @@ import Base from '../layouts/Base.astro';
 import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import ScrollCue from '../components/ScrollCue.astro';
-import Reveal from '../components/Reveal.astro';
 
 interface Project {
   id: number;
@@ -308,7 +307,6 @@ const jsonLd = {
   </main>
 
   <SiteFooter />
-  <Reveal />
 
 </div><!-- /.hp -->
 </Base>
@@ -1049,5 +1047,5 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
     });
   }
 
-  // Scroll reveal now handled by src/components/Reveal.astro
+  // Scroll reveal handled globally by the inline observer in Base.astro
 </script>
