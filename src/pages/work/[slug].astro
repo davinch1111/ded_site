@@ -17,6 +17,7 @@ interface WPImage {
 interface WPTerm { id: number; name: string; slug: string; taxonomy: string; }
 interface GalleryItem { g_image: WPImage | false | null; g_title?: string; g_caption?: string; }
 interface ACF {
+  display_order?: number | string;
   hero_animate?: boolean;
   master_image?: WPImage | false | null;
   project_logo?: WPImage | false | null;
@@ -77,6 +78,15 @@ export async function getStaticPaths() {
   if (!Array.isArray(raw) || raw.length === 0) {
     throw new Error(`[work/[slug]] WP returned no projects. Aborting build to avoid silent empty site.`);
   }
+
+  // Same manual ordering as the homepage grid (ACF display_order ascending,
+  // un-numbered projects after, newest first) so the related-projects
+  // fallback surfaces work in the same order David curated.
+  const orderOf = (p: any) => {
+    const v = Number(p?.acf?.display_order);
+    return Number.isFinite(v) && v > 0 ? v : Number.POSITIVE_INFINITY;
+  };
+  raw.sort((a, b) => orderOf(a) - orderOf(b));
 
   // ── Collect all numeric image IDs across projects (handles legacy data
   //    where ACF stored attachment IDs before return_format=array was set on

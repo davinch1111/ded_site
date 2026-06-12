@@ -29,11 +29,19 @@ let projects: Project[] = FALLBACK_PROJECTS;
 
 try {
   const res = await fetch(
-    'https://davidedigerdesign.in/wp-json/wp/v2/ded_project?per_page=6&_embed',
+    'https://davidedigerdesign.in/wp-json/wp/v2/ded_project?per_page=24&_embed',
     { signal: AbortSignal.timeout(8000) }
   );
   if (res.ok) {
     const data = await res.json() as any[];
+    // Manual sort: ACF display_order ascending (1 shows first). Projects
+    // without a number keep WP's default order (newest first) after all
+    // numbered ones — Array.sort is stable, so ties preserve fetch order.
+    const orderOf = (p: any) => {
+      const v = Number(p?.acf?.display_order);
+      return Number.isFinite(v) && v > 0 ? v : Number.POSITIVE_INFINITY;
+    };
+    data.sort((a, b) => orderOf(a) - orderOf(b));
     const mapped: Project[] = data.map((p: any) => {
       const termGroups: any[][] = p._embedded?.['wp:term'] ?? [];
       const disciplines = termGroups.flat()
@@ -52,11 +60,19 @@ try {
     });
     if (mapped.length > 0) {
       projects = mapped.length >= 6
-        ? mapped.slice(0, 6)
+        ? mapped
         : [...mapped, ...FALLBACK_PROJECTS.slice(mapped.length)];
     }
   }
 } catch { /* WP unreachable — use fallback */ }
+
+// Showcase paging: sets of 6 (3 rows × 2). The prev/next arrows only render
+// when there is more than one page.
+const PAGE_SIZE = 6;
+const showcasePages: Project[][] = [];
+for (let i = 0; i < projects.length; i += PAGE_SIZE) {
+  showcasePages.push(projects.slice(i, i + PAGE_SIZE));
+}
 
 const services = [
   { name: 'Print', desc: 'Logos, brand systems, packaging, signage, vehicle wraps, tradeshow booths. The work people can hold and walk up to.' },
@@ -168,42 +184,59 @@ const jsonLd = {
     <!-- Part B — card grid (transparent over body) -->
     <section class="work-grid-wrap">
       <div class="work-grid-inner">
+        {showcasePages.length > 1 && (
+          <button class="work-nav work-nav--prev" type="button" aria-controls="work-grid" aria-label="Previous projects" disabled>
+            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+          </button>
+        )}
         <div class="work-rows" id="work-grid">
-          {[0, 2, 4].map(start => (
-            <div class="work-row">
-              {projects.slice(start, start + 2).map((p, j) => {
-                const i = start + j;
-                const href = p.slug ? `/work/${p.slug}/` : '#work';
-                const cleanTitle = p.title.replace(/<[^>]+>/g, '');
-                return (
-                  <a
-                    class:list={['card', 'reveal', !p.featuredImage && `card-tone-${i % 6}`]}
-                    href={href}
-                    data-idx={i}
-                    aria-label={`View project: ${cleanTitle}`}
-                  >
-                    {p.featuredImage && (
-                      <img src={p.featuredImage} alt={cleanTitle} loading={i < 2 ? 'eager' : 'lazy'} />
-                    )}
-                    <div class="card-top-scrim"></div>
-                    <div class="card-title" set:html={p.title} />
-                    <div class="card-info">
-                      <span class="card-desc">{p.disciplines}</span>
-                      <div class="card-cta-area">
-                        <span class="card-arrow" aria-hidden="true">
-                          <i class="fa-solid fa-arrow-right"></i>
-                        </span>
-                        <span class="card-cta" aria-hidden="true">
-                          View project <i class="fa-solid fa-arrow-right"></i>
-                        </span>
-                      </div>
-                    </div>
-                  </a>
-                );
-              })}
+          {showcasePages.map((group, pi) => (
+            <div class:list={['work-page', { 'is-active': pi === 0 }]} data-page={pi}>
+              {[0, 2, 4].map(start => group.length > start && (
+                <div class="work-row">
+                  {group.slice(start, start + 2).map((p, j) => {
+                    const i = pi * PAGE_SIZE + start + j;
+                    const href = p.slug ? `/work/${p.slug}/` : '#work';
+                    const cleanTitle = p.title.replace(/<[^>]+>/g, '');
+                    return (
+                      <a
+                        class:list={['card', 'reveal', !p.featuredImage && `card-tone-${i % 6}`]}
+                        href={href}
+                        data-idx={i}
+                        aria-label={`View project: ${cleanTitle}`}
+                      >
+                        {p.featuredImage && (
+                          <img src={p.featuredImage} alt={cleanTitle} loading={i < 2 ? 'eager' : 'lazy'} />
+                        )}
+                        <div class="card-top-scrim"></div>
+                        <div class="card-title" set:html={p.title} />
+                        <div class="card-info">
+                          <span class="card-desc">{p.disciplines}</span>
+                          <div class="card-cta-area">
+                            <span class="card-arrow" aria-hidden="true">
+                              <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+                            <span class="card-cta" aria-hidden="true">
+                              View project <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+                          </div>
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           ))}
         </div>
+        {showcasePages.length > 1 && (
+          <button class="work-nav work-nav--next" type="button" aria-controls="work-grid" aria-label="Next projects">
+            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+          </button>
+        )}
+        {showcasePages.length > 1 && (
+          <span class="vh" id="work-page-status" aria-live="polite"></span>
+        )}
       </div>
     </section>
 
@@ -537,6 +570,70 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
 /* JS :has() fallback (per-row) */
 .work-row.expand-left  { grid-template-columns: 1.4fr 0.6fr; }
 .work-row.expand-right { grid-template-columns: 0.6fr 1.4fr; }
+
+/* ═══ SHOWCASE PAGING ═══ */
+.work-grid-inner { position: relative; }
+
+.work-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+/* FAIL-SAFE: every page is visible (stacked) by default, so all projects
+   are reachable even if scripts never run. Only once the paging script
+   confirms it is live (html.js-showcase) do inactive pages hide and the
+   arrows appear. */
+html.js-showcase .work-page:not(.is-active) { display: none; }
+
+.work-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  /* Theme-adaptive: dark-on-light before the body tint, light-on-dark after,
+     fading with the same easing as the rest of the dark-zone text. */
+  border: 1px solid rgba(15,16,20,0.3);
+  background: rgba(15,16,20,0.04);
+  color: var(--text-dark);
+  transition: color 600ms cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 600ms cubic-bezier(0.4, 0, 0.2, 1),
+              background 600ms cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 200ms cubic-bezier(.25,.1,.25,1);
+}
+body.dark-zone-active .work-nav {
+  border-color: rgba(245,244,240,0.3);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-white);
+}
+html.js-showcase .work-nav { display: flex; }
+.work-nav i { font-size: 13px; }
+.work-nav:hover { background: rgba(15,16,20,0.1); }
+body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); border-color: rgba(245,244,240,0.6); }
+.work-nav:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.work-nav:disabled { opacity: 0.25; cursor: default; pointer-events: none; }
+.work-nav--prev { left: calc(-1 * min(2.5vw + 22px, 72px)); }
+.work-nav--next { right: calc(-1 * min(2.5vw + 22px, 72px)); }
+
+/* Visually-hidden live region announcing the active page */
+.vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 .card {
   position: relative;
@@ -974,6 +1071,14 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
   .work-row.expand-left,
   .work-row.expand-right { grid-template-columns: 1fr !important; }
 
+  /* Paging arrows: side gutters are too tight — park them as a centred
+     pair below the grid instead. Padding only reserved when paging is
+     actually live (js-showcase is set only with 2+ pages). */
+  html.js-showcase .work-grid-inner { padding-bottom: 64px; }
+  .work-nav { top: auto; bottom: 0; transform: none; }
+  .work-nav--prev { left: calc(50% - 52px); }
+  .work-nav--next { right: calc(50% - 52px); }
+
   .srow   { grid-template-columns: 1fr; gap: 8px; }
   .qgrid  { grid-template-columns: 1fr; }
   .c-row  { grid-template-columns: 1fr; }
@@ -1028,11 +1133,14 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
   //    through the user's visit-scroll across row 2 (it begins entering
   //    at top = vh, exits at top = 0; firing at vh*0.5 means we've
   //    scrolled ~30% of the time row 2 is on screen).
-  const workRows = document.querySelectorAll('.work-row');
-  const secondRow = workRows[1] as HTMLElement | undefined;
   const services = document.querySelector('.services-section');
   let ticking = false;
   function updateDarkZone() {
+    // Rows are re-queried each tick: with showcase paging the visible rows
+    // belong to whichever .work-page is active. Single-row pages fall back
+    // to their first row so the tint still releases correctly.
+    const rows = document.querySelectorAll('.work-page.is-active .work-row');
+    const secondRow = (rows[1] ?? rows[0]) as HTMLElement | undefined;
     if (!secondRow || !services) return;
     const secondRowTop = secondRow.getBoundingClientRect().top;
     const servicesTop  = services.getBoundingClientRect().top;
@@ -1055,6 +1163,29 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
   document.querySelectorAll('[data-chip]').forEach(c => {
     c.addEventListener('click', () => c.classList.toggle('on'));
   });
+
+  // ── Showcase paging: arrows step through sets of six projects ──
+  const showcasePagesEls = Array.from(document.querySelectorAll('.work-page'));
+  const navPrev = document.querySelector('.work-nav--prev') as HTMLButtonElement | null;
+  const navNext = document.querySelector('.work-nav--next') as HTMLButtonElement | null;
+  const pageStatus = document.getElementById('work-page-status');
+  if (showcasePagesEls.length > 1 && navPrev && navNext) {
+    // FAIL-SAFE gate: inactive pages only hide once this script is
+    // confirmed running. No JS => all pages stay visible, stacked.
+    document.documentElement.classList.add('js-showcase');
+    let current = 0;
+    const renderPage = () => {
+      showcasePagesEls.forEach((p, i) => p.classList.toggle('is-active', i === current));
+      navPrev.disabled = current === 0;
+      navNext.disabled = current === showcasePagesEls.length - 1;
+      if (pageStatus) pageStatus.textContent =
+        `Showing projects ${current + 1} of ${showcasePagesEls.length}`;
+      updateDarkZone(); // grid height changed — re-evaluate the tint
+    };
+    navPrev.addEventListener('click', () => { if (current > 0) { current -= 1; renderPage(); } });
+    navNext.addEventListener('click', () => { if (current < showcasePagesEls.length - 1) { current += 1; renderPage(); } });
+    renderPage();
+  }
 
   // ── :has() fallback for older browsers (per-row) ──
   const supportsHas = CSS.supports('selector(:has(div))');
