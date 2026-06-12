@@ -10,25 +10,19 @@ interface Project {
   title: string;
   disciplines: string;
   featuredImage: string | null;
-  fallbackBg: string;
 }
 
-const FALLBACK_BG = [
-  'linear-gradient(160deg,#0d1020 0%,#1a1f2e 100%)',
-  'linear-gradient(160deg,#0a0f0a 0%,#141a14 100%)',
-  'linear-gradient(160deg,#0a0d14 0%,#16192a 100%)',
-  'linear-gradient(160deg,#0d0d0d 0%,#1a1a1a 100%)',
-  'linear-gradient(160deg,#0d1212 0%,#181e1e 100%)',
-  'linear-gradient(160deg,#100e0a 0%,#1c1912 100%)',
-];
-
+// Tiles without imagery get a brand-tone gradient via .card-tone-{i % 6}
+// classes (defined in the CSS below) — keyed off grid position, not stored
+// per project. Classes instead of inline style="" keep the CSP free of
+// style-src 'unsafe-inline'.
 const FALLBACK_PROJECTS: Project[] = [
-  { id: 1, slug: 'innotech-windows-and-doors', title: 'Innotech Windows & Doors', disciplines: 'Print · Video · Wraps · Since 2008', featuredImage: null, fallbackBg: FALLBACK_BG[0] },
-  { id: 2, slug: 'chanvre-hemp',               title: 'Chanvre Hemp',             disciplines: 'Brand · Packaging · Video',          featuredImage: null, fallbackBg: FALLBACK_BG[1] },
-  { id: 3, slug: 'first-light-fishing',        title: 'First Light Fishing',      disciplines: 'Brand · Web · Photography',          featuredImage: null, fallbackBg: FALLBACK_BG[2] },
-  { id: 4, slug: 'rackon',                     title: 'RackOn',                   disciplines: 'Video · Brand · Mascot',             featuredImage: null, fallbackBg: FALLBACK_BG[3] },
-  { id: 5, slug: 'wayne-northey',              title: 'Wayne Northey',            disciplines: 'Web · Identity',                     featuredImage: null, fallbackBg: FALLBACK_BG[4] },
-  { id: 6, slug: 'vindauga-windows',           title: 'Vindauga Windows',         disciplines: 'Web · Brand',                        featuredImage: null, fallbackBg: FALLBACK_BG[5] },
+  { id: 1, slug: 'innotech-windows-and-doors', title: 'Innotech Windows & Doors', disciplines: 'Print · Video · Wraps · Since 2008', featuredImage: null },
+  { id: 2, slug: 'chanvre-hemp',               title: 'Chanvre Hemp',             disciplines: 'Brand · Packaging · Video',          featuredImage: null },
+  { id: 3, slug: 'first-light-fishing',        title: 'First Light Fishing',      disciplines: 'Brand · Web · Photography',          featuredImage: null },
+  { id: 4, slug: 'rackon',                     title: 'RackOn',                   disciplines: 'Video · Brand · Mascot',             featuredImage: null },
+  { id: 5, slug: 'wayne-northey',              title: 'Wayne Northey',            disciplines: 'Web · Identity',                     featuredImage: null },
+  { id: 6, slug: 'vindauga-windows',           title: 'Vindauga Windows',         disciplines: 'Web · Brand',                        featuredImage: null },
 ];
 
 let projects: Project[] = FALLBACK_PROJECTS;
@@ -40,7 +34,7 @@ try {
   );
   if (res.ok) {
     const data = await res.json() as any[];
-    const mapped: Project[] = data.map((p: any, i: number) => {
+    const mapped: Project[] = data.map((p: any) => {
       const termGroups: any[][] = p._embedded?.['wp:term'] ?? [];
       const disciplines = termGroups.flat()
         .filter((t: any) => t.taxonomy === 'discipline')
@@ -54,7 +48,6 @@ try {
         title: (p.title?.rendered ?? 'Untitled') as string,
         disciplines: disciplines || 'Design · 2026',
         featuredImage,
-        fallbackBg: FALLBACK_BG[i % FALLBACK_BG.length],
       };
     });
     if (mapped.length > 0) {
@@ -149,7 +142,7 @@ const jsonLd = {
   <!-- ══════════════ HERO ══════════════ -->
   <section class="hp-hero">
     <div class="hero-showreel">
-      <i class="fa-solid fa-play" style="font-size:9px;margin-right:6px;"></i>Showreel
+      <i class="fa-solid fa-play"></i>Showreel
     </div>
     <img src="/images/ded_emblem_white.svg" class="hero-emblem" alt="" aria-hidden="true" />
     <div class="hero-text">
@@ -184,9 +177,8 @@ const jsonLd = {
                 const cleanTitle = p.title.replace(/<[^>]+>/g, '');
                 return (
                   <a
-                    class="card reveal"
+                    class:list={['card', 'reveal', !p.featuredImage && `card-tone-${i % 6}`]}
                     href={href}
-                    style={!p.featuredImage ? `background:${p.fallbackBg};` : ''}
                     data-idx={i}
                     aria-label={`View project: ${cleanTitle}`}
                   >
@@ -199,10 +191,10 @@ const jsonLd = {
                       <span class="card-desc">{p.disciplines}</span>
                       <div class="card-cta-area">
                         <span class="card-arrow" aria-hidden="true">
-                          <i class="fa-solid fa-arrow-right" style="font-size:11px;"></i>
+                          <i class="fa-solid fa-arrow-right"></i>
                         </span>
                         <span class="card-cta" aria-hidden="true">
-                          View project <i class="fa-solid fa-arrow-right" style="font-size:10px;"></i>
+                          View project <i class="fa-solid fa-arrow-right"></i>
                         </span>
                       </div>
                     </div>
@@ -262,7 +254,7 @@ const jsonLd = {
           <input class="c-inp" type="text"  name="name"  placeholder="Your name" required />
           <input class="c-inp" type="email" name="email" placeholder="Email"      required />
         </div>
-        <input class="c-inp" type="text" name="company" placeholder="Business or company" style="margin-bottom:18px;" />
+        <input class="c-inp c-inp--company" type="text" name="company" placeholder="Business or company" />
 
         <div class="c-flabel">What can I help with?</div>
         <div class="c-chips">
@@ -293,9 +285,8 @@ const jsonLd = {
           </div>
         </div>
 
-        <textarea class="c-inp" name="description" rows="4"
-          placeholder="Tell me about the project. What does success look like?"
-          style="margin-top:16px;margin-bottom:24px;resize:vertical;"></textarea>
+        <textarea class="c-inp c-inp--desc" name="description" rows="4"
+          placeholder="Tell me about the project. What does success look like?"></textarea>
 
         <button class="c-submit" type="submit">
           Send it over <i class="fa-solid fa-arrow-right"></i>
@@ -358,6 +349,11 @@ body.dark-zone-active {
   align-items: center;
 }
 
+.hero-showreel i {
+  font-size: 9px;
+  margin-right: 6px;
+}
+
 .hero-text {
   position: absolute;
   bottom: clamp(48px, 4vw, 80px);
@@ -404,10 +400,15 @@ body.dark-zone-active {
   max-width: 480px;
 }
 
-/* ── Hero entrance: rise-up after intro wipe completes ── */
-.hero-ey,
-.hp-hero h1,
-.hero-sub {
+/* ── Hero entrance: rise-up after intro wipe completes ──
+   FAIL-SAFE: the hero title is CONTENT and must never be invisible because
+   a script didn't run. The hidden/pre-animation state is gated on
+   `html.js-hero`, added by this page's script the moment it executes —
+   same pattern as the js-reveal fail-safe in Base.astro. If the script is
+   blocked or fails, .js-hero never lands and the title renders visible. */
+html.js-hero .hero-ey,
+html.js-hero .hp-hero h1,
+html.js-hero .hero-sub {
   opacity: 0;
   transform: translateY(24px);
   transition: opacity 600ms cubic-bezier(.4, 0, .2, 1),
@@ -553,6 +554,15 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
   outline-offset: 3px;
 }
 
+/* Brand-tone fallback backgrounds for tiles without imagery.
+   Classes (not inline style="") so style-src needs no 'unsafe-inline'. */
+.card-tone-0 { background: linear-gradient(160deg,#0d1020 0%,#1a1f2e 100%); }
+.card-tone-1 { background: linear-gradient(160deg,#0a0f0a 0%,#141a14 100%); }
+.card-tone-2 { background: linear-gradient(160deg,#0a0d14 0%,#16192a 100%); }
+.card-tone-3 { background: linear-gradient(160deg,#0d0d0d 0%,#1a1a1a 100%); }
+.card-tone-4 { background: linear-gradient(160deg,#0d1212 0%,#181e1e 100%); }
+.card-tone-5 { background: linear-gradient(160deg,#100e0a 0%,#1c1912 100%); }
+
 .card img {
   position: absolute;
   inset: 0;
@@ -636,6 +646,8 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
   transition: opacity 250ms cubic-bezier(.25,.1,.25,1);
 }
 
+.card-arrow i { font-size: 11px; }
+
 .card-cta {
   position: absolute;
   top: 50%; right: 0;
@@ -659,6 +671,8 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
               border-color 200ms,
               background 200ms;
 }
+
+.card-cta i { font-size: 10px; }
 
 .card:hover .card-arrow { opacity: 0; pointer-events: none; }
 .card:hover .card-cta   { opacity: 1; pointer-events: auto; }
@@ -884,6 +898,14 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
 .c-inp:focus { outline: none; border-color: var(--accent); }
 .c-inp::placeholder { color: rgba(15,16,20,0.3); }
 
+.c-inp--company { margin-bottom: 18px; }
+
+.c-inp--desc {
+  margin-top: 16px;
+  margin-bottom: 24px;
+  resize: vertical;
+}
+
 .c-chips {
   display: flex;
   flex-wrap: wrap;
@@ -981,6 +1003,10 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
   (() => {
     const hero = document.querySelector('.hp-hero');
     if (!hero) return;
+    // FAIL-SAFE gate: only now that this script is confirmed running may the
+    // hero title be hidden for its entrance animation (html.js-hero enables
+    // the opacity:0 pre-state in CSS). Script blocked => title stays visible.
+    document.documentElement.classList.add('js-hero');
     const reveal = () => hero.classList.add('intro-done');
     if (sessionStorage.getItem('hasSeenIntro')) {
       reveal();

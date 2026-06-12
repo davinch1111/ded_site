@@ -67,75 +67,18 @@ export default function IntroSequence() {
 
   if (phase === 'done' || phase === 'init') return null;
 
+  // Styles for the overlay live in Base.astro's global stylesheet
+  // (.intro-overlay / .intro-text / .intro-badge). A JSX <style> tag would
+  // be a runtime-injected inline style element, which the strict CSP
+  // (style-src without 'unsafe-inline') blocks. The wipe duration there
+  // must match WIPE_MS above.
   return (
-    <>
-      <style>{`
-        .intro-overlay {
-          position: fixed;
-          inset: 0;
-          z-index: 9999;
-          background: #000;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          /* Wipe uses a plain CSS transition. Browsers must paint a 0→100%
-             inset on clip-path; if any browser short-circuits that paint,
-             the visual is cut off but the surrounding setTimeout still
-             keeps the timeline correct. */
-          clip-path: inset(0 0% 0 0%);
-          transition: clip-path ${WIPE_MS}ms cubic-bezier(0.76, 0, 0.24, 1);
-        }
-        .intro-overlay.intro-wiping {
-          clip-path: inset(0 0% 0 100%);
-        }
-        .intro-text {
-          color: #fff;
-          font-family: 'Montserrat', sans-serif;
-          font-size: clamp(14px, 2.4vw, 28px);
-          font-weight: 300;
-          text-transform: uppercase;
-          letter-spacing: 0.5em;
-          opacity: 0;
-          filter: blur(12px);
-          animation: introTextIn 1.2s ease-out 0.2s forwards;
-        }
-        @keyframes introTextIn {
-          to {
-            letter-spacing: 0.15em;
-            filter: blur(0px);
-            opacity: 1;
-          }
-        }
-        .intro-badge {
-          position: absolute;
-          bottom: 40px;
-          left: 40px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          width: 40px;
-          height: 34px;
-          border: 2px solid #fff;
-          border-radius: 5px 5px 12px 12px;
-          font-family: 'Montserrat', sans-serif;
-          font-weight: 700;
-          font-size: 11px;
-          letter-spacing: 0.08em;
-          color: #fff;
-          opacity: 0;
-          animation: introBadgeIn 0.6s ease-out 0.6s forwards;
-        }
-        @keyframes introBadgeIn {
-          to { opacity: 0.9; }
-        }
-      `}</style>
-      <div
-        className={`intro-overlay${phase === 'wiping' ? ' intro-wiping' : ''}`}
-        aria-hidden="true"
-      >
-        <div className="intro-text">DAVID EDIGER DESIGN</div>
-        <div className="intro-badge">DED</div>
-      </div>
-    </>
+    <div
+      className={`intro-overlay${phase === 'wiping' ? ' intro-wiping' : ''}`}
+      aria-hidden="true"
+    >
+      <div className="intro-text">DAVID EDIGER DESIGN</div>
+      <div className="intro-badge">DED</div>
+    </div>
   );
 }
