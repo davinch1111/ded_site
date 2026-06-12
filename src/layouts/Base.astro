@@ -35,9 +35,32 @@ import IntroSequence from '../components/IntroSequence.tsx';
       --bg-light:       #F6F3EC;
       --text-primary:   #F5F4F0;
       --text-secondary: hsl(240 0.6% 67.3%);
-      --text-dark:      #0A0A0F;
+      --text-dark:      #0F1014;
       --accent:         #3457C6;
       --accent-hover:   #2A47A0;
+
+      /* ── Shared dark-UI tokens — single source of truth.
+         Previously duplicated in index.astro (.hp) and
+         work/[slug].astro (.work). ── */
+      --black:      #03040E;
+      --card-bg:    #141519;
+      --white:      #FAFAFA;
+      --text-white: #F5F4F0;
+      --text-muted: rgba(245,244,240,0.5);
+      --gap:        20px;
+
+      /* Work / project-page surfaces */
+      --w-bg:              #03040E;
+      --w-surface:         #0F1116;
+      --w-card:            #141519;
+      --w-text:            #F5F4F0;
+      --w-muted:           rgba(245,244,240,0.62);
+      --w-faint:           rgba(245,244,240,0.5);
+      --w-hairline:        rgba(255,255,255,0.09);
+      --w-hairline-strong: rgba(255,255,255,0.16);
+      --w-accent:          #3457C6;
+      --w-accent-soft:     rgba(52,87,198,0.18);
+      --w-ease-out:        cubic-bezier(0.23, 1, 0.32, 1);
 
       /* Legacy tokens — phased out component by component */
       --bg:      #F6F3EC;
@@ -121,6 +144,22 @@ import IntroSequence from '../components/IntroSequence.tsx';
     .btn:hover { background: var(--accent-hover); }
     .btn:active { transform: scale(0.97); }
 
+    /* Skip link — first focusable element on every page; jumps to #main */
+    .skiplink {
+      position: absolute;
+      left: -9999px;
+      top: 12px;
+      background: var(--accent);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: 4px;
+      font-family: var(--body);
+      font-size: 13px;
+      z-index: 200;
+      text-decoration: none;
+    }
+    .skiplink:focus { left: 12px; }
+
     /* Spotlight card — global because ::before can't be set from React inline styles */
     .spotlight-card {
       position: relative;
@@ -152,6 +191,7 @@ import IntroSequence from '../components/IntroSequence.tsx';
 </head>
 <body>
   <IntroSequence client:load />
+  <a href="#main" class="skiplink">Skip to content</a>
   <slot />
 </body>
 </html>

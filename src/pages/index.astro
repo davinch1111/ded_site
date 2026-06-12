@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import ScrollCue from '../components/ScrollCue.astro';
+import Reveal from '../components/Reveal.astro';
 
 interface Project {
   id: number;
@@ -82,12 +83,69 @@ const quotes = [
     name: 'Dave Fullerton', role: 'Investment Manager' },
 ];
 
+// ─── SEO ─────────────────────────────────────────────────────────────────────
+const siteName = 'David Ediger Design';
+const homeTitle = 'David Ediger Design — Portfolio';
+const homeDesc =
+  'Twenty-three years of print, web, video, photo, and audio. Brands that refuse to blend in.';
+const canonical = new URL('/', Astro.site).href;
+// Interim share image — a proper 1200×630 OG asset still needs to be produced.
+const ogImage = new URL('/apple-touch-icon.png', Astro.site).href;
+
+const personId = new URL('/#david-ediger', Astro.site).href;
+const orgId = new URL('/#organization', Astro.site).href;
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Person',
+      '@id': personId,
+      'name': 'David Ediger',
+      'jobTitle': 'Creative Director',
+      'url': canonical,
+      'worksFor': { '@id': orgId },
+    },
+    {
+      '@type': 'Organization',
+      '@id': orgId,
+      'name': siteName,
+      'url': canonical,
+      'logo': new URL('/images/ded-logo-2026-colour.svg', Astro.site).href,
+      'email': 'info@davidedigerdesign.com',
+      'founder': { '@id': personId },
+      'sameAs': [
+        'https://www.instagram.com/david.ediger.design',
+        'https://www.linkedin.com/in/david-ediger-b402a914/',
+        'https://vimeo.com/davidediger/',
+        'https://www.youtube.com/channel/UCVzIVyhZouAq7VjKLsuCPyQ',
+      ],
+    },
+  ],
+};
 ---
 
-<Base title="David Ediger Design — Portfolio">
+<Base title={homeTitle} description={homeDesc}>
+
+  <Fragment slot="head">
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={homeTitle} />
+    <meta property="og:description" content={homeDesc} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={homeTitle} />
+    <meta name="twitter:description" content={homeDesc} />
+    <meta name="twitter:image" content={ogImage} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
+  </Fragment>
+
 <div class="hp">
 
   <SiteNav />
+
+  <main id="main">
 
   <!-- ══════════════ HERO ══════════════ -->
   <section class="hp-hero">
@@ -247,7 +305,10 @@ const quotes = [
     </div>
   </section>
 
+  </main>
+
   <SiteFooter />
+  <Reveal />
 
 </div><!-- /.hp -->
 </Base>
@@ -257,17 +318,8 @@ const quotes = [
 ════════════════════════════════════════════════════════════ -->
 <style is:global>
 
-/* ── Variables (inherited by all children of .hp) ── */
+/* ── .hp wrapper — design tokens now live in Base.astro :root ── */
 .hp {
-  --black:      #03040E;
-  --dark:       #0F1014;
-  --card-bg:    #141519;
-  --white:      #FAFAFA;
-  --text-white: #F5F4F0;
-  --text-muted: rgba(245,244,240,0.5);
-  --text-dark:  #0F1014;
-  --accent:     #3457C6;
-  --gap:        20px;
   font-family: 'Montserrat', -apple-system, system-ui, sans-serif;
 }
 
@@ -882,18 +934,7 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
 
 /* Footer rules now live in src/components/SiteFooter.astro */
 
-/* ═══ SCROLL REVEAL ═══ */
-.reveal {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 800ms cubic-bezier(0.4, 0, 0.2, 1),
-              transform 800ms cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.reveal.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
+/* Scroll-reveal styles now live in src/components/Reveal.astro */
 
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 1024px) {
@@ -1008,10 +1049,5 @@ body.dark-zone-active .work-subhead { color: rgba(245,244,240,0.7); }
     });
   }
 
-  // ── Scroll reveal ──
-  const reveals = document.querySelectorAll('.reveal');
-  const revealObs = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('is-visible'); });
-  }, { threshold: 0.15 });
-  reveals.forEach(el => revealObs.observe(el));
+  // Scroll reveal now handled by src/components/Reveal.astro
 </script>

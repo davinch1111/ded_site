@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import SiteNav from '../../components/SiteNav.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import ScrollCue from '../../components/ScrollCue.astro';
+import Reveal from '../../components/Reveal.astro';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface WPImage {
@@ -276,10 +277,8 @@ const jsonLd = {
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={metaDesc} />
     {ogImage && <meta name="twitter:image" content={ogImage} />}
-    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd).replace(/</g, '\\u003c')} />
   </Fragment>
-
-  <a href="#main" class="skiplink">Skip to content</a>
 
   <SiteNav />
 
@@ -614,6 +613,7 @@ const jsonLd = {
   </article>
 
   <SiteFooter />
+  <Reveal />
 
 </Base>
 
@@ -624,19 +624,8 @@ const jsonLd = {
      Adds its own scoped palette for surfaces, hairlines, and the accent glow.
      ═══════════════════════════════════════════════════════════════════════ */
 
+  /* Design tokens (--w-*) now live in Base.astro :root. */
   .work {
-    --w-bg:        #03040E;
-    --w-surface:   #0F1116;
-    --w-card:      #141519;
-    --w-text:      #F5F4F0;
-    --w-muted:     rgba(245,244,240,0.62);
-    --w-faint:     rgba(245,244,240,0.32);
-    --w-hairline:  rgba(255,255,255,0.09);
-    --w-hairline-strong: rgba(255,255,255,0.16);
-    --w-accent:    #3457C6;
-    --w-accent-soft: rgba(52,87,198,0.18);
-    --w-ease-out:  cubic-bezier(0.23, 1, 0.32, 1);
-
     background: var(--w-bg);
     color: var(--w-text);
     font-family: 'Montserrat', sans-serif;
@@ -644,21 +633,7 @@ const jsonLd = {
     overflow-x: hidden;
   }
 
-  /* Skip link for keyboard users */
-  .skiplink {
-    position: absolute;
-    left: -9999px;
-    top: 12px;
-    background: var(--w-accent);
-    color: #fff;
-    padding: 10px 16px;
-    border-radius: 4px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 13px;
-    z-index: 200;
-    text-decoration: none;
-  }
-  .skiplink:focus { left: 12px; }
+  /* Skip link styles now live globally in Base.astro */
 
   /* Shared wrap */
   .work .w-wrap {
@@ -1229,23 +1204,10 @@ const jsonLd = {
   }
   .w-cta-btn:active { transform: scale(0.97); }
 
-  /* ─── REVEAL pattern (mirrors home-porsche.astro) ──────────────────────── */
-  .work .reveal {
-    opacity: 0;
-    transform: translateY(28px);
-    transition: opacity 800ms var(--w-ease-out), transform 800ms var(--w-ease-out);
-  }
-  .work .reveal.is-visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  /* Scroll-reveal styles now live in src/components/Reveal.astro */
 
   /* prefers-reduced-motion — strip transforms, keep opacity for legibility */
   @media (prefers-reduced-motion: reduce) {
-    .work .reveal {
-      transition: opacity 240ms ease;
-      transform: none !important;
-    }
     .w-hero-bg { transform: none !important; }
     .w-g-card img,
     .w-related-img { transition: none; }
@@ -1327,16 +1289,6 @@ const jsonLd = {
       }
     }
 
-    // Scroll reveal observer (always on; no transforms if reduced-motion via CSS)
-    const reveals = root.querySelectorAll('.reveal');
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('is-visible');
-          io.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-    reveals.forEach(el => io.observe(el));
+    // Scroll reveal now handled by src/components/Reveal.astro
   }
 </script>

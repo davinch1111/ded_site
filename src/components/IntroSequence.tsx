@@ -30,8 +30,16 @@ export default function IntroSequence() {
   const [phase, setPhase] = useState<'init' | 'showing' | 'wiping' | 'done'>('init');
 
   useEffect(() => {
-    // Repeat visit: skip the intro entirely.
-    if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('hasSeenIntro')) {
+    const seenIntro =
+      typeof sessionStorage !== 'undefined' && sessionStorage.getItem('hasSeenIntro');
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Repeat visit OR reduced-motion preference: skip the intro entirely
+    // and fire the done event on next frame so downstream hero-reveal
+    // listeners still trigger.
+    if (seenIntro || prefersReducedMotion) {
       setPhase('done');
       requestAnimationFrame(() => {
         window.dispatchEvent(new CustomEvent('ded-intro-done', { detail: { skipped: true } }));
