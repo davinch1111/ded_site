@@ -1,14 +1,13 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 
-import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 
 // https://astro.build/config
 export default defineConfig({
   output: 'static',
   site: 'https://davidedigerdesign.com',
-  integrations: [react(), sitemap()],
+  integrations: [sitemap()],
 
   // All styles ship as external CSS files — no inline <style> except Astro's
   // own island stylesheet, which security.csp hashes. Keeps style-src free of
