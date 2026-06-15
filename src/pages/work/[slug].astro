@@ -436,7 +436,11 @@ const jsonLd = {
               if (isFirst || isOrphan) {
                 return (
                   <figure class="w-g-card w-g-card--full reveal">
-                    <img src={img.url} alt={img.alt || item.g_title || `${cleanTitle} gallery item ${i + 1}`} loading={i < 2 ? 'eager' : 'lazy'} />
+                    <button class="w-g-trigger" type="button" data-lb-index={i}
+                      data-lb-caption={[item.g_title, item.g_caption].filter(Boolean).join(' — ')}
+                      aria-label={`View larger: ${item.g_title || `${cleanTitle} image ${i + 1}`}`}>
+                      <img src={img.url} alt={img.alt || item.g_title || `${cleanTitle} gallery item ${i + 1}`} loading={i < 2 ? 'eager' : 'lazy'} />
+                    </button>
                     {(item.g_title || item.g_caption) && (
                       <figcaption>
                         {item.g_title && <strong>{item.g_title}</strong>}
@@ -453,7 +457,11 @@ const jsonLd = {
                 return (
                   <div class="w-g-pair w-g-pair--wide-left reveal">
                     <figure class="w-g-card">
-                      <img src={img.url} alt={img.alt || item.g_title || `${cleanTitle} gallery item ${i + 1}`} loading="lazy" />
+                      <button class="w-g-trigger" type="button" data-lb-index={i}
+                        data-lb-caption={[item.g_title, item.g_caption].filter(Boolean).join(' — ')}
+                        aria-label={`View larger: ${item.g_title || `${cleanTitle} image ${i + 1}`}`}>
+                        <img src={img.url} alt={img.alt || item.g_title || `${cleanTitle} gallery item ${i + 1}`} loading="lazy" />
+                      </button>
                       {(item.g_title || item.g_caption) && (
                         <figcaption>
                           {item.g_title && <strong>{item.g_title}</strong>}
@@ -463,7 +471,11 @@ const jsonLd = {
                     </figure>
                     {next && nextImg && (
                       <figure class="w-g-card">
-                        <img src={nextImg.url} alt={nextImg.alt || next.g_title || `${cleanTitle} gallery item ${i + 2}`} loading="lazy" />
+                        <button class="w-g-trigger" type="button" data-lb-index={i + 1}
+                          data-lb-caption={[next.g_title, next.g_caption].filter(Boolean).join(' — ')}
+                          aria-label={`View larger: ${next.g_title || `${cleanTitle} image ${i + 2}`}`}>
+                          <img src={nextImg.url} alt={nextImg.alt || next.g_title || `${cleanTitle} gallery item ${i + 2}`} loading="lazy" />
+                        </button>
                         {(next.g_title || next.g_caption) && (
                           <figcaption>
                             {next.g_title && <strong>{next.g_title}</strong>}
@@ -613,6 +625,29 @@ const jsonLd = {
     )}
 
   </article>
+
+  {/* Lightbox overlay — additive; hidden until a thumbnail is clicked. Placed
+      at page top level (NOT inside a .reveal section) because a transformed
+      ancestor would make position:fixed resolve to that ancestor instead of
+      the viewport. If the script never runs it stays hidden and the gallery
+      thumbnails remain normal inline images. */}
+  {showGallery && (
+    <div class="lb" id="lightbox" role="dialog" aria-modal="true" aria-label={`${cleanTitle} gallery viewer`} hidden>
+      <button class="lb-close" type="button" aria-label="Close image viewer">
+        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      </button>
+      <button class="lb-nav lb-prev" type="button" aria-label="Previous image">
+        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+      </button>
+      <figure class="lb-figure">
+        <img class="lb-img" alt="" />
+        <figcaption class="lb-cap" aria-live="polite"></figcaption>
+      </figure>
+      <button class="lb-nav lb-next" type="button" aria-label="Next image">
+        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+      </button>
+    </div>
+  )}
 
   <SiteFooter />
 
@@ -1006,6 +1041,134 @@ const jsonLd = {
     }
   }
 
+  /* Gallery image becomes a lightbox trigger — a transparent full-size
+     wrapper around the (still-visible) thumbnail. */
+  .w-g-trigger {
+    display: block;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: zoom-in;
+  }
+  .w-g-trigger:focus-visible {
+    outline: 2px solid var(--w-accent);
+    outline-offset: -3px;
+  }
+
+  /* ─── LIGHTBOX ─────────────────────────────────────────────────────────── */
+  .lb {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(3, 4, 14, 0.85);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+  .lb[hidden] { display: none; }
+  .lb.is-open { opacity: 1; }
+
+  /* Figure is non-interactive so clicks in the gaps reach the scrim (close);
+     the image + caption re-enable pointer events. */
+  .lb-figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: calc(100vw - 140px);
+    pointer-events: none;
+  }
+  .lb-img {
+    max-width: calc(100vw - 140px);
+    max-height: calc(100vh - 140px);
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 6px;
+    box-shadow: 0 40px 120px -30px rgba(0, 0, 0, 0.9);
+    pointer-events: auto;
+    transform: translateX(0);
+    opacity: 1;
+    transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 280ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .lb-noanim    { transition: none !important; }
+  .lb-out-next  { transform: translateX(-40px); opacity: 0; }
+  .lb-out-prev  { transform: translateX(40px);  opacity: 0; }
+  .lb-enter-next{ transform: translateX(40px);  opacity: 0; }
+  .lb-enter-prev{ transform: translateX(-40px); opacity: 0; }
+
+  .lb-cap {
+    pointer-events: auto;
+    color: var(--w-muted);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    text-align: center;
+    max-width: 60ch;
+  }
+  .lb-cap:empty { display: none; }
+
+  .lb-close, .lb-nav {
+    position: fixed;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(245, 244, 240, 0.3);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--w-text);
+    border-radius: 50%;
+    cursor: pointer;
+    pointer-events: auto;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+  }
+  .lb-close:hover, .lb-nav:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(245, 244, 240, 0.6);
+  }
+  .lb-close:focus-visible, .lb-nav:focus-visible {
+    outline: 2px solid var(--w-accent);
+    outline-offset: 3px;
+  }
+  .lb-close {
+    top: clamp(16px, 3vw, 28px);
+    right: clamp(16px, 3vw, 28px);
+    width: 48px; height: 48px; font-size: 18px;
+  }
+  .lb-nav {
+    top: 50%;
+    transform: translateY(-50%);
+    width: 52px; height: 52px; font-size: 18px;
+  }
+  .lb-prev { left: clamp(12px, 3vw, 32px); }
+  .lb-next { right: clamp(12px, 3vw, 32px); }
+  .lb-nav:hover { transform: translateY(-50%) scale(1.05); }
+  .lb-nav[hidden] { display: none; }
+
+  @media (max-width: 600px) {
+    .lb-figure { max-width: calc(100vw - 24px); }
+    .lb-img { max-width: calc(100vw - 24px); max-height: calc(100vh - 168px); }
+    .lb-nav { top: auto; bottom: clamp(16px, 5vw, 28px); transform: none; width: 46px; height: 46px; }
+    .lb-nav:hover { transform: scale(1.05); }
+    .lb-prev { left: calc(50% - 54px); }
+    .lb-next { right: calc(50% - 54px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lb { transition: none; }
+    .lb-img { transition: none !important; }
+  }
+
   /* ─── VIDEO ────────────────────────────────────────────────────────────── */
   .w-video {
     padding: clamp(48px, 7vh, 96px) 0;
@@ -1310,4 +1473,124 @@ const jsonLd = {
 
     // Scroll reveal handled globally by the inline observer in Base.astro
   }
+</script>
+
+<script>
+  // ── Gallery lightbox ──────────────────────────────────────────────────────
+  // Purely additive: thumbnails are normal <img>s wrapped in trigger buttons;
+  // if this never runs they still display inline and the overlay stays hidden.
+  // Bundled (script-src 'self'); transitions driven by CSS classes, not inline
+  // styles. element.style is only used for body scroll-lock (CSSOM, CSP-safe).
+  (() => {
+    const overlay = document.getElementById('lightbox');
+    const triggers = Array.from(document.querySelectorAll('.w-g-trigger'));
+    if (!overlay || triggers.length === 0) return;
+
+    const imgEl = overlay.querySelector('.lb-img') as HTMLImageElement;
+    const capEl = overlay.querySelector('.lb-cap') as HTMLElement;
+    const btnClose = overlay.querySelector('.lb-close') as HTMLButtonElement;
+    const btnPrev = overlay.querySelector('.lb-prev') as HTMLButtonElement;
+    const btnNext = overlay.querySelector('.lb-next') as HTMLButtonElement;
+
+    // Build the item list from the DOM (single source of truth, gallery order).
+    triggers.sort((a, b) =>
+      Number((a as HTMLElement).dataset.lbIndex) - Number((b as HTMLElement).dataset.lbIndex));
+    const items = triggers.map((t) => {
+      const im = t.querySelector('img') as HTMLImageElement;
+      return { src: im.getAttribute('src') || '', alt: im.getAttribute('alt') || '',
+        cap: (t as HTMLElement).dataset.lbCaption || '' };
+    });
+    const N = items.length;
+    const single = N < 2;
+    if (single) { btnPrev.hidden = true; btnNext.hidden = true; }
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let current = 0;
+    let lastFocused: HTMLElement | null = null;
+
+    const preload = (i: number) => {
+      const it = items[((i % N) + N) % N];
+      if (it) { const im = new Image(); im.src = it.src; }
+    };
+    const apply = (i: number) => {
+      current = ((i % N) + N) % N;
+      const it = items[current];
+      imgEl.src = it.src;
+      imgEl.alt = it.alt;
+      capEl.textContent = it.cap;
+      if (!single) { preload(current + 1); preload(current - 1); }
+    };
+
+    const navigate = (dir: number) => {
+      if (single) return;
+      if (reduced) { apply(current + dir); return; }
+      const out = dir > 0 ? 'lb-out-next' : 'lb-out-prev';
+      const enter = dir > 0 ? 'lb-enter-next' : 'lb-enter-prev';
+      imgEl.classList.add(out);
+      window.setTimeout(() => {
+        apply(current + dir);
+        imgEl.classList.remove(out);
+        imgEl.classList.add('lb-noanim', enter);
+        void imgEl.offsetWidth;                       // commit entry position
+        imgEl.classList.remove('lb-noanim', enter);   // animate to rest
+      }, 280);
+    };
+
+    // DOM/tab order is [close, prev, next] — query so first/last match it.
+    const focusables = () =>
+      Array.from(overlay.querySelectorAll('button')).filter((b) => !(b as HTMLButtonElement).hidden) as HTMLButtonElement[];
+    const onKeydown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); close(); return; }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(-1); return; }
+      if (e.key === 'ArrowRight') { e.preventDefault(); navigate(1); return; }
+      if (e.key === 'Tab') {
+        const f = focusables();
+        if (f.length === 0) { e.preventDefault(); return; }
+        const first = f[0], last = f[f.length - 1];
+        const active = document.activeElement;
+        if (e.shiftKey && (active === first || !overlay.contains(active))) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && (active === last || !overlay.contains(active))) { e.preventDefault(); first.focus(); }
+      }
+    };
+
+    const open = (index: number, trigger: HTMLElement) => {
+      lastFocused = trigger || (document.activeElement as HTMLElement);
+      apply(index);
+      overlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      void overlay.offsetWidth;            // commit hidden→shown before fading in
+      overlay.classList.add('is-open');
+      document.addEventListener('keydown', onKeydown, true);
+      btnClose.focus();
+    };
+    const close = () => {
+      overlay.classList.remove('is-open');
+      document.removeEventListener('keydown', onKeydown, true);
+      document.body.style.overflow = '';
+      const finish = () => { overlay.hidden = true; };
+      if (reduced) finish(); else window.setTimeout(finish, 200);
+      if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
+    };
+
+    triggers.forEach((t, i) => {
+      t.addEventListener('click', (e) => { e.preventDefault(); open(i, t as HTMLElement); });
+    });
+    btnClose.addEventListener('click', close);
+    btnPrev.addEventListener('click', () => navigate(-1));
+    btnNext.addEventListener('click', () => navigate(1));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+    // Touch swipe (horizontal)
+    let tx = 0, ty = 0, touching = false;
+    overlay.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 1) return;
+      touching = true; tx = e.touches[0].clientX; ty = e.touches[0].clientY;
+    }, { passive: true });
+    overlay.addEventListener('touchend', (e) => {
+      if (!touching) return; touching = false;
+      const dx = e.changedTouches[0].clientX - tx;
+      const dy = e.changedTouches[0].clientY - ty;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) navigate(dx < 0 ? 1 : -1);
+    }, { passive: true });
+  })();
 </script>
