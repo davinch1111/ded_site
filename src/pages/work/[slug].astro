@@ -742,11 +742,17 @@ const jsonLd = {
   }
   .w-project-logo {
     align-self: flex-start;
-    /* Larger client logo — was 44px, too small for the hero. Scales with
-       the viewport; width follows the logo's aspect (Base's global
-       img{max-width:100%} prevents overflow on wide wordmarks). */
-    height: clamp(60px, 6vw, 92px);
+    /* Normalize every project logo into one consistent box. Logos vary
+       wildly in aspect (FLF ~7.6:1 wide lockup vs Innotech ~2.3:1 stacked
+       badge); sizing by height alone let the wide marks stretch across the
+       hero. A fixed 56px box height + width cap + object-fit:contain keeps
+       all logos at a balanced size regardless of source proportions —
+       wide lockups are width-capped and letterboxed, squarer marks fill. */
+    height: 56px;
     width: auto;
+    max-width: 220px;
+    object-fit: contain;
+    object-position: left center;
     margin-bottom: 4px;
     opacity: 0.95;
     filter: drop-shadow(0 2px 12px rgba(0,0,0,0.4));
@@ -761,10 +767,13 @@ const jsonLd = {
   }
   .w-hero-h1 {
     font-family: 'Montserrat', sans-serif;
-    font-size: clamp(2.4rem, 4.8vw + 0.4rem, 5.6rem);
+    /* Smaller than before (was 4.8vw+0.4rem, max 5.6rem) — lower fluid and
+       max terms so the title reads noticeably smaller and wraps more
+       gracefully while still dominating the hero. */
+    font-size: clamp(2.1rem, 3.6vw + 0.3rem, 4.3rem);
     font-weight: 300;
     letter-spacing: -0.025em;
-    line-height: 1.02;
+    line-height: 1.04;
     color: var(--w-text);
     text-wrap: balance;
     max-width: 18ch;
