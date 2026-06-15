@@ -9,7 +9,7 @@ interface Project {
   slug: string;
   title: string;
   disciplines: string;
-  featuredImage: string | null;
+  image: string | null;   // ACF master_image, falling back to the featured image
 }
 
 // Tiles without imagery get a brand-tone gradient via .card-tone-{i % 6}
@@ -17,45 +17,64 @@ interface Project {
 // per project. Classes instead of inline style="" keep the CSP free of
 // style-src 'unsafe-inline'.
 const FALLBACK_PROJECTS: Project[] = [
-  { id: 1, slug: 'innotech-windows-and-doors', title: 'Innotech Windows & Doors', disciplines: 'Print · Video · Wraps · Since 2008', featuredImage: null },
-  { id: 2, slug: 'chanvre-hemp',               title: 'Chanvre Hemp',             disciplines: 'Brand · Packaging · Video',          featuredImage: null },
-  { id: 3, slug: 'first-light-fishing',        title: 'First Light Fishing',      disciplines: 'Brand · Web · Photography',          featuredImage: null },
-  { id: 4, slug: 'rackon',                     title: 'RackOn',                   disciplines: 'Video · Brand · Mascot',             featuredImage: null },
-  { id: 5, slug: 'wayne-northey',              title: 'Wayne Northey',            disciplines: 'Web · Identity',                     featuredImage: null },
-  { id: 6, slug: 'vindauga-windows',           title: 'Vindauga Windows',         disciplines: 'Web · Brand',                        featuredImage: null },
+  { id: 1, slug: 'innotech-windows-and-doors', title: 'Innotech Windows & Doors', disciplines: 'Print · Video · Wraps · Since 2008', image: null },
+  { id: 2, slug: 'chanvre-hemp',               title: 'Chanvre Hemp',             disciplines: 'Brand · Packaging · Video',          image: null },
+  { id: 3, slug: 'first-light-fishing',        title: 'First Light Fishing',      disciplines: 'Brand · Web · Photography',          image: null },
+  { id: 4, slug: 'rackon',                     title: 'RackOn',                   disciplines: 'Video · Brand · Mascot',             image: null },
+  { id: 5, slug: 'wayne-northey',              title: 'Wayne Northey',            disciplines: 'Web · Identity',                     image: null },
+  { id: 6, slug: 'vindauga-windows',           title: 'Vindauga Windows',         disciplines: 'Web · Brand',                        image: null },
 ];
 
 let projects: Project[] = FALLBACK_PROJECTS;
 
+const WP_API = 'https://davidedigerdesign.in/wp-json/wp/v2';
+const isAttachmentId = (v: any): v is number =>
+  typeof v === 'number' && Number.isFinite(v) && v > 0;
+
 try {
+  // orderby=menu_order: the drag-and-drop order set in WP (ASE Content Order).
   const res = await fetch(
-    'https://davidedigerdesign.in/wp-json/wp/v2/ded_project?per_page=24&_embed',
+    `${WP_API}/ded_project?per_page=24&orderby=menu_order&order=asc&_embed`,
     { signal: AbortSignal.timeout(8000) }
   );
   if (res.ok) {
     const data = await res.json() as any[];
-    // Manual sort: ACF display_order ascending (1 shows first). Projects
-    // without a number keep WP's default order (newest first) after all
-    // numbered ones — Array.sort is stable, so ties preserve fetch order.
-    const orderOf = (p: any) => {
-      const v = Number(p?.acf?.display_order);
-      return Number.isFinite(v) && v > 0 ? v : Number.POSITIVE_INFINITY;
-    };
-    data.sort((a, b) => orderOf(a) - orderOf(b));
+
+    // Resolve ACF master_image → URL. It's either an image object
+    // (return_format=array) or a bare attachment ID (legacy); batch-resolve
+    // the IDs via the media endpoint, mirroring work/[slug].astro.
+    const masterIds = new Set<number>();
+    for (const p of data) if (isAttachmentId(p?.acf?.master_image)) masterIds.add(p.acf.master_image);
+    const mediaUrl = new Map<number, string>();
+    if (masterIds.size > 0) {
+      try {
+        const r = await fetch(
+          `${WP_API}/media?include=${Array.from(masterIds).join(',')}&per_page=100&_fields=id,source_url`,
+          { signal: AbortSignal.timeout(8000) }
+        );
+        if (r.ok) for (const m of await r.json() as any[]) mediaUrl.set(m.id, m.source_url);
+      } catch { /* leave unresolved → featured-image fallback below */ }
+    }
+
     const mapped: Project[] = data.map((p: any) => {
       const termGroups: any[][] = p._embedded?.['wp:term'] ?? [];
       const disciplines = termGroups.flat()
         .filter((t: any) => t.taxonomy === 'discipline')
         .map((t: any) => t.name as string)
         .join(' · ');
-      const featuredImage: string | null =
+      const mi = p?.acf?.master_image;
+      const masterUrl: string | null =
+        (mi && typeof mi === 'object' && mi.url) ? mi.url
+        : isAttachmentId(mi) ? (mediaUrl.get(mi) ?? null)
+        : null;
+      const featuredUrl: string | null =
         (p._embedded?.['wp:featuredmedia'] ?? [])[0]?.source_url ?? null;
       return {
         id: p.id as number,
         slug: (p.slug ?? '') as string,
         title: (p.title?.rendered ?? 'Untitled') as string,
         disciplines: disciplines || 'Design · 2026',
-        featuredImage,
+        image: masterUrl ?? featuredUrl,   // master_image preferred, featured fallback
       };
     });
     if (mapped.length > 0) {
@@ -199,13 +218,13 @@ const jsonLd = {
                     const cleanTitle = p.title.replace(/<[^>]+>/g, '');
                     return (
                       <a
-                        class:list={['card', 'reveal', !p.featuredImage && `card-tone-${i % 6}`]}
+                        class:list={['card', 'reveal', !p.image && `card-tone-${i % 6}`]}
                         href={href}
                         data-idx={i}
                         aria-label={`View project: ${cleanTitle}`}
                       >
-                        {p.featuredImage && (
-                          <img src={p.featuredImage} alt={cleanTitle} loading={i < 2 ? 'eager' : 'lazy'} />
+                        {p.image && (
+                          <img src={p.image} alt={cleanTitle} loading={i < 2 ? 'eager' : 'lazy'} />
                         )}
                         <div class="card-top-scrim"></div>
                         <div class="card-title" set:html={p.title} />

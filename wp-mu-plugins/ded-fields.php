@@ -38,18 +38,9 @@ function ded_register_project_fields() {
         ],
         'fields' => [
 
-            // ── Display tab ──
-            [ 'key' => 'field_ded_tab_display', 'label' => 'Display', 'name' => '', 'type' => 'tab', 'placement' => 'top' ],
-            [
-                'key'           => 'field_ded_display_order',
-                'label'         => 'Display order',
-                'name'          => 'display_order',
-                'type'          => 'number',
-                'instructions'  => 'Manual sort position in the Selected Work grid — 1 shows first. Leave empty to sort after all numbered projects (newest first).',
-                'min'           => 1,
-                'step'          => 1,
-                'placeholder'   => 'e.g. 1',
-            ],
+            // Project order is now set by drag-and-drop (ASE Content Order →
+            // Projects ▸ Order), stored in menu_order. The old ACF
+            // display_order number field was removed.
 
             // ── Hero tab ──
             [ 'key' => 'field_ded_tab_hero', 'label' => 'Hero', 'name' => '', 'type' => 'tab', 'placement' => 'top' ],
