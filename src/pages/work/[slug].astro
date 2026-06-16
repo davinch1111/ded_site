@@ -792,7 +792,8 @@ const jsonLd = {
     max-width: min(400px, 100%);
     object-fit: contain;
     object-position: left center;
-    margin-bottom: 4px;
+    /* Nudged 14px left of the shared content edge, per the mockup. */
+    margin: 0 0 4px -14px;
     opacity: 0.95;
     filter: drop-shadow(0 2px 12px rgba(0,0,0,0.4));
   }
@@ -819,16 +820,15 @@ const jsonLd = {
   }
   .w-hero .w-pills { margin-top: 12px; }
 
-  /* Scroll-cue foot: a full-width hairline divider with the (now in-flow)
-     scroll cue centred beneath it at the bottom of the hero. The cue lives
-     in src/components/ScrollCue.astro and is absolute by default — reset it
-     to static here so it sits in the foot. */
+  /* Scroll-cue foot: the (now in-flow) scroll cue centred at the bottom of
+     the hero, sitting close under the facts row. The cue lives in
+     src/components/ScrollCue.astro and is absolute by default — reset it to
+     static here so it sits in the foot. No divider line. */
   .w-hero-foot {
     width: 100%;
     max-width: 1320px;
-    margin: clamp(24px, 3.5vh, 44px) auto 0;
-    padding: clamp(16px, 2.2vh, 26px) clamp(24px, 5vw, 100px) 0;
-    border-top: 1px solid var(--w-hairline);
+    margin: clamp(10px, 1.6vh, 18px) auto 0;
+    padding: 0 clamp(24px, 5vw, 100px);
     display: flex;
     justify-content: center;
   }
@@ -847,9 +847,8 @@ const jsonLd = {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: clamp(24px, 3vw, 48px);
-    margin-top: clamp(6px, 1.4vh, 16px);
-    border-top: 1px solid var(--w-hairline);
-    border-bottom: 1px solid var(--w-hairline);
+    margin-top: clamp(10px, 1.8vh, 20px);
+    /* No hairline borders — whitespace separates the facts from the pills. */
   }
   .w-fact {
     padding: clamp(20px, 3vh, 28px) 0;
