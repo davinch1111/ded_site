@@ -194,9 +194,9 @@ const showCta         = acf.show_cta         !== false;
 const skillsList      = project.skill;
 const showSkills      = skillsList.length > 0;
 
-// First visible content section — used as the hero scroll-cue target.
+// First content section BELOW the hero — the scroll-cue target. Facts now
+// live inside the hero, so they are not a scroll destination.
 const firstSectionHref =
-  showFacts       ? '#facts'       :
   showBrief       ? '#brief'       :
   showApproach    ? '#approach'    :
   showGallery     ? '#gallery'     :
@@ -303,8 +303,6 @@ const jsonLd = {
       )}
       <div class="w-hero-scrim"></div>
 
-      <ScrollCue href={firstSectionHref} />
-
       <div class="w-hero-inner">
         {acf.project_logo && (acf.project_logo as WPImage).url && (
           <img
@@ -329,16 +327,9 @@ const jsonLd = {
             ))}
           </ul>
         )}
-      </div>
-    </section>
 
-    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-    <!-- Quick facts -->
-    <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
-    {showFacts && (
-      <section class="w-facts reveal" id="facts" aria-label="Project facts">
-        <div class="w-wrap">
-          <dl class="w-facts-row">
+        {showFacts && (
+          <dl class="w-facts-row" id="facts" aria-label="Project facts">
             {acf.fact_client && (
               <div class="w-fact">
                 <dt>Client</dt>
@@ -364,9 +355,14 @@ const jsonLd = {
               </div>
             )}
           </dl>
-        </div>
-      </section>
-    )}
+        )}
+      </div>
+
+      <!-- Scroll cue: centered at the bottom of the hero, hairline above. -->
+      <div class="w-hero-foot">
+        <ScrollCue href={firstSectionHref} />
+      </div>
+    </section>
 
     <!-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ -->
     <!-- Brief — label left, copy right -->
@@ -733,14 +729,15 @@ const jsonLd = {
   /* ─── HERO ─────────────────────────────────────────────────────────────── */
   .w-hero {
     position: relative;
-    /* Shorter than a full viewport so the quick-facts row clears the fold
-       and sits close under the discipline pills. */
-    min-height: clamp(520px, 74svh, 760px);
+    /* Holds the full hero block (logo → facts) plus the scroll-cue foot,
+       with the photo filling the space above. */
+    min-height: clamp(580px, 84svh, 880px);
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
+    justify-content: flex-end;
     overflow: hidden;
     isolation: isolate;
-    padding: clamp(104px, 12vh, 168px) 0 clamp(32px, 4.5vh, 56px);
+    padding: clamp(104px, 12vh, 168px) 0 clamp(20px, 2.5vh, 32px);
   }
   .w-hero-bg-wrap {
     position: absolute;
@@ -757,13 +754,17 @@ const jsonLd = {
     will-change: transform;
     transform: scale(1.06);
   }
+  /* Legibility scrim: keeps the top of the photo mostly clear, then darkens
+     toward the bottom and pools at the bottom-left under the content block
+     (logo → facts) so white text clears AA on any hero image — without
+     flattening the whole photo. */
   .w-hero-scrim {
     position: absolute;
     inset: 0;
     z-index: -1;
     background:
-      linear-gradient(180deg, rgba(3,4,14,0.35) 0%, rgba(3,4,14,0.1) 22%, rgba(3,4,14,0.55) 65%, rgba(3,4,14,0.95) 100%),
-      radial-gradient(120% 60% at 50% 100%, rgba(3,4,14,0.6) 0%, transparent 70%);
+      linear-gradient(180deg, rgba(3,4,14,0.18) 0%, rgba(3,4,14,0.04) 22%, rgba(3,4,14,0.50) 56%, rgba(3,4,14,0.92) 100%),
+      radial-gradient(150% 135% at 0% 100%, rgba(3,4,14,0.80) 0%, rgba(3,4,14,0.42) 50%, rgba(3,4,14,0) 80%);
   }
   .w-hero-inner {
     position: relative;
@@ -777,15 +778,18 @@ const jsonLd = {
   }
   .w-project-logo {
     align-self: flex-start;
-    /* Normalize every project logo into one consistent box. Logos vary
-       wildly in aspect (FLF ~7.6:1 wide lockup vs Innotech ~2.3:1 stacked
-       badge); sizing by height alone let the wide marks stretch across the
-       hero. A fixed 56px box height + width cap + object-fit:contain keeps
-       all logos at a balanced size regardless of source proportions —
-       wide lockups are width-capped and letterboxed, squarer marks fill. */
-    height: 56px;
+    /* Normalize every project logo into one consistent box (mockup scale).
+       Logos vary wildly in aspect (FLF ~7.6:1 wide lockup vs Innotech
+       ~2.3:1 stacked badge); sizing by height alone let the wide marks
+       stretch across the hero. A 72px box height + 400px width cap +
+       object-fit:contain keeps all logos at a balanced scale regardless of
+       source proportions — wide lockups are width-capped and letterboxed,
+       squarer marks fill. */
+    height: 72px;
     width: auto;
-    max-width: 220px;
+    /* min(…,100%) so a wide lockup never overflows the content column on
+       narrow viewports (400px cap would otherwise exceed it at ≤~440px). */
+    max-width: min(400px, 100%);
     object-fit: contain;
     object-position: left center;
     margin-bottom: 4px;
@@ -802,33 +806,48 @@ const jsonLd = {
   }
   .w-hero-h1 {
     font-family: 'Montserrat', sans-serif;
-    /* Smaller than before (was 4.8vw+0.4rem, max 5.6rem) — lower fluid and
-       max terms so the title reads noticeably smaller and wraps more
-       gracefully while still dominating the hero. */
-    font-size: clamp(2.1rem, 3.6vw + 0.3rem, 4.3rem);
+    /* Reduced again — smaller fluid + max terms so it reads clearly smaller
+       than before and wraps gracefully, while its multi-line mass keeps it
+       the dominant element above the pills and facts. */
+    font-size: clamp(1.9rem, 3vw + 0.3rem, 3.6rem);
     font-weight: 300;
     letter-spacing: -0.025em;
-    line-height: 1.04;
+    line-height: 1.06;
     color: var(--w-text);
     text-wrap: balance;
     max-width: 18ch;
   }
   .w-hero .w-pills { margin-top: 12px; }
 
-  /* Scroll cue lives in src/components/ScrollCue.astro */
-
-  /* ─── FACTS ─────────────────────────────────────────────────────────────── */
-  .w-facts {
-    /* Tight top padding so the facts sit just under the pills, above the fold. */
-    padding: clamp(24px, 3.5vh, 40px) 0 clamp(32px, 5vh, 64px);
-    background: var(--w-bg);
+  /* Scroll-cue foot: a full-width hairline divider with the (now in-flow)
+     scroll cue centred beneath it at the bottom of the hero. The cue lives
+     in src/components/ScrollCue.astro and is absolute by default — reset it
+     to static here so it sits in the foot. */
+  .w-hero-foot {
+    width: 100%;
+    max-width: 1320px;
+    margin: clamp(24px, 3.5vh, 44px) auto 0;
+    padding: clamp(16px, 2.2vh, 26px) clamp(24px, 5vw, 100px) 0;
+    border-top: 1px solid var(--w-hairline);
+    display: flex;
+    justify-content: center;
   }
+  .w-hero-foot .scroll-cue {
+    position: static;
+    bottom: auto;
+    left: auto;
+    transform: none;
+  }
+
+  /* ─── FACTS (inside the hero) ───────────────────────────────────────────── */
   /* Four evenly-distributed columns across the content width, flush to the
-     same left/right edges as the hero copy, separated by consistent gaps. */
+     same left edge as the logo / eyebrow / title / pills, separated by
+     consistent gaps. Top hairline gives a little extra space above. */
   .w-facts-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: clamp(24px, 3vw, 48px);
+    margin-top: clamp(6px, 1.4vh, 16px);
     border-top: 1px solid var(--w-hairline);
     border-bottom: 1px solid var(--w-hairline);
   }
