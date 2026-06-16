@@ -729,15 +729,16 @@ const jsonLd = {
   /* ─── HERO ─────────────────────────────────────────────────────────────── */
   .w-hero {
     position: relative;
-    /* Holds the full hero block (logo → facts) plus the scroll-cue foot,
-       with the photo filling the space above. */
-    min-height: clamp(580px, 84svh, 880px);
+    /* Full viewport so the next section ("The brief") stays below the fold
+       and the photo fills generous space above the bottom-anchored content
+       block (logo → facts). Grows taller if the content needs it. */
+    min-height: 100svh;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
     overflow: hidden;
     isolation: isolate;
-    padding: clamp(104px, 12vh, 168px) 0 clamp(20px, 2.5vh, 32px);
+    padding: clamp(120px, 16vh, 220px) 0 clamp(20px, 2.5vh, 32px);
   }
   .w-hero-bg-wrap {
     position: absolute;
@@ -848,6 +849,12 @@ const jsonLd = {
     grid-template-columns: repeat(4, 1fr);
     gap: clamp(24px, 3vw, 48px);
     margin-top: clamp(10px, 1.8vh, 20px);
+    /* Grouped toward the left instead of spanning the full content width —
+       caps the row so Engagement/Role pull left (~170px at 1440). Columns
+       stay even and aligned to the shared left edge. */
+    align-self: flex-start;
+    width: 100%;
+    max-width: 820px;
     /* No hairline borders — whitespace separates the facts from the pills. */
   }
   .w-fact {
