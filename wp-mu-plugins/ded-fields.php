@@ -62,6 +62,13 @@ function ded_register_project_fields() {
                 'library'       => 'all',
             ],
             [
+                'key'          => 'field_ded_hover_video',
+                'label'        => 'Hover video',
+                'name'         => 'hover_video',
+                'type'         => 'url',
+                'instructions' => 'R2-hosted MP4 that plays on hover over this project\'s homepage card. The master image above is the poster shown at rest. Leave empty for a static image card.',
+            ],
+            [
                 'key'           => 'field_ded_project_logo',
                 'label'         => 'Project logo',
                 'name'          => 'project_logo',
