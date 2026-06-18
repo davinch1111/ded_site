@@ -180,6 +180,21 @@ const jsonLd = {
 
   <!-- ══════════════ HERO ══════════════ -->
   <section class="hp-hero">
+    <!-- Background video (additive). The dark .hp-hero base + headline render
+         on their own; the video fades in over the base only once it is actually
+         playing. No src in markup — hls.js (or Safari native HLS) supplies it,
+         and only when motion is allowed and the viewport is wide enough. -->
+    <video
+      class="hero-video"
+      muted
+      loop
+      playsinline
+      autoplay
+      preload="auto"
+      aria-hidden="true"
+      data-hls-src="https://customer-svfce6is3mlvvekf.cloudflarestream.com/bde8b56a0110fbecaeba46a28d485527/manifest/video.m3u8"
+    ></video>
+    <div class="hero-video-scrim" aria-hidden="true"></div>
     <div class="hero-showreel">
       <i class="fa-solid fa-play"></i>Showreel
     </div>
@@ -401,6 +416,50 @@ body.dark-zone-active {
   background: var(--black);
   position: relative;
   overflow: hidden;
+}
+
+/* ── Hero background video (additive layer) ──
+   Sits above the dark base (var(--black)) but below the scrim + all hero
+   content. Starts invisible and fades in only once it is actually playing,
+   so a failed/blocked video leaves the dark hero untouched (fail-safe). */
+.hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1200ms cubic-bezier(.4, 0, .2, 1);
+  pointer-events: none;
+}
+.hp-hero.video-playing .hero-video { opacity: 1; }
+
+/* Legibility scrim over the video — darkest at the bottom-left where the
+   eyebrow / headline / subhead sit. Matches the dark hero base tone. */
+.hero-video-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(to top, rgba(3,4,14,0.88) 0%, rgba(3,4,14,0.30) 48%, rgba(3,4,14,0.55) 100%),
+    linear-gradient(to right, rgba(3,4,14,0.55) 0%, rgba(3,4,14,0.10) 55%, transparent 100%);
+}
+
+/* Keep all hero content above the video + scrim. */
+.hp-hero .scroll-cue { z-index: 2; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* No autoplay under reduced motion — the JS never starts it; also make sure
+     the layer can never appear even if a stray .video-playing class lands. */
+  .hero-video { opacity: 0 !important; }
+}
+
+/* ≤480px: skip the video entirely (data saving) — show the dark hero. */
+@media (max-width: 480px) {
+  .hero-video,
+  .hero-video-scrim { display: none; }
 }
 
 .hero-showreel {
@@ -1168,6 +1227,45 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
 </style>
 
 <script>
+  import Hls from 'hls.js';
+
+  // ── Hero background video (Cloudflare Stream / HLS) ──
+  //   Additive: the dark hero + headline already render; this only fades a
+  //   muted, looping video in behind the scrim once it is genuinely playing.
+  //   GUARDS: never under prefers-reduced-motion, and skipped on ≤480px to
+  //   save data — both leave the static dark hero. Safari uses native HLS
+  //   (skip hls.js); Chromium/Firefox use bundled hls.js (script-src 'self').
+  //   We kick off loading immediately so it is already running by the time the
+  //   intro overlay wipes away and the hero is revealed.
+  {
+    const video = document.querySelector('.hero-video') as HTMLVideoElement | null;
+    const hero  = document.querySelector('.hp-hero') as HTMLElement | null;
+    const src   = video?.dataset.hlsSrc;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const tooSmall     = window.matchMedia('(max-width: 480px)').matches;
+
+    if (video && hero && src && !reduceMotion && !tooSmall) {
+      const onPlaying = () => hero.classList.add('video-playing');
+      video.addEventListener('playing', onPlaying, { once: true });
+      const tryPlay = () => { video.play().catch(() => {}); };
+
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari / iOS — native HLS, no hls.js.
+        video.src = src;
+        video.addEventListener('loadedmetadata', tryPlay, { once: true });
+        tryPlay();
+      } else if (Hls.isSupported()) {
+        // Chromium / Firefox — hls.js via MSE. enableWorker:false avoids the
+        // blob: worker that strict CSP would block (and log as a violation).
+        const hls = new Hls({ enableWorker: false });
+        hls.loadSource(src);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, tryPlay);
+      }
+      // No HLS support → dark hero stays (fail-safe, no error surfaced).
+    }
+  }
+
   // ── Hero rise-in: triggered when the intro overlay finishes wiping.
   //    IntroSequence dispatches 'ded-intro-done' on wipe-complete or, on
   //    repeat-visit (sessionStorage already set), immediately on mount.

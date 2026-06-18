@@ -32,10 +32,13 @@ export default defineConfig({
         "base-uri 'self'",
         "object-src 'none'",
         "img-src 'self' data: https://davidedigerdesign.in https://*.r2.dev https://*.r2.cloudflarestorage.com",
-        "media-src 'self' https://davidedigerdesign.in https://*.r2.dev https://*.r2.cloudflarestorage.com",
+        // blob: — hls.js attaches via MSE, setting video.src to a blob: URL.
+        // cloudflarestream.com — Safari plays the HLS manifest natively (media-src).
+        "media-src 'self' blob: https://davidedigerdesign.in https://*.r2.dev https://*.r2.cloudflarestorage.com https://customer-svfce6is3mlvvekf.cloudflarestream.com",
         "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
         "frame-src https://www.youtube-nocookie.com https://player.vimeo.com",
-        "connect-src 'self'",
+        // cloudflarestream.com — hls.js fetches the manifest + segments via XHR.
+        "connect-src 'self' https://customer-svfce6is3mlvvekf.cloudflarestream.com",
       ],
       styleDirective: {
         resources: ["'self'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
