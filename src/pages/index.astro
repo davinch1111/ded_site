@@ -1245,24 +1245,96 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
     const tooSmall     = window.matchMedia('(max-width: 480px)').matches;
 
     if (video && hero && src && !reduceMotion && !tooSmall) {
-      const onPlaying = () => hero.classList.add('video-playing');
-      video.addEventListener('playing', onPlaying, { once: true });
+      const HAVE_FUTURE_DATA = 3;   // readyState: current frame + at least the next
+      const HAVE_ENOUGH_DATA = 4;   // readyState: can likely play to the end
+      const REVEAL_BUFFER = 2;      // seconds buffered ahead before fading the video in
+      let revealed = false;
+
+      // Seconds of media buffered ahead of the current playhead.
+      const bufferedAhead = () => {
+        const b = video.buffered;
+        for (let i = 0; i < b.length; i++) {
+          if (video.currentTime >= b.start(i) && video.currentTime <= b.end(i)) {
+            return b.end(i) - video.currentTime;
+          }
+        }
+        return 0;
+      };
+
+      // Crossfade the (already-sharp, level-locked) video in over the dark hero
+      // poster. Gated so it never reveals during the pixelated buffering ramp —
+      // CSS owns the 1200ms opacity crossfade, so this only flips the class.
+      const reveal = () => {
+        if (revealed) return;
+        revealed = true;
+        hero.classList.add('video-playing');
+      };
+      const maybeReveal = () => {
+        if (!revealed
+            && video.readyState >= HAVE_FUTURE_DATA
+            && bufferedAhead() >= REVEAL_BUFFER) {
+          reveal();
+        }
+      };
+      video.addEventListener('progress', maybeReveal);
+      video.addEventListener('timeupdate', maybeReveal);
+      video.addEventListener('canplaythrough', maybeReveal);
+      // Fallback: if it is genuinely playing with a full readyState but the
+      // buffered-ahead math never trips (MSE edge cases), reveal anyway so the
+      // hero is never stuck on the static poster while video plays beneath it.
+      video.addEventListener('playing', () => {
+        if (video.readyState >= HAVE_ENOUGH_DATA) reveal();
+      });
+
+      // Seamless loop. Native `loop` can stall under MSE, so also handle 'ended'
+      // explicitly: seek back to the first frame and replay. Both set for safety.
+      video.loop = true;
+      video.addEventListener('ended', () => {
+        video.currentTime = 0;
+        video.play().catch(() => {});
+      });
+
       const tryPlay = () => { video.play().catch(() => {}); };
 
-      if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        // Safari / iOS — native HLS, no hls.js.
+      // Prefer hls.js wherever MSE is available (Chromium / Firefox), so we can
+      // lock the rendition. Fall back to native HLS only when hls.js can't run
+      // — i.e. real Safari/iOS, where Hls.isSupported() is false. (Chromium's
+      // canPlayType for HLS can return a misleading "maybe", so it must NOT be
+      // the primary branch.)
+      if (Hls.isSupported()) {
+        // enableWorker:false avoids the blob: worker that strict CSP would block.
+        // backBufferLength:Infinity keeps the start segment resident so the loop
+        // can wrap to 0 with no re-fetch stall / black frame.
+        const hls = new Hls({ enableWorker: false, startLevel: -1, backBufferLength: Infinity });
+        hls.loadSource(src);
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MANIFEST_PARSED, (_evt, data) => {
+          // Lock to a single ~720p rendition so ABR never ramps up from the
+          // tiny bottom level (the pixelated start). Pick 720p exactly, else
+          // the closest at-or-below, else the highest — never the tiny one.
+          const levels = data.levels || [];
+          let idx = levels.findIndex((l) => l.height === 720);
+          if (idx < 0) {
+            let best = -1;
+            levels.forEach((l, i) => {
+              const h = l.height || 0;
+              if (h <= 720 && h > best) { best = h; idx = i; }
+            });
+          }
+          if (idx < 0) idx = levels.length - 1;
+          hls.startLevel = idx;        // initial load level
+          hls.autoLevelCapping = idx;  // never climb above ~720p
+          hls.currentLevel = idx;      // force it now → no climb from the bottom
+          tryPlay();
+        });
+      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        // Safari / iOS — native HLS, no hls.js. Safari picks a sane rendition
+        // itself; the buffer-gate above still defers the reveal until clean.
         video.src = src;
         video.addEventListener('loadedmetadata', tryPlay, { once: true });
         tryPlay();
-      } else if (Hls.isSupported()) {
-        // Chromium / Firefox — hls.js via MSE. enableWorker:false avoids the
-        // blob: worker that strict CSP would block (and log as a violation).
-        const hls = new Hls({ enableWorker: false });
-        hls.loadSource(src);
-        hls.attachMedia(video);
-        hls.on(Hls.Events.MANIFEST_PARSED, tryPlay);
       }
-      // No HLS support → dark hero stays (fail-safe, no error surfaced).
+      // Neither path → dark hero stays (fail-safe, no error surfaced).
     }
   }
 
