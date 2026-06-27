@@ -36,7 +36,8 @@ export default defineConfig({
         // cloudflarestream.com — Safari plays the HLS manifest natively (media-src).
         "media-src 'self' blob: https://davidedigerdesign.in https://*.r2.dev https://*.r2.cloudflarestorage.com https://customer-svfce6is3mlvvekf.cloudflarestream.com",
         "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com",
-        "frame-src https://www.youtube-nocookie.com https://player.vimeo.com",
+        // cloudflarestream.com — the showreel modal embeds the Stream iframe player.
+        "frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://customer-svfce6is3mlvvekf.cloudflarestream.com",
         // cloudflarestream.com — hls.js fetches the manifest + segments via XHR.
         "connect-src 'self' https://customer-svfce6is3mlvvekf.cloudflarestream.com",
       ],
