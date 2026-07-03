@@ -368,5 +368,12 @@ const {
       }
     }
   </script>
+
+  <!-- Cloudflare Web Analytics — privacy-first, cookieless visitor tracking.
+       External third-party beacon (not a bundled island): loaded from
+       static.cloudflareinsights.com (in script-src) and it POSTs RUM data to
+       cloudflareinsights.com/cdn-cgi/rum (in connect-src). The data-cf-beacon
+       attribute makes Astro emit this tag verbatim (no inline hash needed). -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "e5110b0e5f2d418fa7d2a45c024096a5"}'></script>
 </body>
 </html>

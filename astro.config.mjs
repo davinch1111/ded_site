@@ -39,13 +39,16 @@ export default defineConfig({
         // cloudflarestream.com — the showreel modal embeds the Stream iframe player.
         "frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://customer-svfce6is3mlvvekf.cloudflarestream.com",
         // cloudflarestream.com — hls.js fetches the manifest + segments via XHR.
-        "connect-src 'self' https://customer-svfce6is3mlvvekf.cloudflarestream.com",
+        // cloudflareinsights.com — Web Analytics beacon POSTs RUM data to /cdn-cgi/rum.
+        "connect-src 'self' https://customer-svfce6is3mlvvekf.cloudflarestream.com https://cloudflareinsights.com",
       ],
       styleDirective: {
         resources: ["'self'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
       },
       scriptDirective: {
-        resources: ["'self'"],
+        // cloudflareinsights.com — the Web Analytics beacon (beacon.min.js) is
+        // an external third-party script, not hashed like the bundled islands.
+        resources: ["'self'", 'https://static.cloudflareinsights.com'],
       },
     },
   },
