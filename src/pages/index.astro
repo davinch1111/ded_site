@@ -406,24 +406,38 @@ const jsonLd = {
       <p class="c-label">Start a project</p>
       <h2 class="c-heading reveal">Tell me what you're building</h2>
       <p class="c-sub">I take on a small number of new projects each year. A few quick questions and I'll know if I'm the right fit.</p>
-      <form class="c-form" action="mailto:info@davidedigerdesign.com" method="get" enctype="text/plain">
-        <div class="c-row">
-          <input class="c-inp" type="text"  name="name"  placeholder="Your name" required />
-          <input class="c-inp" type="email" name="email" placeholder="Email"      required />
-        </div>
-        <input class="c-inp c-inp--company" type="text" name="company" placeholder="Business or company" />
+      {/* Web3Forms endpoint — the access key is public-by-design (it can only
+          deliver mail TO the studio inbox). FAIL-SAFE: without JS this is a
+          plain POST that lands on Web3Forms' hosted success page; the bundled
+          script upgrades it to an on-page inline status. */}
+      <form class="c-form" action="https://api.web3forms.com/submit" method="POST">
+        <input type="hidden" name="access_key" value="9861cb49-8baf-4327-93b9-8393fe13255a" />
+        <input type="hidden" name="subject" value="New project inquiry — davidedigerdesign.com" />
+        <input type="hidden" name="from_name" value="DED website contact form" />
+        {/* Honeypot — hidden from people, tempting to bots; Web3Forms drops
+            any submission where this is checked. */}
+        <input type="checkbox" name="botcheck" class="c-hp" tabindex="-1" aria-hidden="true" />
 
-        <div class="c-flabel">What can I help with?</div>
-        <div class="c-chips">
-          {['Print','Web','Video','Photo','Audio','Not sure yet'].map((chip, i) => (
-            <span class:list={['c-chip', { on: i === 0 }]} data-chip>{chip}</span>
+        <div class="c-row">
+          <input class="c-inp" type="text"  name="name"  placeholder="Your name" aria-label="Your name" required />
+          <input class="c-inp" type="email" name="email" placeholder="Email" aria-label="Email" required />
+        </div>
+        <input class="c-inp c-inp--company" type="text" name="company" placeholder="Business or company" aria-label="Business or company" />
+
+        <div class="c-flabel" id="chips-label">What can I help with?</div>
+        <div class="c-chips" role="group" aria-labelledby="chips-label">
+          {['Print','Web','Video','Photo','Audio','Not sure yet'].map(chip => (
+            <label class="c-chip">
+              <input type="checkbox" name="Interested in" value={chip} />
+              {chip}
+            </label>
           ))}
         </div>
 
         <div class="c-row">
           <div>
-            <div class="c-flabel">Budget</div>
-            <select class="c-inp" name="budget">
+            <label class="c-flabel" for="c-budget">Budget</label>
+            <select class="c-inp" name="budget" id="c-budget">
               <option>Under $5,000</option>
               <option>$5,000 – $15,000</option>
               <option>$15,000 – $40,000</option>
@@ -432,8 +446,8 @@ const jsonLd = {
             </select>
           </div>
           <div>
-            <div class="c-flabel">Timeline</div>
-            <select class="c-inp" name="timeline">
+            <label class="c-flabel" for="c-timeline">Timeline</label>
+            <select class="c-inp" name="timeline" id="c-timeline">
               <option>As soon as possible</option>
               <option>1 – 3 months</option>
               <option>3 – 6 months</option>
@@ -448,6 +462,9 @@ const jsonLd = {
         <button class="c-submit" type="submit">
           Send it over <i class="fa-solid fa-arrow-right"></i>
         </button>
+
+        {/* Inline submit status (JS path only) — announced to screen readers */}
+        <p class="c-status" role="status" aria-live="polite" hidden></p>
       </form>
     </div>
   </section>
@@ -1440,7 +1457,10 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   margin: 4px 0 24px;
 }
 
+/* Chip = a <label> wrapping a visually-hidden real checkbox, so it is
+   keyboard-operable, screen-reader announced, and actually submitted. */
 .c-chip {
+  position: relative;
   font-family: 'Montserrat', sans-serif;
   font-size: 12px;
   font-weight: 400;
@@ -1453,11 +1473,44 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   transition: all 0.22s cubic-bezier(.25,.1,.25,1);
 }
 
-.c-chip:hover, .c-chip.on {
+.c-chip input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.c-chip:hover, .c-chip:has(input:checked) {
   background: var(--text-dark);
   border-color: var(--text-dark);
   color: var(--white);
 }
+
+.c-chip:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Honeypot — off-canvas, not display:none (bots skip hidden fields) */
+.c-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+/* Inline submit status */
+.c-status {
+  margin-top: 16px;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(15,16,20,0.65);
+}
+.c-status.ok  { color: var(--accent); }
+.c-status.err { color: #B3261E; }
 
 .c-submit {
   display: inline-flex;
@@ -1478,6 +1531,7 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
 
 .c-submit:hover  { opacity: 0.8; }
 .c-submit:active { transform: scale(0.97); }
+.c-submit:disabled { opacity: 0.5; cursor: default; }
 
 /* Footer rules now live in src/components/SiteFooter.astro */
 
@@ -1717,10 +1771,39 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   }, { passive: true });
   updateDarkZone();
 
-  // ── Chip toggles ──
-  document.querySelectorAll('[data-chip]').forEach(c => {
-    c.addEventListener('click', () => c.classList.toggle('on'));
-  });
+  // ── Contact form: AJAX submit to Web3Forms ──
+  // FAIL-SAFE: without this script the form still POSTs normally and lands
+  // on Web3Forms' hosted success page. With it we stay on-page and show an
+  // inline status. Chip state is native checkbox state — no JS needed.
+  const cform = document.querySelector('.c-form') as HTMLFormElement | null;
+  const cstatus = document.querySelector('.c-status') as HTMLElement | null;
+  if (cform && cstatus) {
+    cform.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = cform.querySelector('.c-submit') as HTMLButtonElement | null;
+      if (btn) btn.disabled = true;
+      cstatus.hidden = false;
+      cstatus.classList.remove('ok', 'err');
+      cstatus.textContent = 'Sending…';
+      try {
+        const res = await fetch(cform.action, {
+          method: 'POST',
+          body: new FormData(cform),
+          headers: { Accept: 'application/json' },
+        });
+        const data = await res.json();
+        if (!data.success) throw new Error(data.message || 'send failed');
+        cform.reset();
+        cstatus.classList.add('ok');
+        cstatus.textContent = 'Thanks — your message is on its way. I’ll be in touch soon.';
+      } catch {
+        cstatus.classList.add('err');
+        cstatus.textContent = 'Something went wrong sending that. Email me directly: info@davidedigerdesign.com';
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    });
+  }
 
   // ── Showcase paging: arrows step through sets of six projects ──
   const showcasePagesEls = Array.from(document.querySelectorAll('.work-page'));

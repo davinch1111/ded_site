@@ -40,7 +40,9 @@ export default defineConfig({
         "frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://customer-svfce6is3mlvvekf.cloudflarestream.com",
         // cloudflarestream.com — hls.js fetches the manifest + segments via XHR.
         // cloudflareinsights.com — Web Analytics beacon POSTs RUM data to /cdn-cgi/rum.
-        "connect-src 'self' https://customer-svfce6is3mlvvekf.cloudflarestream.com https://cloudflareinsights.com",
+        // api.web3forms.com — contact form AJAX submit (no-JS fallback is a
+        // plain form POST, which CSP form-action does not restrict here).
+        "connect-src 'self' https://customer-svfce6is3mlvvekf.cloudflarestream.com https://cloudflareinsights.com https://api.web3forms.com",
       ],
       styleDirective: {
         resources: ["'self'", 'https://fonts.googleapis.com', 'https://cdnjs.cloudflare.com'],
