@@ -1,0 +1,98 @@
+---
+// 404 — Astro emits dist/404.html, which Cloudflare Pages serves
+// automatically for any route that doesn't exist. Dark, on-brand,
+// two ways back in. noindex: error pages don't belong in search.
+import Base from '../layouts/Base.astro';
+import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+---
+<Base title="Page not found — David Ediger Design" description="That page doesn't exist. The work very much does.">
+  <Fragment slot="head">
+    <meta name="robots" content="noindex" />
+  </Fragment>
+
+  <div class="nf">
+    <SiteNav />
+
+    <main id="main" class="nf-main">
+      <p class="nf-code" aria-hidden="true">404</p>
+      <h1 class="nf-h1">This page refused to exist</h1>
+      <p class="nf-sub">The link is broken, or the page has moved on. The work, however, is very much here.</p>
+      <div class="nf-actions">
+        <a class="btn" href="/">Back to the studio <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+        <a class="nf-link" href="/#work">See the work</a>
+      </div>
+    </main>
+
+    <SiteFooter />
+  </div>
+</Base>
+
+<style is:global>
+.nf {
+  font-family: 'Montserrat', -apple-system, system-ui, sans-serif;
+  background: var(--bg-dark);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.nf-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 160px 24px 120px;
+}
+
+.nf-code {
+  font-size: clamp(5rem, 14vw, 10rem);
+  font-weight: 200;
+  line-height: 1;
+  color: rgba(245,244,240,0.12);
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+.nf-h1 {
+  margin-top: -0.6em; /* tuck the headline into the ghost numerals */
+  font-size: clamp(1.6rem, 4vw, 3rem);
+  font-weight: 300;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.nf-sub {
+  margin-top: 18px;
+  max-width: 46ch;
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+.nf-actions {
+  margin-top: 36px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.nf-link {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(245,244,240,0.65);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(245,244,240,0.25);
+  padding-bottom: 3px;
+  transition: color 200ms ease, border-color 200ms ease;
+}
+.nf-link:hover { color: var(--accent); border-color: var(--accent); }
+.nf-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+</style>
