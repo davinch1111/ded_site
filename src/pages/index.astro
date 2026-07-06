@@ -106,6 +106,20 @@ const services = [
   { name: 'Audio', desc: 'Music, soundtracks, sound design. Twenty years behind instruments, put to work on your brand.' },
 ];
 
+// About — industry experience rows (editorial, mirrors the Services rows).
+// Client names only where the portfolio actually evidences them.
+const industries = [
+  { name: 'Manufacturing & Fenestration', note: 'Print, video, wraps, and tradeshow for window and door makers. Innotech since 2008; Vindauga.', tag: 'since 2008' },
+  { name: 'Multifamily Development & Real Estate', note: 'Marketing for developments that have to sell before they’re built.' },
+  { name: 'Health Care', note: 'Clear, human communication in a field that rarely gets either.' },
+  { name: 'Legal & Accounting', note: 'Credibility on paper and on screen for professional practices.' },
+  { name: 'Cosmetics & Fashion', note: 'Image-led brand and campaign work, where the look is the product.' },
+  { name: 'Food, Beverage & CPG', note: 'Brand to shelf: identity, packaging, photography. Chanvre Hemp; Pet Goodies.' },
+  { name: 'Outdoor & Recreation', note: 'Brands built for people who’d rather be outside. First Light Fishing; RackOn.' },
+  { name: 'Construction & Trades', note: 'Straight-talking brands for people who build things. Ediger Phoenix Sundecks.' },
+  { name: 'Nonprofit & Community', note: 'Storytelling that moves people to give. El Salvador home-building.' },
+];
+
 const quotes = [
   { text: 'We have worked with David since 2008. He is dependable, professional and highly talented. He has helped us successfully brand our company.',
     name: 'Jessica Owen', role: 'Marketing Manager, Innotech' },
@@ -321,6 +335,49 @@ const jsonLd = {
             <p class="sdesc">{s.desc}</p>
           </div>
         ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════ ABOUT ══════════════ -->
+  <section class="about-section" id="about">
+    <div class="about-inner">
+      <p class="a-label">About the studio</p>
+      <h2 class="a-heading reveal">One desk. Every discipline.<br>Twenty-three years deep.</h2>
+
+      <div class="about-cols">
+        <div class="about-story reveal">
+          <p class="a-lede">David Ediger Design is the studio of David Ediger — a creative director who has spent twenty-three years making brands impossible to ignore.</p>
+          <p>Print, web, video, photo, and audio under one roof means the person who designs your identity is the same one who shoots the video and builds the site. Nothing gets lost between departments, because there aren't any.</p>
+          <p>That range was earned inside very different industries — and the proof is simple: clients who arrived in 2008 are still here.</p>
+        </div>
+        <div class="about-facts reveal">
+          <div class="a-fact">
+            <span class="a-fact-num">23</span>
+            <span class="a-fact-lab">Years in practice</span>
+          </div>
+          <div class="a-fact">
+            <span class="a-fact-num">2008</span>
+            <span class="a-fact-lab">Longest client relationship</span>
+          </div>
+          <div class="a-fact">
+            <span class="a-fact-num">5</span>
+            <span class="a-fact-lab">Disciplines, one desk</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-industries">
+        <p class="a-label a-label--sub">Industry experience</p>
+        <div class="arows">
+          {industries.map(ind => (
+            <div class="arow reveal">
+              <div class="aname">{ind.name}</div>
+              <p class="anote">{ind.note}</p>
+              {ind.tag && <span class="atag">{ind.tag}</span>}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   </section>
@@ -1071,6 +1128,147 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   line-height: 1.6;
 }
 
+/* ═══ ABOUT ═══
+   Warm-paper band (--bg-light) so it reads as its own chapter between the
+   white Services band and the dark Testimonials. Light background → class
+   is in SiteNav's light-flip observer list. */
+.about-section {
+  background: var(--bg-light, #F6F3EC);
+  padding: 120px clamp(40px,5vw,100px);
+}
+
+.about-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.a-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(15,16,20,0.4);
+  margin-bottom: 12px;
+}
+
+.a-heading {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.6rem, 3vw, 2.8rem);
+  font-weight: 300;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  margin-bottom: 48px;
+}
+
+/* Story + facts. The facts column doubles as the future portrait slot —
+   when a photo lands, it swaps in above the numbers. */
+.about-cols {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: clamp(40px, 6vw, 96px);
+  align-items: start;
+  margin-bottom: 88px;
+}
+
+.about-story p {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 15px;
+  font-weight: 300;
+  color: rgba(15,16,20,0.65);
+  line-height: 1.75;
+  margin-bottom: 20px;
+  max-width: 62ch;
+}
+.about-story p:last-child { margin-bottom: 0; }
+
+.about-story .a-lede {
+  font-size: clamp(1.05rem, 1.4vw, 1.3rem);
+  font-weight: 300;
+  color: var(--text-dark);
+  line-height: 1.55;
+}
+
+.about-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  border-left: 1px solid rgba(15,16,20,0.12);
+  padding-left: clamp(24px, 3vw, 48px);
+}
+
+.a-fact { display: flex; flex-direction: column; }
+
+.a-fact-num {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(2.4rem, 4vw, 3.6rem);
+  font-weight: 200;
+  color: var(--text-dark);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.a-fact-lab {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(15,16,20,0.45);
+  margin-top: 8px;
+}
+
+/* Industry experience — editorial rows, same DNA as the Services rows
+   but denser (nine rows, smaller type). */
+.a-label--sub { margin-bottom: 8px; }
+
+.arows { border-top: 1px solid rgba(15,16,20,0.12); }
+
+.arow {
+  display: grid;
+  grid-template-columns: minmax(220px, 34%) 1fr auto;
+  gap: 24px;
+  align-items: center;
+  padding: 22px 0;
+  border-bottom: 1px solid rgba(15,16,20,0.12);
+  transition: background 250ms cubic-bezier(.25,.1,.25,1);
+}
+
+.arow:hover { background: rgba(15,16,20,0.04); }
+
+.aname {
+  font-family: 'Montserrat', sans-serif;
+  font-size: clamp(1.05rem, 1.6vw, 1.45rem);
+  font-weight: 300;
+  color: var(--text-dark);
+  letter-spacing: -0.01em;
+  transition: color 250ms cubic-bezier(.25,.1,.25,1);
+}
+
+.arow:hover .aname { color: var(--accent); }
+
+.anote {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  color: rgba(15,16,20,0.55);
+  line-height: 1.6;
+}
+
+.atag {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid rgba(52,87,198,0.35);
+  border-radius: 100px;
+  padding: 4px 12px;
+  white-space: nowrap;
+}
+
 /* ═══ TESTIMONIALS ═══ */
 .quotes-section {
   background: #0F1014;
@@ -1314,6 +1512,22 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   .srow   { grid-template-columns: 1fr; gap: 8px; }
   .qgrid  { grid-template-columns: 1fr; }
   .c-row  { grid-template-columns: 1fr; }
+
+  /* About: story stacks over the facts; facts go horizontal under a top
+     rule; industry rows collapse to name / note / tag stacked. */
+  .about-section { padding-top: 88px; padding-bottom: 88px; }
+  .about-cols    { grid-template-columns: 1fr; margin-bottom: 64px; }
+  .about-facts {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 32px;
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid rgba(15,16,20,0.12);
+    padding-top: 28px;
+  }
+  .arow  { grid-template-columns: 1fr; gap: 8px; padding: 18px 0; }
+  .atag  { justify-self: start; }
 }
 
 /* Hero emblem: shrink + move to top-right on tablets, hide on small phones */

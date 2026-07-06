@@ -3,6 +3,13 @@
 // Used on src/pages/index.astro and src/pages/work/[slug].astro.
 // Stays transparent over dark sections, flips to a light/blurred state
 // over any element matching its observed selector list.
+//
+// Mobile (≤768px): the inline menu collapses behind a hamburger that opens a
+// full-screen overlay. FAIL-SAFE: the collapse is gated on `html.js-nav`,
+// set only when the bundled script runs. Without JS the inline links stay
+// visible at every width (the logotype hides ≤768px to make room), the
+// burger stays hidden, and the overlay stays inert — navigation never
+// depends on the script.
 ---
 <nav class="hp-nav" id="hp-nav" aria-label="Primary">
   <a href="/" class="nav-brand">
@@ -14,9 +21,28 @@
   <div class="hp-menu">
     <a href="/#work">Work</a>
     <a href="/#services">Services</a>
+    <a href="/#about">About</a>
     <a href="/#contact">Contact</a>
   </div>
+  <button class="nav-burger" id="nav-burger" type="button"
+          aria-expanded="false" aria-controls="nav-overlay" aria-label="Open menu">
+    <span class="nav-burger-line"></span>
+    <span class="nav-burger-line"></span>
+    <span class="nav-burger-line"></span>
+  </button>
 </nav>
+
+<!-- Full-screen mobile menu. Closed state is pure CSS (opacity/visibility),
+     so with no JS it is invisible AND out of the tab order. -->
+<div class="nav-overlay" id="nav-overlay" aria-hidden="true">
+  <div class="nav-overlay-links">
+    <a href="/#work">Work</a>
+    <a href="/#services">Services</a>
+    <a href="/#about">About</a>
+    <a href="/#contact">Contact</a>
+  </div>
+  <a class="nav-overlay-mail" href="mailto:info@davidedigerdesign.com">info@davidedigerdesign.com</a>
+</div>
 
 <style is:global>
   .hp-nav {
@@ -39,6 +65,16 @@
     -webkit-backdrop-filter: blur(12px);
   }
 
+  /* While the overlay is open the bar sits on the dark overlay — suppress
+     the light flip so the brand + burger stay legible. */
+  .hp-nav.menu-open,
+  .hp-nav.menu-open.nav--light {
+    background: transparent;
+    border-bottom-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
   .nav-brand {
     display: flex;
     align-items: center;
@@ -55,6 +91,10 @@
   /* Light nav: swap to coloured/black variants */
   .hp-nav.nav--light .nav-mark-dark-bg  { display: none; }
   .hp-nav.nav--light .nav-mark-light-bg { display: block; }
+
+  /* Menu open: force the white-on-dark marks even if nav--light is set */
+  .hp-nav.menu-open.nav--light .nav-mark-dark-bg  { display: block; }
+  .hp-nav.menu-open.nav--light .nav-mark-light-bg { display: none; }
 
   .hp-menu {
     display: flex;
@@ -75,26 +115,148 @@
 
   .hp-nav.nav--light .hp-menu a { color: rgba(15,16,20,0.65); }
 
-  .hp-nav a:focus-visible {
+  .hp-nav a:focus-visible,
+  .hp-nav button:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 4px;
     border-radius: 2px;
   }
 
+  /* ── Hamburger ─────────────────────────────────────────────────────
+     Hidden everywhere by default; shown ≤768px only under html.js-nav. */
+  .nav-burger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 44px;
+    height: 44px;
+    padding: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+  .nav-burger-line {
+    display: block;
+    width: 22px;
+    height: 1.5px;
+    background: #F5F4F0;
+    transition: transform 300ms cubic-bezier(.25,.1,.25,1),
+                opacity 200ms ease;
+  }
+  .hp-nav.nav--light .nav-burger-line { background: #0F1014; }
+  .hp-nav.menu-open  .nav-burger-line { background: #F5F4F0; }
+
+  /* Burger → X */
+  .nav-burger[aria-expanded="true"] .nav-burger-line:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+  .nav-burger[aria-expanded="true"] .nav-burger-line:nth-child(2) { opacity: 0; }
+  .nav-burger[aria-expanded="true"] .nav-burger-line:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+  /* ── Overlay ──────────────────────────────────────────────────────
+     Sits under the fixed bar (z 99 < 100) so brand + burger stay on top.
+     Closed by default via opacity/visibility — invisible and untabbable
+     with or without JS. */
+  .nav-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    background: #03040E;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(32px, 8vh, 64px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 320ms cubic-bezier(.25,.1,.25,1),
+                visibility 0s linear 320ms;
+  }
+  .nav-overlay.open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 320ms cubic-bezier(.25,.1,.25,1);
+  }
+
+  .nav-overlay-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(20px, 4vh, 32px);
+  }
+  .nav-overlay-links a {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(26px, 7vw, 36px);
+    font-weight: 200;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #F5F4F0;
+    text-decoration: none;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 380ms cubic-bezier(.25,.1,.25,1),
+                transform 380ms cubic-bezier(.25,.1,.25,1),
+                color 200ms ease;
+  }
+  .nav-overlay-links a:hover,
+  .nav-overlay-links a:focus-visible { color: var(--accent, #3457C6); }
+  .nav-overlay-links a:focus-visible {
+    outline: 2px solid var(--accent, #3457C6);
+    outline-offset: 6px;
+  }
+  .nav-overlay.open .nav-overlay-links a {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  /* Stagger the links in */
+  .nav-overlay.open .nav-overlay-links a:nth-child(1) { transition-delay: 60ms; }
+  .nav-overlay.open .nav-overlay-links a:nth-child(2) { transition-delay: 120ms; }
+  .nav-overlay.open .nav-overlay-links a:nth-child(3) { transition-delay: 180ms; }
+  .nav-overlay.open .nav-overlay-links a:nth-child(4) { transition-delay: 240ms; }
+
+  .nav-overlay-mail {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    color: rgba(245,244,240,0.5);
+    text-decoration: none;
+    opacity: 0;
+    transition: opacity 380ms ease 320ms, color 200ms ease;
+  }
+  .nav-overlay.open .nav-overlay-mail { opacity: 1; }
+  .nav-overlay-mail:hover,
+  .nav-overlay-mail:focus-visible { color: #F5F4F0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-overlay,
+    .nav-overlay-links a,
+    .nav-overlay-mail,
+    .nav-burger-line { transition-duration: 1ms !important; transition-delay: 0ms !important; }
+  }
+
   @media (max-width: 768px) {
     .hp-nav { padding: 18px 20px; }
-    .hp-menu { display: none; }
+
+    /* JS present: collapse the inline menu behind the burger. */
+    html.js-nav .hp-menu    { display: none; }
+    html.js-nav .nav-burger { display: flex; }
+
+    /* No JS: keep the inline links reachable — tighten them and drop the
+       logotype (emblem stays) so everything fits a small viewport. */
+    html:not(.js-nav) .hp-menu { gap: 16px; }
+    html:not(.js-nav) .nav-logotype { display: none; }
   }
 </style>
 
 <script>
+  // ── Light-section observer ────────────────────────────────────────
   // Flip nav to light over light-background sections. Observer is shared
   // across pages: the selector list covers homepage sections AND the
   // project page CTA. Stale targets that aren't on a given page are ignored
   // by the observer (querySelectorAll returns 0 matches).
   const hpNav = document.getElementById('hp-nav');
   const lightSections = document.querySelectorAll(
-    '.work-header, .services-section, .contact-section, .w-cta'
+    '.work-header, .services-section, .about-section, .contact-section, .w-cta'
   );
 
   if (hpNav && lightSections.length) {
@@ -107,5 +269,65 @@
       });
     }, { rootMargin: '-60px 0px -80% 0px', threshold: 0 });
     lightSections.forEach(s => navObs.observe(s));
+  }
+
+  // ── Mobile overlay menu ───────────────────────────────────────────
+  // html.js-nav is added ONLY here, which is what collapses the inline
+  // menu behind the burger (≤768px). If this script never runs, the
+  // inline links remain visible — fail-safe navigation.
+  const burger  = document.getElementById('nav-burger');
+  const overlay = document.getElementById('nav-overlay');
+
+  if (hpNav && burger && overlay) {
+    document.documentElement.classList.add('js-nav');
+
+    let open = false;
+    let prevOverflow = '';
+
+    const setOpen = (next: boolean) => {
+      open = next;
+      burger.setAttribute('aria-expanded', String(next));
+      burger.setAttribute('aria-label', next ? 'Close menu' : 'Open menu');
+      overlay.setAttribute('aria-hidden', String(!next));
+      overlay.classList.toggle('open', next);
+      hpNav.classList.toggle('menu-open', next);
+      if (next) {
+        prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = prevOverflow;
+      }
+    };
+
+    burger.addEventListener('click', () => setOpen(!open));
+
+    // Delegate: any link tap closes the menu, then the browser handles
+    // the anchor navigation normally.
+    overlay.addEventListener('click', (e) => {
+      if ((e.target as Element).closest('a')) setOpen(false);
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (!open) return;
+      if (e.key === 'Escape') {
+        setOpen(false);
+        burger.focus();
+        return;
+      }
+      // Simple focus trap: cycle between the burger and the overlay links.
+      if (e.key === 'Tab') {
+        const focusables: HTMLElement[] = [burger, ...overlay.querySelectorAll<HTMLElement>('a')];
+        const first = focusables[0];
+        const last  = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    });
+
+    // Leaving the mobile breakpoint while open: reset so the page is
+    // never left scroll-locked under an invisible overlay.
+    window.matchMedia('(min-width: 769px)').addEventListener('change', (e) => {
+      if (e.matches && open) setOpen(false);
+    });
   }
 </script>
