@@ -195,6 +195,21 @@ function ded_register_project_fields() {
                 'type'  => 'textarea',
                 'rows'  => 6,
             ],
+            [
+                'key'          => 'field_ded_outcome_stats',
+                'label'        => 'Outcome stats',
+                'name'         => 'outcome_stats',
+                'type'         => 'repeater',
+                'instructions' => 'Up to three proof points shown as big numerals under the outcome statement — e.g. value “2008”, label “Client since”. Leave empty to show the statement alone.',
+                'min'          => 0,
+                'max'          => 3,
+                'layout'       => 'table',
+                'button_label' => 'Add stat',
+                'sub_fields'   => [
+                    [ 'key' => 'field_ded_os_value', 'label' => 'Value', 'name' => 'os_value', 'type' => 'text' ],
+                    [ 'key' => 'field_ded_os_label', 'label' => 'Label', 'name' => 'os_label', 'type' => 'text' ],
+                ],
+            ],
 
             // ── Testimonial tab ──
             [ 'key' => 'field_ded_tab_testimonial', 'label' => 'Testimonial', 'name' => '', 'type' => 'tab', 'placement' => 'top' ],

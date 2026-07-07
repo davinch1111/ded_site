@@ -36,6 +36,7 @@ interface ACF {
   video_url?: string;
   show_outcome?: boolean;
   outcome_text?: string;
+  outcome_stats?: { os_value?: string; os_label?: string }[] | false;
   show_testimonial?: boolean;
   t_quote?: string;
   t_name?: string;
@@ -189,6 +190,10 @@ const galleryItems    = Array.isArray(acf.gallery_items) ? acf.gallery_items.fil
 const showGallery     = acf.show_gallery     !== false && galleryItems.length > 0;
 const showVideo       = acf.show_video       === true  && !!acf.video_url;
 const showOutcome     = acf.show_outcome     !== false && !!acf.outcome_text;
+// Case-study proof points (big numerals under the outcome statement)
+const outcomeStats    = Array.isArray(acf.outcome_stats)
+  ? acf.outcome_stats.filter(s => s && (s.os_value || s.os_label))
+  : [];
 const showTestimonial = acf.show_testimonial === true  && !!acf.t_quote;
 const showRelated     = acf.show_related     !== false;
 const showCta         = acf.show_cta         !== false;
@@ -529,6 +534,16 @@ const jsonLd = {
           <p class="w-eyebrow">The outcome</p>
           <h2 id="outcome-h" class="w-h2">How it landed</h2>
           <p class="w-outcome-statement">{acf.outcome_text}</p>
+          {outcomeStats.length > 0 && (
+            <div class="w-outcome-stats">
+              {outcomeStats.map(s => (
+                <div class="w-ostat">
+                  <span class="w-ostat-value">{s.os_value}</span>
+                  <span class="w-ostat-label">{s.os_label}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     )}
@@ -1235,6 +1250,35 @@ const jsonLd = {
     color: var(--w-text);
     max-width: 18ch;
     text-wrap: balance;
+  }
+
+  /* Case-study proof points — big numerals under the statement,
+     same DNA as the homepage About facts, on the dark ground. */
+  .w-outcome-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: clamp(32px, 5vw, 72px);
+    margin-top: clamp(36px, 5vh, 56px);
+    padding-top: clamp(28px, 4vh, 40px);
+    border-top: 1px solid var(--w-hairline);
+  }
+  .w-ostat { display: flex; flex-direction: column; }
+  .w-ostat-value {
+    font-family: 'Montserrat', sans-serif;
+    font-size: clamp(2.2rem, 4vw, 3.4rem);
+    font-weight: 200;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--w-text);
+  }
+  .w-ostat-label {
+    margin-top: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--w-muted);
   }
 
   /* ─── TESTIMONIAL ──────────────────────────────────────────────────────── */
