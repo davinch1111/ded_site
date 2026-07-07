@@ -1,0 +1,41 @@
+# 301 map: old davidedigerdesign.com (WordPress/Brooklyn theme) → new site.
+# Source: the old site's wp-sitemap (pages, portfolio items, portfolio
+# categories) crawled 2026-07-06 — 33 indexed URLs. Preserves search equity
+# at domain cutover; inert until then (the old paths simply don't exist on
+# the new site). Specific rules must precede splats.
+
+# ── Pages ──────────────────────────────────────────────────────────
+/contact-us/                       /#contact  301
+/drop-us-a-line/                   /#contact  301
+/about/                            /#about    301
+/about-brooklyn/                   /#about    301
+/about-brooklyn/what-they-have-said/ /#about  301
+/our-philosophy-is/                /#about    301
+/david_ediger/                     /#about    301
+/awards/                           /#about    301
+/studio-2/                         /#about    301
+/studio-2/awards/                  /#about    301
+/services/                         /#services 301
+/showcase/                         /#work     301
+/brands_01/                        /#work     301
+/typography/                       /#work     301
+/video-gallery/                    /#work     301
+/el-salvador-photo-gallery/        /work/el-salvador-home-building-video/ 301
+
+# /work/ (old work landing) → homepage work section. Exact match only —
+# the new /work/<slug>/ pages are unaffected.
+/work/                             /#work     301
+
+# ── Portfolio items with a direct successor ────────────────────────
+/portfolio-item/chanvrehemp/       /work/chanvre-hemp/ 301
+/portfolio-item/innotech-windows-booklet-brochure/ /work/innotech-windows-and-doors/ 301
+
+# ── Everything else under the old portfolio structure ──────────────
+/portfolio-item/*                  /#work     301
+/portfolio-category/*              /#work     301
+
+# ── Old WP internals that search engines sometimes index ───────────
+/wp-sitemap.xml                    /sitemap-index.xml 301
+/wp-sitemap-posts-page-1.xml       /sitemap-index.xml 301
+/wp-sitemap-posts-portfolio-1.xml  /sitemap-index.xml 301
+/wp-sitemap-taxonomies-portfolio-category-1.xml /sitemap-index.xml 301
