@@ -1,6 +1,7 @@
 ---
 // SiteFooter — shared site footer.
 // Used on src/pages/index.astro and src/pages/work/[slug].astro.
+import Icon from './Icon.astro';
 const year = new Date().getFullYear();
 ---
 <footer class="hp-footer">
@@ -17,16 +18,17 @@ const year = new Date().getFullYear();
         <div class="foot-section-label">Site</div>
         <a class="foot-link" href="/#work">Work</a>
         <a class="foot-link" href="/#services">Services</a>
+        <a class="foot-link" href="/#about">About</a>
         <a class="foot-link" href="/#contact">Contact</a>
       </div>
       <div>
         <div class="foot-section-label">Get in touch</div>
         <a class="foot-link" href="mailto:info@davidedigerdesign.com">info@davidedigerdesign.com</a>
         <div class="foot-social">
-          <a href="https://www.instagram.com/david.ediger.design"               aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
-          <a href="https://www.linkedin.com/in/david-ediger-b402a914/"          aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
-          <a href="https://vimeo.com/davidediger/"                              aria-label="Vimeo"><i class="fa-brands fa-vimeo"></i></a>
-          <a href="https://www.youtube.com/channel/UCVzIVyhZouAq7VjKLsuCPyQ"    aria-label="YouTube"><i class="fa-brands fa-youtube"></i></a>
+          <a href="https://www.instagram.com/david.ediger.design"               aria-label="Instagram"><Icon name="instagram" /></a>
+          <a href="https://www.linkedin.com/in/david-ediger-b402a914/"          aria-label="LinkedIn"><Icon name="linkedin" /></a>
+          <a href="https://vimeo.com/davidediger/"                              aria-label="Vimeo"><Icon name="vimeo" /></a>
+          <a href="https://www.youtube.com/channel/UCVzIVyhZouAq7VjKLsuCPyQ"    aria-label="YouTube"><Icon name="youtube" /></a>
         </div>
       </div>
     </div>

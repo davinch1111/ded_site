@@ -2,6 +2,7 @@
 import Base from '../layouts/Base.astro';
 import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
+import Icon from '../components/Icon.astro';
 import ScrollCue from '../components/ScrollCue.astro';
 
 interface Project {
@@ -222,7 +223,7 @@ const jsonLd = {
       rel="noopener"
       data-showreel
     >
-      <i class="fa-solid fa-play"></i>Showreel
+      <Icon name="play" />Showreel
     </a>
     <img src="/images/ded_emblem_white.svg" class="hero-emblem" alt="" aria-hidden="true" />
     <div class="hero-text">
@@ -250,7 +251,7 @@ const jsonLd = {
       <div class="work-grid-inner">
         {showcasePages.length > 1 && (
           <button class="work-nav work-nav--prev" type="button" aria-controls="work-grid" aria-label="Previous projects" disabled>
-            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+            <Icon name="chevron-left" />
           </button>
         )}
         <div class="work-rows" id="work-grid">
@@ -298,10 +299,10 @@ const jsonLd = {
                           <span class="card-desc">{p.disciplines}</span>
                           <div class="card-cta-area">
                             <span class="card-arrow" aria-hidden="true">
-                              <i class="fa-solid fa-arrow-right"></i>
+                              <Icon name="arrow-right" />
                             </span>
                             <span class="card-cta" aria-hidden="true">
-                              View project <i class="fa-solid fa-arrow-right"></i>
+                              View project <Icon name="arrow-right" />
                             </span>
                           </div>
                         </div>
@@ -315,7 +316,7 @@ const jsonLd = {
         </div>
         {showcasePages.length > 1 && (
           <button class="work-nav work-nav--next" type="button" aria-controls="work-grid" aria-label="Next projects">
-            <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            <Icon name="chevron-right" />
           </button>
         )}
         {showcasePages.length > 1 && (
@@ -463,7 +464,7 @@ const jsonLd = {
           placeholder="Tell me about the project. What does success look like?"></textarea>
 
         <button class="c-submit" type="submit">
-          Send it over <i class="fa-solid fa-arrow-right"></i>
+          Send it over <Icon name="arrow-right" />
         </button>
 
         {/* Inline submit status (JS path only) — announced to screen readers */}
@@ -484,7 +485,7 @@ const jsonLd = {
       to the Stream watch page. */}
   <div class="sr-modal" id="showreel-modal" role="dialog" aria-modal="true" aria-label="David Ediger showreel" hidden>
     <button class="sr-close" type="button" aria-label="Close showreel">
-      <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+      <Icon name="xmark" />
     </button>
     <div class="sr-frame-wrap"><!-- Stream iframe injected here on open --></div>
   </div>
@@ -588,7 +589,7 @@ body.dark-zone-active {
 .hero-showreel:hover { color: var(--text-white); }
 .hero-showreel:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
-.hero-showreel i {
+.hero-showreel .svg-icon {
   font-size: 9px;
   margin-right: 6px;
 }
@@ -910,7 +911,7 @@ body.dark-zone-active .work-nav {
   color: var(--text-white);
 }
 html.js-showcase .work-nav { display: flex; }
-.work-nav i { font-size: 13px; }
+.work-nav .svg-icon { font-size: 13px; }
 .work-nav:hover { background: rgba(15,16,20,0.1); }
 body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); border-color: rgba(245,244,240,0.6); }
 .work-nav:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
@@ -1052,7 +1053,7 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   transition: opacity 250ms cubic-bezier(.25,.1,.25,1);
 }
 
-.card-arrow i { font-size: 11px; }
+.card-arrow .svg-icon { font-size: 11px; }
 
 .card-cta {
   position: absolute;
@@ -1078,7 +1079,7 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
               background 200ms;
 }
 
-.card-cta i { font-size: 10px; }
+.card-cta .svg-icon { font-size: 10px; }
 
 .card:hover .card-arrow { opacity: 0; pointer-events: none; }
 .card:hover .card-cta   { opacity: 1; pointer-events: auto; }

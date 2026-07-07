@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import SiteNav from '../../components/SiteNav.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
+import Icon from '../../components/Icon.astro';
 import ScrollCue from '../../components/ScrollCue.astro';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -593,7 +594,7 @@ const jsonLd = {
                     <h3 class="w-related-title" set:html={r.title} />
                   </div>
                   <span class="w-related-arrow" aria-hidden="true">
-                    <i class="fa-solid fa-arrow-right"></i>
+                    <Icon name="arrow-right" />
                   </span>
                 </div>
               </a>
@@ -614,7 +615,7 @@ const jsonLd = {
           </h2>
           <a href="/#contact" class="w-cta-btn">
             Tell me what you're building
-            <i class="fa-solid fa-arrow-right"></i>
+            <Icon name="arrow-right" />
           </a>
         </div>
       </section>
@@ -630,17 +631,17 @@ const jsonLd = {
   {showGallery && (
     <div class="lb" id="lightbox" role="dialog" aria-modal="true" aria-label={`${cleanTitle} gallery viewer`} hidden>
       <button class="lb-close" type="button" aria-label="Close image viewer">
-        <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        <Icon name="xmark" />
       </button>
       <button class="lb-nav lb-prev" type="button" aria-label="Previous image">
-        <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+        <Icon name="chevron-left" />
       </button>
       <figure class="lb-figure">
         <img class="lb-img" alt="" />
         <figcaption class="lb-cap" aria-live="polite"></figcaption>
       </figure>
       <button class="lb-nav lb-next" type="button" aria-label="Next image">
-        <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+        <Icon name="chevron-right" />
       </button>
     </div>
   )}
@@ -1405,7 +1406,7 @@ const jsonLd = {
     text-decoration: none;
     transition: transform 160ms var(--w-ease-out), background 220ms var(--w-ease-out);
   }
-  .w-cta-btn i { font-size: 11px; }
+  .w-cta-btn .svg-icon { font-size: 11px; }
   @media (hover: hover) and (pointer: fine) {
     .w-cta-btn:hover { background: var(--w-accent); }
   }
