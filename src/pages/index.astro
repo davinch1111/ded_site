@@ -84,12 +84,13 @@ try {
       };
     });
     if (mapped.length > 0) {
-      // Projects without a master/featured image render as near-blank dark
-      // cards next to real thumbnails — keep them off the homepage until
-      // they get imagery in WP. If NONE have imagery (edge case), fall back
-      // to the full list with tone tiles rather than an empty grid.
-      const withImagery = mapped.filter(p => p.image);
-      projects = withImagery.length > 0 ? withImagery : mapped;
+      // ALL published projects show — image-less ones get the branded
+      // placeholder treatment (brand-tone gradient + ghosted emblem, see
+      // .card-tone-* / .card-ghost) and switch to imagery automatically
+      // once a master image lands in WP.
+      projects = mapped.length >= 6
+        ? mapped
+        : [...mapped, ...FALLBACK_PROJECTS.slice(mapped.length)];
     }
   }
 } catch { /* WP unreachable — use fallback */ }
@@ -292,8 +293,11 @@ const jsonLd = {
                               data-hover-src={p.hoverVideo}
                               aria-hidden="true"
                             ></video>
-                          ) : p.image && (
+                          ) : p.image ? (
                             <img src={p.image} alt={cleanTitle} loading={i < 2 ? 'eager' : 'lazy'} />
+                          ) : (
+                            /* Awaiting imagery: ghosted emblem on the tone tile */
+                            <img class="card-ghost" src="/images/ded_emblem_white.svg" alt="" aria-hidden="true" loading="lazy" />
                           )}
                         </div>
                         <div class="card-top-scrim"></div>
@@ -953,12 +957,27 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
 
 /* Brand-tone fallback backgrounds for tiles without imagery.
    Classes (not inline style="") so style-src needs no 'unsafe-inline'. */
-.card-tone-0 { background: linear-gradient(160deg,#0d1020 0%,#1a1f2e 100%); }
-.card-tone-1 { background: linear-gradient(160deg,#0a0f0a 0%,#141a14 100%); }
-.card-tone-2 { background: linear-gradient(160deg,#0a0d14 0%,#16192a 100%); }
-.card-tone-3 { background: linear-gradient(160deg,#0d0d0d 0%,#1a1a1a 100%); }
-.card-tone-4 { background: linear-gradient(160deg,#0d1212 0%,#181e1e 100%); }
-.card-tone-5 { background: linear-gradient(160deg,#100e0a 0%,#1c1912 100%); }
+/* Brand-tone placeholder tiles — dark-theme takes on the locked palette
+   (brand blue / slate / periwinkle / midblue / taupe). Distinct enough to
+   read as designed "awaiting content" slots, not blank cards. */
+.card-tone-0 { background: linear-gradient(160deg,#1B2A5E 0%,#0B1128 100%); }
+.card-tone-1 { background: linear-gradient(160deg,#2A323B 0%,#12161B 100%); }
+.card-tone-2 { background: linear-gradient(160deg,#333F63 0%,#151B2C 100%); }
+.card-tone-3 { background: linear-gradient(160deg,#22335C 0%,#0E1526 100%); }
+.card-tone-4 { background: linear-gradient(160deg,#37322A 0%,#181510 100%); }
+.card-tone-5 { background: linear-gradient(160deg,#20263B 0%,#0E111C 100%); }
+
+/* Ghosted emblem on placeholder tiles */
+.card-media .card-ghost {
+  inset: auto;
+  right: -5%;
+  bottom: -12%;
+  width: 52%;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.08;
+  pointer-events: none;
+}
 
 /* Card media wrapper — holds both the poster image and the hover <video> and
    is the ONLY element the hover-zoom transform is applied to, so poster + video

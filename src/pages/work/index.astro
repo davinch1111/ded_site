@@ -63,9 +63,10 @@ try {
         image: masterUrl ?? featuredUrl,
         disciplines,
       };
-    // Same rule as the homepage: image-less projects stay off until they
-    // get a master image in WP.
-    }).filter(c => c.slug && c.image);
+    // ALL published projects list here — image-less ones get the branded
+    // placeholder tile (tone gradient + ghosted emblem) until imagery
+    // lands in WP.
+    }).filter(c => c.slug);
   }
 } catch { /* WP unreachable — page renders with the empty-state note */ }
 
@@ -111,11 +112,16 @@ const ogImage = new URL('/og-image.png', Astro.site).href;
       </header>
 
       <div class="wk-grid" id="wk-grid">
-        {cards.map(c => (
-          <a class="wk-card reveal" href={`/work/${c.slug}/`} data-disciplines={c.disciplines.join('|')}
+        {cards.map((c, i) => (
+          <a class:list={['wk-card', 'reveal', !c.image && `card-tone-${i % 6}`]}
+             href={`/work/${c.slug}/`} data-disciplines={c.disciplines.join('|')}
              aria-label={`View project: ${c.title.replace(/<[^>]+>/g, '')}`}>
             <div class="wk-card-media">
-              <img src={c.image} alt="" loading="lazy" />
+              {c.image ? (
+                <img src={c.image} alt="" loading="lazy" />
+              ) : (
+                <img class="wk-card-ghost" src="/images/ded_emblem_white.svg" alt="" aria-hidden="true" loading="lazy" />
+              )}
             </div>
             <div class="wk-card-scrim" aria-hidden="true"></div>
             <div class="wk-card-text">
@@ -234,6 +240,25 @@ html.js-workfilter .wk-card.is-hidden { display: none; }
   object-fit: cover;
 }
 .wk-card:hover .wk-card-media { transform: scale(1.04); }
+
+/* Brand-tone placeholder tiles — same palette as the homepage cards */
+.wk-card.card-tone-0 { background: linear-gradient(160deg,#1B2A5E 0%,#0B1128 100%); }
+.wk-card.card-tone-1 { background: linear-gradient(160deg,#2A323B 0%,#12161B 100%); }
+.wk-card.card-tone-2 { background: linear-gradient(160deg,#333F63 0%,#151B2C 100%); }
+.wk-card.card-tone-3 { background: linear-gradient(160deg,#22335C 0%,#0E1526 100%); }
+.wk-card.card-tone-4 { background: linear-gradient(160deg,#37322A 0%,#181510 100%); }
+.wk-card.card-tone-5 { background: linear-gradient(160deg,#20263B 0%,#0E111C 100%); }
+
+.wk-card-media .wk-card-ghost {
+  inset: auto;
+  right: -5%;
+  bottom: -12%;
+  width: 52%;
+  height: auto;
+  object-fit: contain;
+  opacity: 0.08;
+  pointer-events: none;
+}
 
 .wk-card-scrim {
   position: absolute;
