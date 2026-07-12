@@ -58,6 +58,16 @@
                 border-color 300ms cubic-bezier(.25,.1,.25,1);
   }
 
+  /* Scrolled state — solid dark bar once the page moves, so section titles
+     and card text never bleed through the wordmark/menu. Declared BEFORE
+     nav--light and menu-open so both out-cascade it at equal specificity. */
+  .hp-nav.nav--scrolled {
+    background: rgba(3,4,14,0.88);
+    border-bottom: 0.5px solid rgba(255,255,255,0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
   .hp-nav.nav--light {
     background: rgba(250,250,250,0.95);
     border-bottom: 0.5px solid rgba(15,16,20,0.1);
@@ -269,6 +279,26 @@
       });
     }, { rootMargin: '-60px 0px -80% 0px', threshold: 0 });
     lightSections.forEach(s => navObs.observe(s));
+  }
+
+  // ── Scrolled state ────────────────────────────────────────────────
+  // Solid dark bar as soon as the page moves so content never bleeds
+  // through the transparent nav. nav--light still wins over light
+  // sections and menu-open over both (cascade order in the CSS).
+  // Fail-safe: no JS → no class → exactly the pre-existing behavior.
+  if (hpNav) {
+    let scrollTicking = false;
+    const setScrolled = () => {
+      hpNav.classList.toggle('nav--scrolled', window.scrollY > 24);
+      scrollTicking = false;
+    };
+    window.addEventListener('scroll', () => {
+      if (!scrollTicking) {
+        requestAnimationFrame(setScrolled);
+        scrollTicking = true;
+      }
+    }, { passive: true });
+    setScrolled();
   }
 
   // ── Mobile overlay menu ───────────────────────────────────────────

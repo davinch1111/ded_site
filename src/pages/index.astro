@@ -84,9 +84,12 @@ try {
       };
     });
     if (mapped.length > 0) {
-      projects = mapped.length >= 6
-        ? mapped
-        : [...mapped, ...FALLBACK_PROJECTS.slice(mapped.length)];
+      // Projects without a master/featured image render as near-blank dark
+      // cards next to real thumbnails — keep them off the homepage until
+      // they get imagery in WP. If NONE have imagery (edge case), fall back
+      // to the full list with tone tiles rather than an empty grid.
+      const withImagery = mapped.filter(p => p.image);
+      projects = withImagery.length > 0 ? withImagery : mapped;
     }
   }
 } catch { /* WP unreachable — use fallback */ }

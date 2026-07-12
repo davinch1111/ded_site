@@ -1,0 +1,309 @@
+---
+// /work — full project index. The homepage shows the curated showcase;
+// this page lists EVERY published project with imagery, filterable by
+// discipline. Fixes the /work 404 (deep links + SEO).
+//
+// FAIL-SAFE: all cards render visible; filtering is a progressive
+// enhancement — the chip row itself is hidden until html.js-workfilter
+// confirms the script is running, so there are never dead controls.
+import Base from '../../layouts/Base.astro';
+import SiteNav from '../../components/SiteNav.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+
+interface WorkCard {
+  slug: string;
+  title: string;
+  image: string | null;
+  disciplines: string[];
+}
+
+const WP_API = 'https://davidedigerdesign.in/wp-json/wp/v2';
+const isAttachmentId = (v: any): v is number =>
+  typeof v === 'number' && Number.isFinite(v) && v > 0;
+
+let cards: WorkCard[] = [];
+try {
+  const res = await fetch(
+    `${WP_API}/ded_project?per_page=50&orderby=menu_order&order=asc&_embed`,
+    { signal: AbortSignal.timeout(8000) }
+  );
+  if (res.ok) {
+    const data = await res.json() as any[];
+
+    // Resolve legacy attachment-ID master_images via the media endpoint,
+    // mirroring index.astro and work/[slug].astro.
+    const masterIds = new Set<number>();
+    for (const p of data) if (isAttachmentId(p?.acf?.master_image)) masterIds.add(p.acf.master_image);
+    const mediaUrl = new Map<number, string>();
+    if (masterIds.size > 0) {
+      try {
+        const r = await fetch(
+          `${WP_API}/media?include=${Array.from(masterIds).join(',')}&per_page=100&_fields=id,source_url`,
+          { signal: AbortSignal.timeout(8000) }
+        );
+        if (r.ok) for (const m of await r.json() as any[]) mediaUrl.set(m.id, m.source_url);
+      } catch { /* unresolved → featured fallback below */ }
+    }
+
+    cards = data.map((p: any) => {
+      const termGroups: any[][] = p._embedded?.['wp:term'] ?? [];
+      const disciplines = termGroups.flat()
+        .filter((t: any) => t.taxonomy === 'discipline')
+        .map((t: any) => t.name as string);
+      const mi = p?.acf?.master_image;
+      const masterUrl: string | null =
+        (mi && typeof mi === 'object' && mi.url) ? mi.url
+        : isAttachmentId(mi) ? (mediaUrl.get(mi) ?? null)
+        : null;
+      const featuredUrl: string | null =
+        (p._embedded?.['wp:featuredmedia'] ?? [])[0]?.source_url ?? null;
+      return {
+        slug: (p.slug ?? '') as string,
+        title: (p.title?.rendered ?? 'Untitled') as string,
+        image: masterUrl ?? featuredUrl,
+        disciplines,
+      };
+    // Same rule as the homepage: image-less projects stay off until they
+    // get a master image in WP.
+    }).filter(c => c.slug && c.image);
+  }
+} catch { /* WP unreachable — page renders with the empty-state note */ }
+
+const allDisciplines = [...new Set(cards.flatMap(c => c.disciplines))].sort();
+
+const pageTitle = 'Work — David Ediger Design';
+const pageDesc = 'Every project: brand, print, web, video, photo, and audio work by David Ediger, Creative Director.';
+const canonical = new URL('/work/', Astro.site).href;
+const ogImage = new URL('/og-image.png', Astro.site).href;
+---
+<Base title={pageTitle} description={pageDesc}>
+  <Fragment slot="head">
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="David Ediger Design" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDesc} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDesc} />
+    <meta name="twitter:image" content={ogImage} />
+  </Fragment>
+
+  <div class="wk">
+    <SiteNav />
+
+    <main id="main">
+      <header class="wk-head">
+        <p class="wk-eyebrow">Selected work</p>
+        <h1 class="wk-h1">The work</h1>
+        <p class="wk-sub">{cards.length} projects across brand, print, web, video, photo, and audio.</p>
+
+        {allDisciplines.length > 1 && (
+          <div class="wk-filters" role="group" aria-label="Filter projects by discipline">
+            <button class="wk-chip is-on" type="button" data-filter="" aria-pressed="true">All</button>
+            {allDisciplines.map(d => (
+              <button class="wk-chip" type="button" data-filter={d} aria-pressed="false">{d}</button>
+            ))}
+          </div>
+        )}
+      </header>
+
+      <div class="wk-grid" id="wk-grid">
+        {cards.map(c => (
+          <a class="wk-card reveal" href={`/work/${c.slug}/`} data-disciplines={c.disciplines.join('|')}
+             aria-label={`View project: ${c.title.replace(/<[^>]+>/g, '')}`}>
+            <div class="wk-card-media">
+              <img src={c.image} alt="" loading="lazy" />
+            </div>
+            <div class="wk-card-scrim" aria-hidden="true"></div>
+            <div class="wk-card-text">
+              <h2 class="wk-card-title" set:html={c.title} />
+              {c.disciplines.length > 0 && <p class="wk-card-disc">{c.disciplines.join(' · ')}</p>}
+            </div>
+          </a>
+        ))}
+      </div>
+
+      {cards.length === 0 && (
+        <p class="wk-empty">The project index is momentarily unavailable — see the <a href="/#work">homepage showcase</a>.</p>
+      )}
+    </main>
+
+    <SiteFooter />
+  </div>
+</Base>
+
+<style is:global>
+.wk {
+  background: var(--w-bg, #03040E);
+  min-height: 100vh;
+  font-family: 'Montserrat', -apple-system, system-ui, sans-serif;
+}
+
+.wk-head {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 148px clamp(24px, 5vw, 100px) 8px;
+}
+
+.wk-eyebrow {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--w-faint, rgba(245,244,240,0.5));
+  margin-bottom: 12px;
+}
+
+.wk-h1 {
+  font-size: clamp(2.2rem, 4.5vw, 4.2rem);
+  font-weight: 200;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+  color: var(--w-text, #F5F4F0);
+}
+
+.wk-sub {
+  margin-top: 14px;
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--w-muted, rgba(245,244,240,0.62));
+}
+
+/* Filter chips — hidden until the script confirms it runs (no dead controls) */
+.wk-filters { display: none; }
+html.js-workfilter .wk-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 28px;
+}
+.wk-chip {
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 8px 16px;
+  border-radius: 100px;
+  border: 1px solid var(--w-hairline-strong, rgba(255,255,255,0.16));
+  background: transparent;
+  color: var(--w-muted, rgba(245,244,240,0.62));
+  cursor: pointer;
+  transition: color 200ms ease, border-color 200ms ease, background 200ms ease;
+}
+.wk-chip:hover { color: var(--w-text, #F5F4F0); border-color: rgba(255,255,255,0.35); }
+.wk-chip.is-on {
+  background: var(--w-accent, #3457C6);
+  border-color: var(--w-accent, #3457C6);
+  color: #fff;
+}
+.wk-chip:focus-visible { outline: 2px solid var(--w-accent, #3457C6); outline-offset: 3px; }
+
+.wk-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--gap, 20px);
+  max-width: 1600px;
+  margin: 36px auto 110px;
+  padding: 0 clamp(24px, 5vw, 100px);
+}
+
+.wk-card {
+  position: relative;
+  display: block;
+  height: clamp(320px, 38vw, 460px);
+  overflow: hidden;
+  background: var(--w-card, #141519);
+  text-decoration: none;
+}
+html.js-workfilter .wk-card.is-hidden { display: none; }
+
+.wk-card-media {
+  position: absolute;
+  inset: 0;
+  transition: transform 550ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.wk-card-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.wk-card:hover .wk-card-media { transform: scale(1.04); }
+
+.wk-card-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(3,4,14,0.82) 0%, rgba(3,4,14,0.18) 38%, transparent 60%);
+  pointer-events: none;
+}
+
+.wk-card-text {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 24px;
+}
+.wk-card-title {
+  font-size: clamp(1.2rem, 2vw, 1.7rem);
+  font-weight: 300;
+  letter-spacing: -0.01em;
+  color: #F5F4F0;
+  line-height: 1.15;
+}
+.wk-card-disc {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(245,244,240,0.6);
+}
+
+.wk-card:focus-visible { outline: 2px solid var(--w-accent, #3457C6); outline-offset: 3px; }
+
+.wk-empty {
+  max-width: 1600px;
+  margin: 24px auto 140px;
+  padding: 0 clamp(24px, 5vw, 100px);
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--w-muted, rgba(245,244,240,0.62));
+}
+.wk-empty a { color: var(--w-accent, #3457C6); }
+
+@media (max-width: 768px) {
+  .wk-head { padding-top: 116px; }
+  .wk-grid { grid-template-columns: 1fr; }
+  .wk-card { height: 300px; }
+}
+</style>
+
+<script>
+  // Discipline filter — progressive enhancement. html.js-workfilter reveals
+  // the chip row AND gates the card-hiding class, so a script failure means
+  // "no filter UI, all projects visible" — never hidden content.
+  const grid = document.getElementById('wk-grid');
+  const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('.wk-chip'));
+
+  if (grid && chips.length) {
+    document.documentElement.classList.add('js-workfilter');
+    const cardEls = Array.from(grid.querySelectorAll<HTMLElement>('.wk-card'));
+
+    chips.forEach((chip) => chip.addEventListener('click', () => {
+      const f = chip.dataset.filter ?? '';
+      chips.forEach((c) => {
+        c.classList.toggle('is-on', c === chip);
+        c.setAttribute('aria-pressed', String(c === chip));
+      });
+      cardEls.forEach((card) => {
+        const list = (card.dataset.disciplines ?? '').split('|');
+        card.classList.toggle('is-hidden', !!f && !list.includes(f));
+      });
+    }));
+  }
+</script>
