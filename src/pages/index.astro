@@ -217,23 +217,23 @@ const jsonLd = {
       data-hls-src="https://customer-svfce6is3mlvvekf.cloudflarestream.com/bde8b56a0110fbecaeba46a28d485527/manifest/video.m3u8"
     ></video>
     <div class="hero-video-scrim" aria-hidden="true"></div>
-    <!-- Real anchor to the Stream watch page (progressive enhancement): with
-         JS it opens the centered modal player; with JS blocked it opens the
-         reel in a new tab. Never a dead control. -->
-    <a
-      class="hero-showreel"
-      href="https://customer-svfce6is3mlvvekf.cloudflarestream.com/bde8b56a0110fbecaeba46a28d485527/watch"
-      target="_blank"
-      rel="noopener"
-      data-showreel
-    >
-      <Icon name="play" />Showreel
-    </a>
     <img src="/images/ded_emblem_white.svg" class="hero-emblem" alt="" aria-hidden="true" />
     <div class="hero-text">
       <p class="hero-ey">DAVID EDIGER DESIGN&nbsp;&nbsp;|&nbsp;&nbsp;CREATED FOR YOU IN: PRINT. WEB. VIDEO. PHOTO. AUDIO.</p>
       <h1 class="hero-h1">Brands that<br><strong>refuse</strong> to blend in</h1>
       <p class="hero-sub">Twenty-three years of print, web, video, photo, and audio. Some of these clients have stayed since 2008.</p>
+      <!-- Real anchor to the Stream watch page (progressive enhancement): with
+           JS it opens the centered modal player; with JS blocked it opens the
+           reel in a new tab. Never a dead control. -->
+      <a
+        class="hero-showreel"
+        href="https://customer-svfce6is3mlvvekf.cloudflarestream.com/bde8b56a0110fbecaeba46a28d485527/watch"
+        target="_blank"
+        rel="noopener"
+        data-showreel
+      >
+        <Icon name="play" />Watch showreel
+      </a>
     </div>
     <ScrollCue href="#work" />
   </section>
@@ -576,17 +576,14 @@ body.dark-zone-active {
 }
 
 .hero-showreel {
-  position: absolute;
-  top: 90px;
-  right: clamp(40px, 5vw, 100px);
+  margin-top: 22px;
   font-family: 'Montserrat', sans-serif;
-  font-size: 10px;
+  font-size: 13px;
   font-weight: 400;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-muted);
   text-decoration: none;
-  z-index: 2;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -597,8 +594,8 @@ body.dark-zone-active {
 .hero-showreel:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
 .hero-showreel .svg-icon {
-  font-size: 9px;
-  margin-right: 6px;
+  font-size: 11px;
+  margin-right: 8px;
 }
 
 /* ── Showreel modal (mirrors the work-page .lb lightbox patterns) ── */
@@ -733,19 +730,22 @@ body.dark-zone-active {
    blocked or fails, .js-hero never lands and the title renders visible. */
 html.js-hero .hero-ey,
 html.js-hero .hp-hero h1,
-html.js-hero .hero-sub {
+html.js-hero .hero-sub,
+html.js-hero .hero-showreel {
   opacity: 0;
   transform: translateY(24px);
   transition: opacity 600ms cubic-bezier(.4, 0, .2, 1),
               transform 600ms cubic-bezier(.4, 0, .2, 1);
   will-change: opacity, transform;
 }
-.hp-hero.intro-done .hero-ey   { transition-delay: 0ms;   }
-.hp-hero.intro-done .hero-h1   { transition-delay: 120ms; }
-.hp-hero.intro-done .hero-sub  { transition-delay: 240ms; }
+.hp-hero.intro-done .hero-ey        { transition-delay: 0ms;   }
+.hp-hero.intro-done .hero-h1        { transition-delay: 120ms; }
+.hp-hero.intro-done .hero-sub       { transition-delay: 240ms; }
+.hp-hero.intro-done .hero-showreel  { transition-delay: 360ms; }
 .hp-hero.intro-done .hero-ey,
 .hp-hero.intro-done .hero-h1,
-.hp-hero.intro-done .hero-sub {
+.hp-hero.intro-done .hero-sub,
+.hp-hero.intro-done .hero-showreel {
   opacity: 1;
   transform: translateY(0);
 }
@@ -753,7 +753,8 @@ html.js-hero .hero-sub {
 @media (prefers-reduced-motion: reduce) {
   .hero-ey,
   .hp-hero h1,
-  .hero-sub {
+  .hero-sub,
+  .hero-showreel {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
