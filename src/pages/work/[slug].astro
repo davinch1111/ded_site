@@ -798,19 +798,20 @@ const jsonLd = {
     /* Normalize every project logo into one consistent box (mockup scale).
        Logos vary wildly in aspect (FLF ~7.6:1 wide lockup vs Innotech
        ~2.3:1 stacked badge); sizing by height alone let the wide marks
-       stretch across the hero. A 72px box height + 400px width cap +
+       stretch across the hero. A 100px box height + 400px width cap +
        object-fit:contain keeps all logos at a balanced scale regardless of
        source proportions — wide lockups are width-capped and letterboxed,
        squarer marks fill. */
-    height: 72px;
+    height: 100px;
     width: auto;
     /* min(…,100%) so a wide lockup never overflows the content column on
        narrow viewports (400px cap would otherwise exceed it at ≤~440px). */
     max-width: min(400px, 100%);
     object-fit: contain;
     object-position: left center;
-    /* Nudged 14px left of the shared content edge, per the mockup. */
-    margin: 0 0 4px -14px;
+    /* Nudged 3px left of the shared content edge (was 14px left; pushed
+       right 11px per David). */
+    margin: 0 0 4px -3px;
     opacity: 0.95;
     filter: drop-shadow(0 2px 12px rgba(0,0,0,0.4));
   }
