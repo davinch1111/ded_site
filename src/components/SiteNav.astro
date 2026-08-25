@@ -266,7 +266,8 @@
   // by the observer (querySelectorAll returns 0 matches).
   const hpNav = document.getElementById('hp-nav');
   const lightSections = document.querySelectorAll(
-    '.work-header, .services-section, .about-section, .contact-section, .w-cta'
+    // `.svc` is ServicesSection.astro's root (was `.services-section`).
+    '.work-header, .svc, .about-section, .contact-section, .w-cta'
   );
 
   if (hpNav && lightSections.length) {

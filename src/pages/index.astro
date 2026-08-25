@@ -4,6 +4,7 @@ import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import Icon from '../components/Icon.astro';
 import ScrollCue from '../components/ScrollCue.astro';
+import ServicesSection from '../components/ServicesSection.astro';
 
 interface Project {
   id: number;
@@ -102,14 +103,6 @@ const showcasePages: Project[][] = [];
 for (let i = 0; i < projects.length; i += PAGE_SIZE) {
   showcasePages.push(projects.slice(i, i + PAGE_SIZE));
 }
-
-const services = [
-  { name: 'Print', desc: 'Logos, brand systems, packaging, signage, vehicle wraps, tradeshow booths. The work people can hold and walk up to.' },
-  { name: 'Web',   desc: 'Websites that load fast and convert, plus the social campaigns to feed them. WordPress builds with the back end actually organised.' },
-  { name: 'Video', desc: 'Cinematic shoots, editing, colour, motion graphics. From hero films down to social cuts.' },
-  { name: 'Photo', desc: 'Product, portrait, and conceptual photography. Images built to sell, not just to sit there.' },
-  { name: 'Audio', desc: 'Music, soundtracks, sound design. Twenty years behind instruments, put to work on your brand.' },
-];
 
 // About — industry experience rows (editorial, mirrors the Services rows).
 // Client names only where the portfolio actually evidences them.
@@ -334,21 +327,11 @@ const jsonLd = {
 
   </div><!-- /.dark-zone -->
 
-  <!-- ══════════════ SERVICES ══════════════ -->
-  <section class="services-section" id="services">
-    <div class="services-inner">
-      <p class="s-label">What I make</p>
-      <h2 class="s-heading">Five ways I can help</h2>
-      <div class="srows">
-        {services.map(s => (
-          <div class="srow reveal">
-            <div class="sname">{s.name}</div>
-            <p class="sdesc">{s.desc}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
+  <!-- ══════════════ SERVICES ══════════════
+       Renders <section class="svc" id="services"> — a light band, so it is in
+       SiteNav's light-flip observer list and is the dark-zone release
+       sentinel below. Both hooks select `.svc`. -->
+  <ServicesSection />
 
   <!-- ══════════════ ABOUT ══════════════ -->
   <section class="about-section" id="about">
@@ -1108,69 +1091,10 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
 .card:hover .card-cta   { opacity: 1; pointer-events: auto; }
 .card-cta:hover { background: rgba(255,255,255,0.08); border-color: rgba(245,244,240,0.6); }
 
-/* ═══ SERVICES ═══ */
-.services-section {
-  background: #FAFAFA;
-  padding: 80px clamp(40px,5vw,100px);
-}
-
-.services-inner {
-  max-width: 1600px;
-  margin: 0 auto;
-}
-
-.s-label {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(15,16,20,0.4);
-  margin-bottom: 12px;
-}
-
-.s-heading {
-  font-family: 'Montserrat', sans-serif;
-  font-size: clamp(1.6rem, 3vw, 2.8rem);
-  font-weight: 300;
-  color: var(--text-dark);
-  letter-spacing: -0.01em;
-  line-height: 1.1;
-  margin-bottom: 40px;
-}
-
-.srows { border-top: 1px solid rgba(15,16,20,0.1); }
-
-.srow {
-  display: grid;
-  grid-template-columns: minmax(200px, 35%) 1fr;
-  gap: 24px;
-  align-items: center;
-  padding: 28px 0;
-  border-bottom: 1px solid rgba(15,16,20,0.1);
-  transition: background 250ms cubic-bezier(.25,.1,.25,1);
-}
-
-.srow:hover { background: rgba(15,16,20,0.04); }
-
-.sname {
-  font-family: 'Montserrat', sans-serif;
-  font-size: clamp(1.8rem, 3vw, 3rem);
-  font-weight: 300;
-  color: var(--text-dark);
-  letter-spacing: -0.01em;
-  transition: color 250ms cubic-bezier(.25,.1,.25,1);
-}
-
-.srow:hover .sname { color: var(--accent); }
-
-.sdesc {
-  font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
-  font-weight: 300;
-  color: rgba(15,16,20,0.55);
-  line-height: 1.6;
-}
+/* ═══ SERVICES ═══
+   Owned by src/components/ServicesSection.astro (scoped styles).
+   The old .services-section / .s-* / .srow* rules were removed with the
+   "Five ways I can help" markup. */
 
 /* ═══ ABOUT ═══
    Warm-paper band (--bg-light) so it reads as its own chapter between the
@@ -1590,7 +1514,6 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   .work-nav--prev { left: calc(50% - 52px); }
   .work-nav--next { right: calc(50% - 52px); }
 
-  .srow   { grid-template-columns: 1fr; gap: 8px; }
   .qgrid  { grid-template-columns: 1fr; }
   .c-row  { grid-template-columns: 1fr; }
 
@@ -1772,7 +1695,8 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   //    through the user's visit-scroll across row 2 (it begins entering
   //    at top = vh, exits at top = 0; firing at vh*0.5 means we've
   //    scrolled ~30% of the time row 2 is on screen).
-  const services = document.querySelector('.services-section');
+  //    `.svc` is ServicesSection.astro's root (was `.services-section`).
+  const services = document.querySelector('.svc');
   let ticking = false;
   function updateDarkZone() {
     // Rows are re-queried each tick: with showcase paging the visible rows

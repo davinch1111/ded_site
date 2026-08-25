@@ -1,0 +1,464 @@
+---
+// Studio services — five numbered routes into the work.
+//
+// CSP: no inline `style=""` anywhere. The per-item accent-rule width and
+// reveal delay used to ride on a style attribute; they now come from
+// .svc__item--01 … --05 slot classes in the scoped <style> below, so the
+// rendered HTML carries no style-src-attr surface.
+//
+// Type comes from the global type-scale tokens in Base.astro (:root).
+export interface Service {
+  num: string;
+  title: string;
+  body: string;
+  href: string;
+}
+
+export interface Props {
+  eyebrow?: string;
+  heading?: string;
+  sublineA?: string;
+  sublineB?: string;
+  services?: Service[];
+  retainer?: Service;
+  helpLabel?: string;
+  helpCta?: string;
+  helpHref?: string;
+}
+
+// Routes: /services/* and /start do not exist yet — every href points at the
+// homepage contact anchor until those pages ship, so nothing 404s.
+const {
+  eyebrow = 'Studio services',
+  heading = 'where do you need help?',
+  sublineA = 'Most marketing campaigns move through this order.',
+  sublineB = 'Start wherever you are.',
+  helpLabel = 'Not sure what you need?',
+  helpCta = "Let's narrow it down",
+  helpHref = '/#contact',
+  services = [
+    {
+      num: '01',
+      title: 'Branding',
+      body: 'Logo, colour, and type — the foundation everything else is built on. Get this right and every piece that follows looks like it belongs to you.',
+      href: '/#contact',
+    },
+    {
+      num: '02',
+      title: 'Print &amp; signage',
+      body: 'Brochures and business cards through to packaging, vehicle wraps, tradeshow booths, and wayfinding. The work people pick up and walk through.',
+      href: '/#contact',
+    },
+    {
+      num: '03',
+      title: 'Web',
+      body: 'Custom sites that load fast and make a small operation look like the obvious choice. Not a template — and live sooner than a traditional studio would manage.',
+      href: '/#contact',
+    },
+    {
+      num: '04',
+      title: 'Video',
+      body: 'Short-form and motion content produced end to end — shot, cut, and scored in-house, so it lands as one finished piece instead of stock footage on a stock track.',
+      href: '/#contact',
+    },
+  ],
+  retainer = {
+    num: '05',
+    title: 'A studio on call',
+    body: 'Already have all of the above? Keep someone on hand who knows your brand — updates, campaigns, and new pieces without starting from a blank brief.',
+    href: '/#contact',
+  },
+} = Astro.props;
+
+// `slot` is the item's position in the numbered 01→05 sequence, independent of
+// which column it renders in. It drives the --rule / --delay slot class, so the
+// stagger runs in numbered order rather than column order.
+const items = services.map((s, i) => ({ ...s, slot: i + 1 }));
+const retainerItem = { ...retainer, slot: items.length + 1 };
+const colLeft = items.filter((_, i) => i % 2 === 0);
+const colRight = items.filter((_, i) => i % 2 === 1);
+
+const slotClass = (slot: number) => `svc__item--${String(slot).padStart(2, '0')}`;
+---
+
+<section class="svc" id="services" aria-labelledby="svc-heading">
+  <div class="svc__inner">
+    <p class="svc__eyebrow">{eyebrow}</p>
+    <h2 class="svc__heading" id="svc-heading">{heading}</h2>
+    <p class="svc__subline">
+      <span class="svc__subline-a">{sublineA}</span>
+      <span class="svc__subline-b">{sublineB}</span>
+    </p>
+
+    <div class="svc__grid">
+      <div class="svc__col svc__col--left">
+        {colLeft.map((s) => (
+          <a class:list={['svc__item', slotClass(s.slot)]} href={s.href} data-reveal>
+            <span class="svc__rule" aria-hidden="true"></span>
+            <span class="svc__num">{s.num}</span>
+            <span class="svc__title" set:html={s.title}></span>
+            <span class="svc__body">{s.body}</span>
+            <span class="svc__arrow" aria-hidden="true">See how it works &rarr;</span>
+          </a>
+        ))}
+      </div>
+
+      <div class="svc__col svc__col--right">
+        {colRight.map((s) => (
+          <a class:list={['svc__item', slotClass(s.slot)]} href={s.href} data-reveal>
+            <span class="svc__rule" aria-hidden="true"></span>
+            <span class="svc__num">{s.num}</span>
+            <span class="svc__title" set:html={s.title}></span>
+            <span class="svc__body">{s.body}</span>
+            <span class="svc__arrow" aria-hidden="true">See how it works &rarr;</span>
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <a
+      class:list={['svc__item', 'svc__item--wide', slotClass(retainerItem.slot)]}
+      href={retainerItem.href}
+      data-reveal
+    >
+      <span class="svc__rule" aria-hidden="true"></span>
+      <span class="svc__wide-head">
+        <span class="svc__num">{retainerItem.num}</span>
+        <span class="svc__title" set:html={retainerItem.title}></span>
+        <span class="svc__arrow" aria-hidden="true">See how it works &rarr;</span>
+      </span>
+      <span class="svc__body svc__body--wide">{retainerItem.body}</span>
+    </a>
+
+    <div class="svc__foot">
+      <span class="svc__ask">{helpLabel}</span>
+      <a class="svc__cta" href={helpHref}>{helpCta} &rarr;</a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .svc {
+    --svc-ink: #15161a;
+    --svc-accent: var(--type-accent, #3457c6);
+    --svc-hairline: rgba(21, 22, 26, 0.13);
+    --svc-hover: #fafafa;
+    --svc-offset: 60px;
+
+    background: #fff;
+    color: var(--svc-ink);
+    /* Matches Base.astro's --body stack; the single @font-face lives there,
+       so there is no duplicate declaration in this component. */
+    font-family: var(--body, 'Montserrat', system-ui, sans-serif);
+    padding: clamp(64px, 9vw, 128px) 0;
+  }
+
+  .svc__inner {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 clamp(20px, 5vw, 64px);
+  }
+
+  .svc__eyebrow {
+    margin: 0 0 20px;
+    font-size: var(--type-eyebrow-size);
+    font-weight: var(--type-eyebrow-weight);
+    letter-spacing: var(--type-eyebrow-track);
+    text-transform: var(--type-eyebrow-transform);
+    color: var(--type-eyebrow-color);
+  }
+
+  .svc__heading {
+    margin: 0 0 16px;
+    font-size: var(--type-head-size);
+    font-weight: var(--type-head-weight);
+    letter-spacing: var(--type-head-track);
+    line-height: 1;
+    color: var(--type-head-color);
+  }
+
+  .svc__subline {
+    margin: 0 0 clamp(34px, 4vw, 46px);
+    font-size: 13.5px;
+    font-weight: 400;
+    line-height: 1.75;
+    color: rgba(21, 22, 26, 0.58);
+    max-width: 46ch;
+  }
+
+  .svc__subline-a,
+  .svc__subline-b {
+    display: inline;
+  }
+
+  .svc__grid {
+    display: grid;
+    grid-template-columns: 1.06fr 0.94fr;
+    column-gap: clamp(28px, 4vw, 56px);
+  }
+
+  .svc__col--right {
+    margin-top: var(--svc-offset);
+  }
+
+  .svc__item {
+    position: relative;
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    padding: 24px 16px 28px 0;
+    margin-bottom: 34px;
+    border-top: 1px solid var(--svc-hairline);
+    transition: background 0.35s ease;
+  }
+
+  .svc__col .svc__item:last-child {
+    margin-bottom: 0;
+  }
+
+  .svc__item--wide {
+    display: grid;
+    grid-template-columns: 1.06fr 0.94fr;
+    column-gap: clamp(28px, 4vw, 56px);
+    margin: 38px 0 0;
+  }
+
+  /* ── Per-slot accent-rule width + reveal delay ──────────────────────
+     Previously inline style="--rule:…;--delay:…". Class-driven so the
+     rendered HTML carries no style attribute (strict style-src-attr). */
+  .svc__item--01 { --rule: 18%; --delay:   0ms; }
+  .svc__item--02 { --rule: 30%; --delay:  90ms; }
+  .svc__item--03 { --rule: 22%; --delay: 180ms; }
+  .svc__item--04 { --rule: 36%; --delay: 270ms; }
+  .svc__item--05 { --rule: 14%; --delay: 360ms; }
+
+  .svc__rule {
+    position: absolute;
+    top: -1px;
+    left: 0;
+    height: 1px;
+    width: var(--rule, 20%);
+    background: var(--svc-accent);
+    transition: width 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+
+  .svc__num {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: rgba(21, 22, 26, 0.45);
+    transition: color 0.35s ease;
+  }
+
+  .svc__title {
+    display: block;
+    margin: 10px 0 12px;
+    font-size: var(--type-item-size);
+    font-weight: var(--type-item-weight);
+    letter-spacing: var(--type-item-track);
+    line-height: 1.25;
+  }
+
+  .svc__body {
+    display: block;
+    font-size: var(--type-body-size);
+    font-weight: var(--type-body-weight);
+    line-height: var(--type-body-leading);
+    color: var(--type-body-color);
+  }
+
+  .svc__body--wide {
+    align-self: center;
+  }
+
+  .svc__wide-head .svc__title {
+    margin-bottom: 0;
+  }
+
+  .svc__arrow {
+    display: block;
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--svc-accent);
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+
+  .svc__item:hover,
+  .svc__item:focus-visible {
+    background: var(--svc-hover);
+    outline: none;
+  }
+
+  .svc__item:hover .svc__rule,
+  .svc__item:focus-visible .svc__rule {
+    width: 100%;
+  }
+
+  .svc__item:hover .svc__num,
+  .svc__item:focus-visible .svc__num {
+    color: var(--svc-accent);
+  }
+
+  .svc__item:hover .svc__arrow,
+  .svc__item:focus-visible .svc__arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .svc__item:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--svc-accent);
+  }
+
+  .svc__foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 36px;
+    padding-top: 24px;
+    border-top: 1px solid var(--svc-hairline);
+  }
+
+  .svc__ask {
+    font-size: var(--type-body-size);
+    font-weight: var(--type-body-weight);
+    color: var(--type-body-color);
+  }
+
+  .svc__cta {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--svc-ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--svc-accent);
+    padding-bottom: 5px;
+  }
+
+  .svc__cta:hover {
+    color: var(--svc-accent);
+  }
+
+  /* FAIL-SAFE: items are fully visible by default. The hidden-then-animate
+     state is gated on [data-reveal-ready], set only once the script runs. */
+  .svc[data-reveal-ready] .svc__item[data-reveal] {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
+  .svc[data-reveal-ready] .svc__item[data-reveal].is-in {
+    opacity: 1;
+    transform: none;
+    transition: opacity 0.7s ease var(--delay, 0ms), transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1) var(--delay, 0ms);
+  }
+
+  @media (min-width: 861px) {
+    .svc__subline-b {
+      display: block;
+    }
+  }
+
+  @media (max-width: 860px) {
+    /* Single column in numbered order. The two column wrappers are dissolved
+       with display:contents so all four items become flex children of the
+       grid; without this they stack per-wrapper and read 01,03,02,04. */
+    .svc__grid {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .svc__col {
+      display: contents;
+    }
+
+    .svc__item--01 { order: 1; }
+    .svc__item--02 { order: 2; }
+    .svc__item--03 { order: 3; }
+    .svc__item--04 { order: 4; }
+
+    .svc__col--right {
+      margin-top: 0;
+    }
+
+    .svc__col--left .svc__item:last-child {
+      margin-bottom: 34px;
+    }
+
+    .svc__item--wide {
+      grid-template-columns: 1fr;
+      margin-top: 34px;
+      border-top-width: 2px;
+    }
+
+    .svc__item--wide .svc__body--wide {
+      margin-top: 12px;
+    }
+
+    .svc__rule {
+      width: 100%;
+    }
+
+    .svc__num {
+      color: var(--svc-accent);
+    }
+
+    .svc__arrow {
+      opacity: 1;
+      transform: none;
+    }
+
+    .svc__item:hover {
+      background: transparent;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .svc__rule,
+    .svc__num,
+    .svc__arrow,
+    .svc__item {
+      transition: none;
+    }
+
+    .svc[data-reveal-ready] .svc__item[data-reveal] {
+      opacity: 1;
+      transform: none;
+    }
+  }
+</style>
+
+<script>
+  // Scroll reveal. The section — not each item — is the observed target, so
+  // once it enters the viewport every item flips to .is-in together and the
+  // per-slot --delay alone controls the order (01→05). Observing items
+  // individually would fire them in column order, because the right column
+  // sits 60px lower and crosses the threshold after the left column's second
+  // item.
+  const section = document.querySelector<HTMLElement>('.svc');
+
+  if (section && 'IntersectionObserver' in window) {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!reduce) {
+      section.setAttribute('data-reveal-ready', '');
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target
+              .querySelectorAll('[data-reveal]')
+              .forEach((el) => el.classList.add('is-in'));
+            observer.unobserve(entry.target);
+          });
+        },
+        { rootMargin: '0px 0px -12% 0px', threshold: 0.1 }
+      );
+
+      observer.observe(section);
+    }
+  }
+</script>

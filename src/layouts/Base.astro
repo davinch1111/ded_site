@@ -88,6 +88,39 @@ const {
       --disp: 'Montserrat', sans-serif;
       --mid:  'Montserrat', sans-serif;
       --body: 'Montserrat', -apple-system, system-ui, sans-serif;
+
+      /* ── Type scale — the site's type hierarchy ────────────────────
+         Established by ServicesSection.astro, currently the only consumer.
+         NOT yet migrated (still hardcoding their own type): index.astro
+         hero / work grid / about / testimonials / contact, SiteNav,
+         SiteFooter, work/[slug].astro, work/index.astro.
+
+         Weight 200 on the head token relies on the variable font's 100–900
+         axis declared in the @font-face above. The two colour tokens are
+         tuned for LIGHT backgrounds — a dark-background section must
+         override --type-head-color / --type-body-color rather than
+         inherit them. */
+      --type-eyebrow-size:      10px;
+      --type-eyebrow-weight:    500;
+      --type-eyebrow-track:     0.28em;
+      --type-eyebrow-transform: uppercase;
+      --type-eyebrow-color:     var(--accent);
+
+      --type-head-size:   clamp(34px, 5vw, 52px);
+      --type-head-weight: 200;
+      --type-head-track:  -0.035em;
+      --type-head-color:  #8A8A8C;
+
+      --type-item-size:   clamp(20px, 2.1vw, 22px);
+      --type-item-weight: 400;
+      --type-item-track:  -0.01em;
+
+      --type-body-size:    13px;
+      --type-body-weight:  300;
+      --type-body-leading: 1.8;
+      --type-body-color:   rgba(21, 22, 26, 0.55);
+
+      --type-accent: var(--accent);
     }
 
     /* No global `scroll-behavior: smooth` — it makes mouse-wheel ticks
