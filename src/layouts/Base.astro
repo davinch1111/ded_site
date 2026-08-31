@@ -89,36 +89,46 @@ const {
       --mid:  'Montserrat', sans-serif;
       --body: 'Montserrat', -apple-system, system-ui, sans-serif;
 
+      /* ── Page shell ────────────────────────────────────────────────
+         Every full-width band measures from these, so all sections share
+         one text edge. Values taken from the Selected-work section, which
+         is the reference width. */
+      --shell-max: 1600px;
+      --shell-pad: clamp(40px, 5vw, 100px);
+
       /* ── Type scale — the site's type hierarchy ────────────────────
-         Established by ServicesSection.astro, currently the only consumer.
-         NOT yet migrated (still hardcoding their own type): index.astro
-         hero / work grid / about / testimonials / contact, SiteNav,
-         SiteFooter, work/[slug].astro, work/index.astro.
+         Single source of truth for eyebrow / section head / item / body.
+         Consumed by index.astro (work, about, testimonials, contact) and
+         ServicesSection.astro. Still to migrate: SiteNav, SiteFooter,
+         work/[slug].astro, work/index.astro.
 
-         Weight 200 on the head token relies on the variable font's 100–900
-         axis declared in the @font-face above. The two colour tokens are
-         tuned for LIGHT backgrounds — a dark-background section must
-         override --type-head-color / --type-body-color rather than
-         inherit them. */
-      --type-eyebrow-size:      10px;
+         Colour tokens come in light/dark pairs. The *-on-dark variants are
+         for bands over --black / #0F1014 (work grid, testimonials); the
+         light values fail contrast there and must not be used. */
+      --type-eyebrow-size:      11px;
       --type-eyebrow-weight:    500;
-      --type-eyebrow-track:     0.28em;
+      --type-eyebrow-track:     0.2em;
       --type-eyebrow-transform: uppercase;
-      --type-eyebrow-color:     var(--accent);
+      --type-eyebrow-color:         var(--accent);
+      /* Periwinkle, not --accent: #3457C6 on #0F1014 is only 3.0:1. */
+      --type-eyebrow-color-on-dark: var(--peri);
 
-      --type-head-size:   clamp(34px, 5vw, 52px);
-      --type-head-weight: 200;
-      --type-head-track:  -0.035em;
-      --type-head-color:  #8A8A8C;
+      --type-head-size:          clamp(1.8rem, 3vw, 2.8rem);
+      --type-head-weight:        300;
+      --type-head-track:         -0.01em;
+      --type-head-leading:       1.1;
+      --type-head-color:         var(--text-dark);
+      --type-head-color-on-dark: var(--text-white);
 
-      --type-item-size:   clamp(20px, 2.1vw, 22px);
-      --type-item-weight: 400;
+      --type-item-size:   clamp(1.05rem, 1.6vw, 1.45rem);
+      --type-item-weight: 300;
       --type-item-track:  -0.01em;
 
-      --type-body-size:    13px;
-      --type-body-weight:  300;
-      --type-body-leading: 1.8;
-      --type-body-color:   rgba(21, 22, 26, 0.55);
+      --type-body-size:          18px;
+      --type-body-weight:        300;
+      --type-body-leading:       1.7;
+      --type-body-color:         rgba(15, 16, 20, 0.65);
+      --type-body-color-on-dark: rgba(245, 244, 240, 0.72);
 
       --type-accent: var(--accent);
     }

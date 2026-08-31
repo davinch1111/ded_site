@@ -153,10 +153,11 @@ const slotClass = (slot: number) => `svc__item--${String(slot).padStart(2, '0')}
     padding: clamp(64px, 9vw, 128px) 0;
   }
 
+  /* Shares the site shell so this band lines up with Selected work. */
   .svc__inner {
-    max-width: 1240px;
+    max-width: var(--shell-max);
     margin: 0 auto;
-    padding: 0 clamp(20px, 5vw, 64px);
+    padding: 0 var(--shell-pad);
   }
 
   .svc__eyebrow {
@@ -173,17 +174,17 @@ const slotClass = (slot: number) => `svc__item--${String(slot).padStart(2, '0')}
     font-size: var(--type-head-size);
     font-weight: var(--type-head-weight);
     letter-spacing: var(--type-head-track);
-    line-height: 1;
+    line-height: var(--type-head-leading);
     color: var(--type-head-color);
   }
 
   .svc__subline {
     margin: 0 0 clamp(34px, 4vw, 46px);
-    font-size: 13.5px;
-    font-weight: 400;
-    line-height: 1.75;
-    color: rgba(21, 22, 26, 0.58);
-    max-width: 46ch;
+    font-size: var(--type-body-size);
+    font-weight: var(--type-body-weight);
+    line-height: var(--type-body-leading);
+    color: var(--type-body-color);
+    max-width: 62ch;
   }
 
   .svc__subline-a,
