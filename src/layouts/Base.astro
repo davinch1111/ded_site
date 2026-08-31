@@ -113,6 +113,14 @@ const {
       /* Periwinkle, not --accent: #3457C6 on #0F1014 is only 3.0:1. */
       --type-eyebrow-color-on-dark: var(--peri);
 
+      /* Page H1 — the hero setting, used by every page's single H1
+         (homepage hero, project title, /work, /services/*, /start, 404).
+         Per-page layout constraints like max-width/text-wrap stay local. */
+      --type-h1-size:    clamp(2.4rem, 5vw + 0.3rem, 5rem);
+      --type-h1-weight:  300;
+      --type-h1-track:   -0.02em;
+      --type-h1-leading: 1.04;
+
       --type-head-size:          clamp(1.8rem, 3vw, 2.8rem);
       --type-head-weight:        300;
       --type-head-track:         -0.01em;
@@ -150,9 +158,10 @@ const {
     img { max-width: 100%; display: block; }
 
     h1 {
-      font-size: clamp(2rem, 3.5vw + 1.3rem, 5.5rem);
-      letter-spacing: -0.01em;
-      line-height: 1.05;
+      font-size: var(--type-h1-size);
+      font-weight: var(--type-h1-weight);
+      letter-spacing: var(--type-h1-track);
+      line-height: var(--type-h1-leading);
     }
 
     h2 {

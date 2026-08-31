@@ -1,0 +1,173 @@
+---
+// /start — the "not sure what you need?" path. Deliberately NOT a second
+// contact form: there is one form on the site, in the homepage contact
+// section, and duplicating it would mean two endpoints and two sets of
+// validation to keep in step. This page narrows the question first, then
+// hands off to that single form.
+import Base from '../layouts/Base.astro';
+import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import Icon from '../components/Icon.astro';
+// Same source as the service pages, so the chooser can never list a service
+// that does not exist or describe one that has since been reworded.
+import { SERVICES } from '../data/services';
+
+const pageTitle = 'Start a project — David Ediger Design';
+const pageDesc = 'Not sure which discipline you need? Narrow it down in a minute, then tell me what you are building.';
+const canonical = new URL('/start/', Astro.site).href;
+const ogImage = new URL('/og-image.png', Astro.site).href;
+---
+<Base title={pageTitle} description={pageDesc}>
+  <Fragment slot="head">
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="David Ediger Design" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDesc} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDesc} />
+    <meta name="twitter:image" content={ogImage} />
+  </Fragment>
+
+  <div class="sv st">
+    <SiteNav />
+
+    <main id="main">
+      <header class="sv-head">
+        <div class="sv-wrap">
+          <p class="sv-eyebrow">Start a project</p>
+          <h1 class="sv-h1">Let’s narrow it down</h1>
+          <p class="sv-lede">Most people arrive knowing something needs to change, not which discipline fixes it. Pick whichever line below sounds most like your situation — or skip straight to the form.</p>
+        </div>
+      </header>
+
+      <section class="sv-block" aria-labelledby="pick-h">
+        <div class="sv-wrap">
+          <p class="sv-eyebrow">Which sounds like you?</p>
+          <h2 id="pick-h" class="sv-h2">Find the closest fit</h2>
+          <ul class="st-list">
+            {SERVICES.map(s => (
+              <li>
+                <a class="st-link" href={`/services/${s.slug}/`}>
+                  <span class="st-num" aria-hidden="true">{s.num}</span>
+                  <span class="st-text">
+                    <span class="st-title">{s.title}</span>
+                    <span class="st-note">{s.prompt}</span>
+                  </span>
+                  <span class="st-arrow" aria-hidden="true"><Icon name="arrow-right" /></span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section class="sv-block sv-block--alt" aria-labelledby="how-h">
+        <div class="sv-wrap">
+          <p class="sv-eyebrow">What happens next</p>
+          <h2 id="how-h" class="sv-h2">How this goes</h2>
+          <ol class="sv-steps">
+            <li class="sv-step">
+              <span class="sv-step-num" aria-hidden="true">01</span>
+              <div>
+                <h3 class="sv-item-name">You send the form</h3>
+                <p class="sv-item-note">Name, what you are building, rough budget and timeline. Five minutes, and there is no wrong answer — “not sure yet” is a real option on every question.</p>
+              </div>
+            </li>
+            <li class="sv-step">
+              <span class="sv-step-num" aria-hidden="true">02</span>
+              <div>
+                <h3 class="sv-item-name">I reply within two business days</h3>
+                <p class="sv-item-note">Either with questions, or with a straight answer about whether I am the right fit. If I am not, I will say so and point you somewhere better.</p>
+              </div>
+            </li>
+            <li class="sv-step">
+              <span class="sv-step-num" aria-hidden="true">03</span>
+              <div>
+                <h3 class="sv-item-name">We talk properly</h3>
+                <p class="sv-item-note">A call to understand the business rather than just the deliverable. No charge, no obligation, no pitch deck.</p>
+              </div>
+            </li>
+            <li class="sv-step">
+              <span class="sv-step-num" aria-hidden="true">04</span>
+              <div>
+                <h3 class="sv-item-name">You get a scope and a number</h3>
+                <p class="sv-item-note">In writing, with what is included and what is not, so there is nothing to discover later.</p>
+              </div>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="sv-cta" aria-labelledby="cta-h">
+        <div class="sv-wrap">
+          <h2 id="cta-h" class="sv-h2">Ready when you are</h2>
+          <p class="sv-cta-sub">I take on a small number of new projects each year. Tell me what you are building and I will tell you honestly whether I am the right fit.</p>
+          <a class="sv-btn" href="/#contact">Tell me about the project <Icon name="arrow-right" /></a>
+        </div>
+      </section>
+    </main>
+
+    <SiteFooter />
+  </div>
+</Base>
+
+<style is:global>
+/* Layout, type and CTA styles are shared with the service pages (.sv-*),
+   defined in src/pages/services/[slug].astro. Only the chooser list below
+   is specific to this page. */
+.st-list { list-style: none; margin: 0; padding: 0; }
+
+.st-link {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: clamp(16px, 3vw, 40px);
+  padding: 26px 0;
+  border-top: 1px solid var(--w-hairline, rgba(255,255,255,0.09));
+  text-decoration: none;
+  color: var(--w-text, #F5F4F0);
+  transition: background 250ms cubic-bezier(.25,.1,.25,1);
+}
+.st-list li:last-child .st-link { border-bottom: 1px solid var(--w-hairline, rgba(255,255,255,0.09)); }
+.st-link:hover { background: rgba(255,255,255,0.04); }
+.st-link:focus-visible { outline: 2px solid var(--w-accent, #3457C6); outline-offset: -2px; }
+
+.st-num {
+  font-size: var(--type-eyebrow-size);
+  font-weight: var(--type-eyebrow-weight);
+  letter-spacing: var(--type-eyebrow-track);
+  color: var(--type-eyebrow-color-on-dark);
+  padding-top: 8px;
+}
+
+.st-text { display: block; }
+
+.st-title {
+  display: block;
+  font-size: var(--type-item-size);
+  font-weight: var(--type-item-weight);
+  letter-spacing: var(--type-item-track);
+  line-height: 1.25;
+  margin-bottom: 8px;
+}
+
+.st-note {
+  display: block;
+  max-width: 62ch;
+  font-size: var(--type-body-size);
+  font-weight: var(--type-body-weight);
+  line-height: var(--type-body-leading);
+  color: var(--w-muted, rgba(245,244,240,0.62));
+}
+
+.st-arrow { color: var(--type-eyebrow-color-on-dark); padding-top: 6px; }
+
+@media (max-width: 860px) {
+  .st-link { grid-template-columns: auto 1fr; }
+  .st-arrow { display: none; }
+}
+</style>

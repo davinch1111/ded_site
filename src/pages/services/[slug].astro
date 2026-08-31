@@ -1,0 +1,329 @@
+---
+// Service detail pages — /services/branding, /print-signage, /web, /video,
+// /retainer. One dynamic route so the five share a layout. Copy lives in
+// src/data/services.ts rather than in WordPress (studio pages, not project
+// content) and rather than in this frontmatter, because getStaticPaths runs
+// in a hoisted scope that cannot see frontmatter consts.
+import Base from '../../layouts/Base.astro';
+import SiteNav from '../../components/SiteNav.astro';
+import SiteFooter from '../../components/SiteFooter.astro';
+import Icon from '../../components/Icon.astro';
+
+import { SERVICES } from '../../data/services';
+
+export function getStaticPaths() {
+  return SERVICES.map(s => ({ params: { slug: s.slug } }));
+}
+
+const { slug } = Astro.params;
+const service = SERVICES.find(s => s.slug === slug)!;
+const others = SERVICES.filter(s => s.slug !== slug);
+
+const pageTitle = `${service.title} — David Ediger Design`;
+const canonical = new URL(`/services/${service.slug}/`, Astro.site).href;
+const ogImage = new URL('/og-image.png', Astro.site).href;
+---
+<Base title={pageTitle} description={service.metaDesc}>
+  <Fragment slot="head">
+    <link rel="canonical" href={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="David Ediger Design" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={service.metaDesc} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={service.metaDesc} />
+    <meta name="twitter:image" content={ogImage} />
+  </Fragment>
+
+  <div class="sv">
+    <SiteNav />
+
+    <main id="main">
+      <header class="sv-head">
+        <div class="sv-wrap">
+          <p class="sv-eyebrow">Studio services — {service.num}</p>
+          <h1 class="sv-h1">{service.title}</h1>
+          <p class="sv-lede">{service.lede}</p>
+        </div>
+      </header>
+
+      <section class="sv-intro" aria-label="Overview">
+        <div class="sv-wrap">
+          <div class="sv-intro-body">
+            {service.intro.map(p => <p>{p}</p>)}
+          </div>
+        </div>
+      </section>
+
+      <section class="sv-block" aria-labelledby="inc-h">
+        <div class="sv-wrap">
+          <p class="sv-eyebrow">What it includes</p>
+          <h2 id="inc-h" class="sv-h2">The deliverables</h2>
+          <div class="sv-grid">
+            {service.includes.map(item => (
+              <div class="sv-item">
+                <span class="sv-rule" aria-hidden="true"></span>
+                <h3 class="sv-item-name">{item.name}</h3>
+                <p class="sv-item-note">{item.note}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section class="sv-block sv-block--alt" aria-labelledby="how-h">
+        <div class="sv-wrap">
+          <p class="sv-eyebrow">How it works</p>
+          <h2 id="how-h" class="sv-h2">The process</h2>
+          <ol class="sv-steps">
+            {service.steps.map((step, i) => (
+              <li class="sv-step">
+                <span class="sv-step-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                <div>
+                  <h3 class="sv-item-name">{step.name}</h3>
+                  <p class="sv-item-note">{step.note}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section class="sv-cta" aria-labelledby="cta-h">
+        <div class="sv-wrap">
+          <h2 id="cta-h" class="sv-h2">Start a project</h2>
+          <p class="sv-cta-sub">Tell me what you are building. A few quick questions and I will know if I am the right fit.</p>
+          <a class="sv-btn" href="/start/">Start a project <Icon name="arrow-right" /></a>
+        </div>
+      </section>
+
+      <nav class="sv-more" aria-label="Other services">
+        <div class="sv-wrap">
+          <p class="sv-eyebrow">Also from the studio</p>
+          <ul class="sv-more-list">
+            {others.map(o => (
+              <li>
+                <a class="sv-more-link" href={`/services/${o.slug}/`}>
+                  <span class="sv-more-num" aria-hidden="true">{o.num}</span>
+                  <span class="sv-more-name">{o.title}</span>
+                  <span class="sv-more-arrow" aria-hidden="true"><Icon name="arrow-right" /></span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </nav>
+    </main>
+
+    <SiteFooter />
+  </div>
+</Base>
+
+<style is:global>
+.sv {
+  background: var(--w-bg, #03040E);
+  min-height: 100vh;
+  font-family: var(--body);
+  color: var(--w-text, #F5F4F0);
+}
+
+.sv-wrap {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  padding: 0 var(--shell-pad);
+}
+
+.sv-eyebrow {
+  font-size: var(--type-eyebrow-size);
+  font-weight: var(--type-eyebrow-weight);
+  letter-spacing: var(--type-eyebrow-track);
+  text-transform: var(--type-eyebrow-transform);
+  color: var(--type-eyebrow-color-on-dark);
+  margin-bottom: 14px;
+}
+
+.sv-h1 {
+  font-size: var(--type-h1-size);
+  font-weight: var(--type-h1-weight);
+  letter-spacing: var(--type-h1-track);
+  line-height: var(--type-h1-leading);
+  color: var(--w-text, #F5F4F0);
+  max-width: 16ch;
+  text-wrap: balance;
+}
+
+.sv-h2 {
+  font-size: var(--type-head-size);
+  font-weight: var(--type-head-weight);
+  letter-spacing: var(--type-head-track);
+  line-height: var(--type-head-leading);
+  color: var(--w-text, #F5F4F0);
+  margin-bottom: clamp(28px, 4vh, 44px);
+}
+
+.sv-head { padding: 148px 0 0; }
+
+.sv-lede {
+  margin-top: 20px;
+  max-width: 56ch;
+  font-size: clamp(1.15rem, 1vw + 0.8rem, 1.5rem);
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--w-text, #F5F4F0);
+}
+
+.sv-intro { padding: clamp(48px, 7vh, 88px) 0 0; }
+
+.sv-intro-body {
+  columns: 2;
+  column-gap: clamp(32px, 4vw, 72px);
+  max-width: 110ch;
+  font-size: var(--type-body-size);
+  font-weight: var(--type-body-weight);
+  line-height: var(--type-body-leading);
+  color: var(--w-muted, rgba(245,244,240,0.62));
+}
+.sv-intro-body p { break-inside: avoid-column; }
+.sv-intro-body p + p { margin-top: 1em; }
+
+.sv-block { padding: clamp(64px, 9vh, 120px) 0; }
+.sv-block--alt { background: var(--w-surface, #0F1116); }
+
+/* Deliverables — the Studio-services grid: two columns, hairline per item
+   with an accent rule. Column-major DOM order, so tab order tracks reading
+   order without any `order` reshuffling. */
+.sv-grid {
+  display: grid;
+  grid-template-columns: 1.06fr 0.94fr;
+  column-gap: clamp(28px, 4vw, 56px);
+}
+
+.sv-item {
+  position: relative;
+  padding: 24px 16px 28px 0;
+  margin-bottom: 34px;
+  border-top: 1px solid var(--w-hairline, rgba(255,255,255,0.09));
+}
+
+.sv-rule {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  height: 1px;
+  width: 22%;
+  background: var(--w-accent, #3457C6);
+}
+
+.sv-item-name {
+  font-size: var(--type-item-size);
+  font-weight: var(--type-item-weight);
+  letter-spacing: var(--type-item-track);
+  line-height: 1.25;
+  color: var(--w-text, #F5F4F0);
+  margin-bottom: 10px;
+}
+
+.sv-item-note {
+  font-size: var(--type-body-size);
+  font-weight: var(--type-body-weight);
+  line-height: var(--type-body-leading);
+  color: var(--w-muted, rgba(245,244,240,0.62));
+  max-width: 56ch;
+}
+
+/* Process — numbered steps */
+.sv-steps { list-style: none; margin: 0; padding: 0; }
+
+.sv-step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: clamp(20px, 3vw, 40px);
+  padding: 26px 0;
+  border-top: 1px solid var(--w-hairline, rgba(255,255,255,0.09));
+}
+.sv-step:last-child { border-bottom: 1px solid var(--w-hairline, rgba(255,255,255,0.09)); }
+
+.sv-step-num {
+  font-size: var(--type-eyebrow-size);
+  font-weight: var(--type-eyebrow-weight);
+  letter-spacing: var(--type-eyebrow-track);
+  color: var(--type-eyebrow-color-on-dark);
+  padding-top: 6px;
+}
+
+/* CTA */
+.sv-cta {
+  padding: clamp(64px, 9vh, 120px) 0;
+  border-top: 1px solid var(--w-hairline, rgba(255,255,255,0.09));
+}
+.sv-cta-sub {
+  margin: -20px 0 32px;
+  max-width: 52ch;
+  font-size: var(--type-body-size);
+  font-weight: var(--type-body-weight);
+  line-height: var(--type-body-leading);
+  color: var(--w-muted, rgba(245,244,240,0.62));
+}
+
+.sv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 28px;
+  background: var(--w-accent, #3457C6);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 200ms cubic-bezier(.25,.1,.25,1), transform 120ms ease-out;
+}
+.sv-btn:hover { background: var(--accent-hover, #2A47A0); }
+.sv-btn:active { transform: scale(0.97); }
+
+/* Other services */
+.sv-more {
+  padding: clamp(48px, 7vh, 88px) 0 clamp(64px, 9vh, 120px);
+  background: var(--w-surface, #0F1116);
+}
+.sv-more-list { list-style: none; margin: 0; padding: 0; }
+
+.sv-more-link {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: clamp(16px, 3vw, 36px);
+  padding: 22px 0;
+  border-top: 1px solid var(--w-hairline, rgba(255,255,255,0.09));
+  text-decoration: none;
+  color: var(--w-text, #F5F4F0);
+  transition: background 250ms cubic-bezier(.25,.1,.25,1);
+}
+.sv-more-list li:last-child .sv-more-link { border-bottom: 1px solid var(--w-hairline, rgba(255,255,255,0.09)); }
+.sv-more-link:hover { background: rgba(255,255,255,0.04); }
+.sv-more-link:focus-visible { outline: 2px solid var(--w-accent, #3457C6); outline-offset: -2px; }
+
+.sv-more-num {
+  font-size: var(--type-eyebrow-size);
+  font-weight: var(--type-eyebrow-weight);
+  letter-spacing: var(--type-eyebrow-track);
+  color: var(--type-eyebrow-color-on-dark);
+}
+.sv-more-name {
+  font-size: var(--type-item-size);
+  font-weight: var(--type-item-weight);
+  letter-spacing: var(--type-item-track);
+}
+.sv-more-arrow { color: var(--type-eyebrow-color-on-dark); }
+
+@media (max-width: 860px) {
+  .sv-head { padding-top: 120px; }
+  .sv-intro-body { columns: 1; }
+  .sv-grid { grid-template-columns: 1fr; }
+  .sv-step { grid-template-columns: 1fr; gap: 8px; }
+}
+</style>

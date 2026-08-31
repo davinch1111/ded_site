@@ -26,8 +26,8 @@ export interface Props {
   helpHref?: string;
 }
 
-// Routes: /services/* and /start do not exist yet — every href points at the
-// homepage contact anchor until those pages ship, so nothing 404s.
+// Routes: all six targets now exist — src/pages/services/[slug].astro builds
+// the five service pages, src/pages/start.astro the intake path.
 const {
   eyebrow = 'Studio services',
   heading = 'where do you need help?',
@@ -35,48 +35,54 @@ const {
   sublineB = 'Start wherever you are.',
   helpLabel = 'Not sure what you need?',
   helpCta = "Let's narrow it down",
-  helpHref = '/#contact',
+  helpHref = '/start/',
   services = [
     {
       num: '01',
       title: 'Branding',
       body: 'Logo, colour, and type — the foundation everything else is built on. Get this right and every piece that follows looks like it belongs to you.',
-      href: '/#contact',
+      href: '/services/branding/',
     },
     {
       num: '02',
       title: 'Print &amp; signage',
       body: 'Brochures and business cards through to packaging, vehicle wraps, tradeshow booths, and wayfinding. The work people pick up and walk through.',
-      href: '/#contact',
+      href: '/services/print-signage/',
     },
     {
       num: '03',
       title: 'Web',
       body: 'Custom sites that load fast and make a small operation look like the obvious choice. Not a template — and live sooner than a traditional studio would manage.',
-      href: '/#contact',
+      href: '/services/web/',
     },
     {
       num: '04',
       title: 'Video',
       body: 'Short-form and motion content produced end to end — shot, cut, and scored in-house, so it lands as one finished piece instead of stock footage on a stock track.',
-      href: '/#contact',
+      href: '/services/video/',
     },
   ],
   retainer = {
     num: '05',
     title: 'A studio on call',
     body: 'Already have all of the above? Keep someone on hand who knows your brand — updates, campaigns, and new pieces without starting from a blank brief.',
-    href: '/#contact',
+    href: '/services/retainer/',
   },
 } = Astro.props;
 
-// `slot` is the item's position in the numbered 01→05 sequence, independent of
-// which column it renders in. It drives the --rule / --delay slot class, so the
-// stagger runs in numbered order rather than column order.
+// `slot` is the item's position in the numbered 01→05 sequence. It drives the
+// --rule / --delay slot class, so the stagger runs in numbered order.
+//
+// Columns are COLUMN-MAJOR: the first half fills the left column, the rest the
+// right, so DOM order is already 01,02,03,04. That keeps tab and screen-reader
+// order identical to reading order at every breakpoint (WCAG 2.4.3) and means
+// the mobile stack needs no `order` reshuffling. Splitting odd/even would put
+// 01,03,02,04 in the DOM and desync the two.
 const items = services.map((s, i) => ({ ...s, slot: i + 1 }));
 const retainerItem = { ...retainer, slot: items.length + 1 };
-const colLeft = items.filter((_, i) => i % 2 === 0);
-const colRight = items.filter((_, i) => i % 2 === 1);
+const splitAt = Math.ceil(items.length / 2);
+const colLeft = items.slice(0, splitAt);
+const colRight = items.slice(splitAt);
 
 const slotClass = (slot: number) => `svc__item--${String(slot).padStart(2, '0')}`;
 ---
@@ -363,22 +369,12 @@ const slotClass = (slot: number) => `svc__item--${String(slot).padStart(2, '0')}
   }
 
   @media (max-width: 860px) {
-    /* Single column in numbered order. The two column wrappers are dissolved
-       with display:contents so all four items become flex children of the
-       grid; without this they stack per-wrapper and read 01,03,02,04. */
+    /* Single column. Columns are column-major, so DOM order is already
+       01→04 and the wrappers stack in the right sequence on their own —
+       no display:contents and no `order` needed. */
     .svc__grid {
-      display: flex;
-      flex-direction: column;
+      grid-template-columns: 1fr;
     }
-
-    .svc__col {
-      display: contents;
-    }
-
-    .svc__item--01 { order: 1; }
-    .svc__item--02 { order: 2; }
-    .svc__item--03 { order: 3; }
-    .svc__item--04 { order: 4; }
 
     .svc__col--right {
       margin-top: 0;

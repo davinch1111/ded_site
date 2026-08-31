@@ -190,6 +190,30 @@ const galleryItems    = Array.isArray(acf.gallery_items) ? acf.gallery_items.fil
 const showGallery     = acf.show_gallery     !== false && galleryItems.length > 0;
 const showVideo       = acf.show_video       === true  && !!acf.video_url;
 const showOutcome     = acf.show_outcome     !== false && !!acf.outcome_text;
+
+// ─── Outcome copy ────────────────────────────────────────────────────────────
+// The outcome used to render as one <p> in the big pull-quote face at an 18ch
+// measure. That reads well for a one-line result ("Bookings up 40%") but turns
+// into a tall ribbon of oversized text when the field holds real paragraphs —
+// see ediger-phoenix-sundecks (~660 chars). So: keep the FIRST SENTENCE as the
+// statement, and flow whatever follows as normal body copy in two columns.
+//
+// ACF textareas store hard newlines rather than markup, so split on them for
+// paragraphs; a lone newline is a paragraph break here, not a soft wrap.
+const outcomeParas = (acf.outcome_text ?? '')
+  .split(/\r?\n+/)
+  .map(p => p.trim())
+  .filter(Boolean);
+
+// Sentence end = . ! or ? followed by whitespace or end-of-string. If there is
+// no terminator the whole paragraph becomes the lead and there is no body.
+const firstPara = outcomeParas[0] ?? '';
+const sentenceEnd = firstPara.search(/[.!?](?=\s|$)/);
+const splitAt = sentenceEnd === -1 ? -1 : sentenceEnd + 1;
+const outcomeLead = splitAt === -1 ? firstPara : firstPara.slice(0, splitAt).trim();
+const firstRemainder = splitAt === -1 ? '' : firstPara.slice(splitAt).trim();
+const outcomeBody = [firstRemainder, ...outcomeParas.slice(1)].filter(Boolean);
+
 // Case-study proof points (big numerals under the outcome statement)
 const outcomeStats    = Array.isArray(acf.outcome_stats)
   ? acf.outcome_stats.filter(s => s && (s.os_value || s.os_label))
@@ -533,7 +557,12 @@ const jsonLd = {
         <div class="w-wrap">
           <p class="w-eyebrow">The outcome</p>
           <h2 id="outcome-h" class="w-h2">How it landed</h2>
-          <p class="w-outcome-statement">{acf.outcome_text}</p>
+          <p class="w-outcome-statement">{outcomeLead}</p>
+          {outcomeBody.length > 0 && (
+            <div class="w-outcome-body">
+              {outcomeBody.map(p => <p>{p}</p>)}
+            </div>
+          )}
           {outcomeStats.length > 0 && (
             <div class="w-outcome-stats">
               {outcomeStats.map(s => (
@@ -823,15 +852,15 @@ const jsonLd = {
     text-transform: uppercase;
     color: rgba(245,244,240,0.78);
   }
+  /* Page H1 — shares the --type-h1-* setting with the homepage hero, /work
+     and 404. The measure + balance stay local so long taglines still wrap
+     to a compact block rather than one long line. */
   .w-hero-h1 {
-    font-family: 'Montserrat', sans-serif;
-    /* Reduced again — smaller fluid + max terms so it reads clearly smaller
-       than before and wraps gracefully, while its multi-line mass keeps it
-       the dominant element above the pills and facts. */
-    font-size: clamp(1.9rem, 3vw + 0.3rem, 3.6rem);
-    font-weight: 300;
-    letter-spacing: -0.025em;
-    line-height: 1.06;
+    font-family: var(--body);
+    font-size: var(--type-h1-size);
+    font-weight: var(--type-h1-weight);
+    letter-spacing: var(--type-h1-track);
+    line-height: var(--type-h1-leading);
     color: var(--w-text);
     text-wrap: balance;
     max-width: 18ch;
@@ -952,13 +981,15 @@ const jsonLd = {
   .w-blocked-label--right .w-eyebrow,
   .w-blocked-label--right .w-h2 { text-align: right; }
 
+  /* "Where it started" / "How I tackled it" — the site body size, so project
+     pages read at the same scale as the homepage and the outcome body. */
   .w-blocked-body {
-    font-family: 'Montserrat', sans-serif;
-    font-size: clamp(1.05rem, 1vw + 0.55rem, 1.4rem);
-    font-weight: 300;
-    line-height: 1.55;
+    font-family: var(--body);
+    font-size: var(--type-body-size);
+    font-weight: var(--type-body-weight);
+    line-height: var(--type-body-leading);
     color: var(--w-muted);
-    max-width: 60ch;
+    max-width: 62ch;
   }
   .w-blocked-body p + p { margin-top: 1em; }
 
@@ -1242,15 +1273,39 @@ const jsonLd = {
     background: var(--w-bg);
   }
   .w-outcome .w-h2 { margin-bottom: 24px; }
+  /* Lead sentence only. 18ch suited a one-line result but strangled a real
+     paragraph, so the measure is now ~28ch — still a pull-quote, but it can
+     hold a full sentence without becoming a ribbon. */
   .w-outcome-statement {
-    font-family: 'Montserrat', sans-serif;
+    font-family: var(--body);
     font-size: clamp(1.6rem, 2.2vw + 0.4rem, 2.6rem);
     font-weight: 300;
-    line-height: 1.18;
+    line-height: 1.22;
     letter-spacing: -0.018em;
     color: var(--w-text);
-    max-width: 18ch;
+    max-width: 28ch;
     text-wrap: balance;
+  }
+
+  /* Everything after the lead sentence: normal body copy, two columns.
+     Multi-column balances the fill automatically, so an odd number of
+     paragraphs still produces two even columns. */
+  .w-outcome-body {
+    margin-top: clamp(24px, 3vh, 36px);
+    font-family: var(--body);
+    font-size: var(--type-body-size);
+    font-weight: var(--type-body-weight);
+    line-height: var(--type-body-leading);
+    color: var(--w-muted);
+    columns: 2;
+    column-gap: clamp(32px, 4vw, 72px);
+    max-width: 110ch;
+  }
+  .w-outcome-body p { break-inside: avoid-column; }
+  .w-outcome-body p + p { margin-top: 1em; }
+
+  @media (max-width: 880px) {
+    .w-outcome-body { columns: 1; }
   }
 
   /* Case-study proof points — big numerals under the statement,

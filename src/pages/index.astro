@@ -122,9 +122,12 @@ const industries = [
 // in the numbered sequence regardless of which column it renders in, so the
 // slot class can drive the accent-rule width and the mobile stacking order
 // from CSS instead of an inline style (strict CSP forbids style attributes).
+// Column-major, matching ServicesSection: first half left, rest right, so DOM
+// order is 01→09 and tab/screen-reader order tracks reading order (WCAG 2.4.3).
 const industryItems = industries.map((ind, i) => ({ ...ind, slot: i + 1 }));
-const indLeft  = industryItems.filter((_, i) => i % 2 === 0);
-const indRight = industryItems.filter((_, i) => i % 2 === 1);
+const indSplit = Math.ceil(industryItems.length / 2);
+const indLeft  = industryItems.slice(0, indSplit);
+const indRight = industryItems.slice(indSplit);
 const indSlot = (slot: number) => `arow--${String(slot).padStart(2, '0')}`;
 
 const quotes = [
@@ -702,14 +705,16 @@ body.dark-zone-active {
   margin-bottom: 18px;
 }
 
-/* Override Base.astro's global h1 for this hero */
+/* Hero H1 — the reference the --type-h1-* tokens are drawn from. Only the
+   colour is hero-specific; size/weight/tracking/leading come from the tokens
+   so every other page H1 matches. */
 .hp-hero h1 {
-  font-family: 'Montserrat', sans-serif !important;
-  font-size: clamp(2.4rem, 5vw + 0.3rem, 5rem) !important;
-  font-weight: 300 !important;
+  font-family: var(--body) !important;
+  font-size: var(--type-h1-size) !important;
+  font-weight: var(--type-h1-weight) !important;
   color: var(--text-white) !important;
-  letter-spacing: -0.02em !important;
-  line-height: 1.04 !important;
+  letter-spacing: var(--type-h1-track) !important;
+  line-height: var(--type-h1-leading) !important;
   margin-bottom: 22px;
 }
 
@@ -1602,28 +1607,12 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   .atag  { justify-self: start; }
 }
 
-/* Industry grid → single column in slot order. The column wrappers are
-   dissolved with display:contents, otherwise the left column's rows all
-   stack before the right column's (01,03,05,07,09,02,04,06,08). */
+/* Industry grid → single column. Columns are column-major, so DOM order is
+   already 01→09 and the wrappers stack in sequence on their own. */
 @media (max-width: 860px) {
-  .agrid {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .acol { display: contents; }
+  .agrid { grid-template-columns: 1fr; }
 
   .acol--right { margin-top: 0; }
-
-  .arow--01 { order: 1; }
-  .arow--02 { order: 2; }
-  .arow--03 { order: 3; }
-  .arow--04 { order: 4; }
-  .arow--05 { order: 5; }
-  .arow--06 { order: 6; }
-  .arow--07 { order: 7; }
-  .arow--08 { order: 8; }
-  .arow--09 { order: 9; }
 
   .acol--left .arow:last-child { margin-bottom: 34px; }
 
