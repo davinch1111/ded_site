@@ -96,6 +96,12 @@ const {
       --shell-max: 1600px;
       --shell-pad: clamp(40px, 5vw, 100px);
 
+      /* Inner padding on highlightable list rows (Studio services, Industry
+         experience). Rows carry an equal NEGATIVE horizontal margin, so text
+         still sits on the column edge at rest and only the hover tint bleeds
+         outward. Changing this keeps text and tint in step automatically. */
+      --row-pad: 22px;
+
       /* ── Type scale — the site's type hierarchy ────────────────────
          Single source of truth for eyebrow / section head / item / body.
          Consumed by index.astro (work, about, testimonials, contact) and

@@ -1137,12 +1137,17 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
    is in SiteNav's light-flip observer list. */
 .about-section {
   background: var(--bg-light, #F6F3EC);
-  padding: 120px var(--shell-pad);
+  padding: 120px 0;
 }
 
+/* Same box model as .svc__inner — padding INSIDE the max-width — so both
+   bands resolve to one identical container width. Previously the padding
+   sat on .about-section (outside the cap), which made this section wider
+   than Studio services above ~1744px viewport (1600 vs 1408). */
 .about-inner {
   max-width: var(--shell-max);
   margin: 0 auto;
+  padding: 0 var(--shell-pad);
 }
 
 .a-label {
@@ -1239,38 +1244,65 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
 
 .arow {
   position: relative;
-  padding: 24px 16px 28px 0;
-  margin-bottom: 34px;
-  border-top: 1px solid rgba(15,16,20,0.13);
-  transition: background 350ms ease;
+  /* Even whitespace on all four sides of the highlight, pulled back out by
+     an equal negative horizontal margin so text stays on the column edge at
+     rest — only the tint extends outward on hover. */
+  padding: var(--row-pad);
+  margin: 0 calc(var(--row-pad) * -1) 34px;
+  /* Jiggle uses `translate`; the global .reveal state owns `transform` at
+     higher specificity, and the two properties compose independently. */
+  transition: background 350ms ease,
+              translate 240ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .acol .arow:last-child { margin-bottom: 0; }
 
-/* Per-slot accent-rule width. Class-driven, never an inline style — the
-   CSP has no 'unsafe-inline' and no style-src-attr escape hatch. */
-.arow--01 { --arule: 18%; }
-.arow--02 { --arule: 30%; }
-.arow--03 { --arule: 22%; }
-.arow--04 { --arule: 36%; }
-.arow--05 { --arule: 16%; }
-.arow--06 { --arule: 28%; }
-.arow--07 { --arule: 20%; }
-.arow--08 { --arule: 34%; }
-.arow--09 { --arule: 24%; }
+/* Per-slot accent-rule length. Class-driven, never an inline style — the
+   CSP has no 'unsafe-inline' and no style-src-attr escape hatch. Unitless
+   because the rule sweeps via scaleX. */
+.arow--01 { --arule-x: 0.18; }
+.arow--02 { --arule-x: 0.30; }
+.arow--03 { --arule-x: 0.22; }
+.arow--04 { --arule-x: 0.36; }
+.arow--05 { --arule-x: 0.16; }
+.arow--06 { --arule-x: 0.28; }
+.arow--07 { --arule-x: 0.20; }
+.arow--08 { --arule-x: 0.34; }
+.arow--09 { --arule-x: 0.24; }
+
+/* Divider = grey base (::before) + blue overlay (.arule), both inset by
+   --row-pad so the rule stays flush with the text rather than with the
+   bled-out highlight box. Both thicken together on hover. */
+.arow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: var(--row-pad);
+  right: var(--row-pad);
+  height: var(--arule-h, 1px);
+  background: rgba(15,16,20,0.13);
+  transition: height 360ms ease;
+}
 
 .arule {
   position: absolute;
-  top: -1px;
-  left: 0;
-  height: 1px;
-  width: var(--arule, 20%);
+  top: 0;
+  left: var(--row-pad);
+  right: var(--row-pad);
+  height: var(--arule-h, 1px);
   background: var(--accent);
-  transition: width 550ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  transform: scaleX(var(--arule-x, 0.2));
+  transform-origin: left center;
+  transition: transform 360ms cubic-bezier(0.22, 0.61, 0.36, 1),
+              height 360ms ease;
 }
 
-.arow:hover { background: #FBFAF7; }
-.arow:hover .arule { width: 100%; }
+.arow:hover {
+  background: #FBFAF7;
+  --arule-h: 3px;
+  translate: 3px 0;
+}
+.arow:hover .arule { transform: scaleX(1); }
 
 .aname {
   font-family: var(--body);
@@ -1616,9 +1648,30 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
 
   .acol--left .arow:last-child { margin-bottom: 34px; }
 
-  .arule { width: 100%; }
+  /* Rules render full width. Set through the variable rather than by
+     overriding transform, so the reduced-motion rule below cannot shrink
+     them back on hover here. */
+  .arow { --arule-x: 1; }
 
-  .arow:hover { background: transparent; }
+  .arow:hover { background: transparent; translate: none; }
+}
+
+/* Motion guard for both list sections' rows: no jiggle, and the divider
+   stays static — no sweep, no growth. The background tint still confirms
+   the hover. */
+@media (prefers-reduced-motion: reduce) {
+  .arow,
+  .arow::before,
+  .arule {
+    transition: none;
+  }
+
+  .arow:hover {
+    translate: none;
+    --arule-h: 1px;
+  }
+
+  .arow:hover .arule { transform: scaleX(var(--arule-x, 0.2)); }
 }
 
 /* Hero emblem: shrink + move to top-right on tablets, hide on small phones */
