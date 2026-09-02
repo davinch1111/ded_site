@@ -707,7 +707,23 @@ const jsonLd = {
     color: var(--w-text);
     font-family: 'Montserrat', sans-serif;
     font-weight: 300;
-    overflow-x: hidden;
+
+    /* `clip`, never `hidden`. Per CSS Overflow 3, if one axis is `hidden`
+       and the other `visible`, the visible axis computes to `auto` — which
+       silently turned this element into a user-scrollable box. It then
+       acquired real scrollable extent from its descendants: the global
+       .reveal state is transform: translateY(24px), and a transform
+       enlarges the scrollable overflow area even though it does not affect
+       layout. A wheel gesture therefore scrolled those 24px inside .work
+       first and had to be repeated to chain out to the document — the
+       scroll "stall" on this page but not the homepage, whose wrapper
+       computes visible/visible.
+
+       `clip` does not coerce the other axis and creates no scroll
+       container, so horizontal overflow is still clipped but there is no
+       scroll box to swallow the gesture. Page-level horizontal clipping is
+       additionally covered by `body { overflow-x: hidden }` in Base.astro. */
+    overflow-x: clip;
   }
 
   /* Skip link styles now live globally in Base.astro */
