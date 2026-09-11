@@ -138,7 +138,15 @@ export async function getStaticPaths() {
       id: p.id,
       slug: p.slug,
       title: p.title?.rendered ?? 'Untitled',
-      featuredImage: p._embedded?.['wp:featuredmedia']?.[0]?.source_url ?? null,
+      // Prefer the WP featured image, then fall back to ACF master_image.
+      // Most projects set only master_image and leave featured_media at 0, so
+      // keying solely off wp:featuredmedia left the "More work" card with no
+      // <img> at all — and .w-related-card's dark background plus its gradient
+      // overlay rendered that as a plain black tile.
+      featuredImage:
+        p._embedded?.['wp:featuredmedia']?.[0]?.source_url
+        ?? resolveImg((p.acf ?? {}).master_image)?.url
+        ?? null,
       discipline: terms.filter(t => t.taxonomy === 'discipline'),
       skill:      terms.filter(t => t.taxonomy === 'skill'),
     };
@@ -625,8 +633,12 @@ const jsonLd = {
           <div class="w-related-grid">
             {related.map(r => (
               <a class="w-related-card" href={`/work/${r.slug}/`} aria-label={`View project: ${r.title.replace(/<[^>]+>/g,'')}`}>
-                {r.featuredImage && (
+                {r.featuredImage ? (
                   <img class="w-related-img" src={r.featuredImage} alt={r.title.replace(/<[^>]+>/g,'')} loading="lazy" />
+                ) : (
+                  /* No imagery yet: branded emblem rather than a bare dark
+                     tile, matching the placeholder cards on / and /work/. */
+                  <img class="w-related-img w-related-ghost" src="/images/ded_emblem_white.svg" alt="" aria-hidden="true" loading="lazy" />
                 )}
                 <div class="w-related-overlay">
                   <div class="w-related-meta">
@@ -1437,6 +1449,12 @@ const jsonLd = {
     width: 100%; height: 100%;
     object-fit: cover;
     transition: transform 600ms var(--w-ease-out);
+  }
+  /* Placeholder emblem: contained and dimmed, not cropped to fill. */
+  .w-related-ghost {
+    object-fit: contain;
+    padding: 18%;
+    opacity: 0.14;
   }
   .w-related-overlay {
     position: absolute;
