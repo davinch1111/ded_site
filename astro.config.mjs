@@ -39,12 +39,13 @@ export default defineConfig({
         // third-party font or style origins remain.
         "font-src 'self'",
         // cloudflarestream.com — the showreel modal embeds the Stream iframe player.
-        "frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://customer-svfce6is3mlvvekf.cloudflarestream.com",
+        // challenges.cloudflare.com — Turnstile renders its widget in an iframe.
+        "frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://customer-svfce6is3mlvvekf.cloudflarestream.com https://challenges.cloudflare.com",
         // cloudflarestream.com — hls.js fetches the manifest + segments via XHR.
         // cloudflareinsights.com — Web Analytics beacon POSTs RUM data to /cdn-cgi/rum.
-        // api.web3forms.com — contact form AJAX submit (no-JS fallback is a
-        // plain form POST, which CSP form-action does not restrict here).
-        "connect-src 'self' https://customer-svfce6is3mlvvekf.cloudflarestream.com https://cloudflareinsights.com https://api.web3forms.com",
+        // The contact form now posts to our own /api/contact Pages Function,
+        // which 'self' already covers — the Web3Forms origin is gone.
+        "connect-src 'self' https://customer-svfce6is3mlvvekf.cloudflarestream.com https://cloudflareinsights.com",
       ],
       styleDirective: {
         resources: ["'self'"],
@@ -52,7 +53,12 @@ export default defineConfig({
       scriptDirective: {
         // cloudflareinsights.com — the Web Analytics beacon (beacon.min.js) is
         // an external third-party script, not hashed like the bundled islands.
-        resources: ["'self'", 'https://static.cloudflareinsights.com'],
+        // challenges.cloudflare.com — Turnstile's api.js, same situation.
+        resources: [
+          "'self'",
+          'https://static.cloudflareinsights.com',
+          'https://challenges.cloudflare.com',
+        ],
       },
     },
   },

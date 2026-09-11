@@ -161,6 +161,14 @@ const {
       overflow-x: hidden;
     }
 
+    /* Shared scroll lock — see src/scripts/scroll-lock.ts. A class, not an
+       inline style, so the intro wipe and the mobile menu can hold it
+       simultaneously without clobbering each other. */
+    html.scroll-locked,
+    html.scroll-locked body {
+      overflow: hidden;
+    }
+
     img { max-width: 100%; display: block; }
 
     h1 {
@@ -407,31 +415,56 @@ const {
        ded-intro-done for the hero entrances. Bundled (script-src 'self'),
        never inline. -->
   <script>
+    import { lockScroll, unlockScroll } from '../scripts/scroll-lock';
+
     // 3500ms hold + 800ms wipe — must match the introWipe keyframe.
     const INTRO_TOTAL_MS = 4300;
+    // Safety net: if the animation never ends (tab backgrounded mid-wipe,
+    // throttled timer, animationend never firing) the page must not stay
+    // locked. Generous enough never to cut a healthy intro short.
+    const INTRO_SAFETY_MS = INTRO_TOTAL_MS + 3000;
+    const OWNER = 'intro';
+
     const overlay = document.getElementById('intro-overlay');
     const fireIntroDone = (skipped) =>
       window.dispatchEvent(new CustomEvent('ded-intro-done', { detail: { skipped } }));
 
+    // Idempotent: whichever of the three paths below fires first wins, and
+    // the rest become no-ops.
+    let settled = false;
+    const finish = (skipped) => {
+      if (settled) return;
+      settled = true;
+      unlockScroll(OWNER);
+      fireIntroDone(skipped);
+    };
+
     if (!overlay) {
-      fireIntroDone(true);
+      finish(true);
     } else {
       let seen = null;
       try { seen = sessionStorage.getItem('hasSeenIntro'); } catch {}
       const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       if (seen || reduced) {
-        // Repeat visit or reduced motion: dismiss instantly, no animation.
+        // Repeat visit or reduced motion: dismiss instantly. Scroll is never
+        // locked at all on this path.
         overlay.classList.add('is-dismissed');
-        fireIntroDone(true);
+        finish(true);
       } else {
         try { sessionStorage.setItem('hasSeenIntro', '1'); } catch {}
-        const prevOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-        window.setTimeout(() => {
-          document.body.style.overflow = prevOverflow;
-          fireIntroDone(false);
-        }, INTRO_TOTAL_MS);
+        lockScroll(OWNER);
+
+        // 1. The wipe actually finishing.
+        overlay.addEventListener('animationend', () => finish(false));
+        // 2. The expected duration.
+        window.setTimeout(() => finish(false), INTRO_TOTAL_MS);
+        // 3. Backstop, so scrolling can never stay locked.
+        window.setTimeout(() => finish(false), INTRO_SAFETY_MS);
+        // 4. Restoring from bfcache with the lock still applied.
+        window.addEventListener('pageshow', (e) => {
+          if ((e as PageTransitionEvent).persisted) finish(true);
+        });
       }
     }
   </script>

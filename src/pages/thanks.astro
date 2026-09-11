@@ -1,0 +1,48 @@
+---
+// /thanks/ — landing page for the no-JS contact submission.
+//
+// The JS path never reaches here: it shows an inline status and stays put.
+// This exists so a submission without JS ends somewhere real rather than on
+// a raw JSON body. noindex — it is a flow endpoint, not content.
+import Base from '../layouts/Base.astro';
+import SiteNav from '../components/SiteNav.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import Icon from '../components/Icon.astro';
+
+const pageTitle = 'Thanks — David Ediger Design';
+const pageDesc = 'Your message is on its way.';
+---
+<Base title={pageTitle} description={pageDesc}>
+  <Fragment slot="head">
+    <meta name="robots" content="noindex" />
+  </Fragment>
+
+  <div class="sv">
+    <SiteNav />
+
+    <main id="main">
+      <header class="sv-head">
+        <div class="sv-wrap">
+          <p class="sv-eyebrow">Message sent</p>
+          <h1 class="sv-h1">Thanks — that's with me.</h1>
+          <p class="sv-lede">
+            I read every enquiry myself and reply within two business days. If it's
+            urgent, <a class="tx-link" href="mailto:info@davidedigerdesign.com">email the studio directly</a>.
+          </p>
+          <p class="tx-actions">
+            <a class="sv-btn" href="/">Back to the homepage <Icon name="arrow-right" /></a>
+          </p>
+        </div>
+      </header>
+    </main>
+
+    <SiteFooter />
+  </div>
+</Base>
+
+<style is:global>
+  /* Layout comes from the shared .sv-* set defined in services/[slug].astro. */
+  .tx-actions { margin-top: clamp(32px, 5vh, 56px); padding-bottom: clamp(64px, 12vh, 140px); }
+  .tx-link { color: var(--w-text, #F5F4F0); text-decoration: underline; text-underline-offset: 3px; }
+  .tx-link:hover { color: var(--accent); }
+</style>

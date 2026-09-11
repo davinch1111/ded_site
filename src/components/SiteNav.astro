@@ -4,10 +4,10 @@
 // Stays transparent over dark sections, flips to a light/blurred state
 // over any element matching its observed selector list.
 //
-// Mobile (≤768px): the inline menu collapses behind a hamburger that opens a
+// Mobile (<768px): the inline menu collapses behind a hamburger that opens a
 // full-screen overlay. FAIL-SAFE: the collapse is gated on `html.js-nav`,
 // set only when the bundled script runs. Without JS the inline links stay
-// visible at every width (the logotype hides ≤768px to make room), the
+// visible at every width (the logotype hides <768px to make room), the
 // burger stays hidden, and the overlay stays inert — navigation never
 // depends on the script.
 ---
@@ -150,7 +150,8 @@
   }
 
   /* ── Hamburger ─────────────────────────────────────────────────────
-     Hidden everywhere by default; shown ≤768px only under html.js-nav. */
+     Hidden everywhere by default; shown <768px only under html.js-nav.
+     767.98 not 768: 768px itself must be desktop. */
   .nav-burger {
     display: none;
     flex-direction: column;
@@ -261,7 +262,7 @@
     .nav-burger-line { transition-duration: 1ms !important; transition-delay: 0ms !important; }
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 767.98px) {
     /* Horizontal inset stays on .nav-inner (--shell-pad), so the brand and
        burger line up with the section content below rather than sitting at
        their own margin. */
@@ -279,6 +280,8 @@
 </style>
 
 <script>
+  import { lockScroll, unlockScroll } from '../scripts/scroll-lock';
+
   // ── Light-section observer ────────────────────────────────────────
   // Flip nav to light over light-background sections. Observer is shared
   // across pages: the selector list covers homepage sections AND the
@@ -324,7 +327,7 @@
 
   // ── Mobile overlay menu ───────────────────────────────────────────
   // html.js-nav is added ONLY here, which is what collapses the inline
-  // menu behind the burger (≤768px). If this script never runs, the
+  // menu behind the burger (<768px). If this script never runs, the
   // inline links remain visible — fail-safe navigation.
   const burger  = document.getElementById('nav-burger');
   const overlay = document.getElementById('nav-overlay');
@@ -333,36 +336,58 @@
     document.documentElement.classList.add('js-nav');
 
     let open = false;
-    let prevOverflow = '';
+    const OWNER = 'nav-menu';
 
-    const setOpen = (next: boolean) => {
+    const setOpen = (next: boolean, returnFocus = false) => {
+      if (next === open) return;
       open = next;
       burger.setAttribute('aria-expanded', String(next));
       burger.setAttribute('aria-label', next ? 'Close menu' : 'Open menu');
       overlay.setAttribute('aria-hidden', String(!next));
       overlay.classList.toggle('open', next);
       hpNav.classList.toggle('menu-open', next);
+
+      // Reference-counted shared lock, so the intro wipe can hold it at the
+      // same time without either clobbering the other's inline style.
+      if (next) lockScroll(OWNER);
+      else unlockScroll(OWNER);
+
       if (next) {
-        prevOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = prevOverflow;
+        // Move focus into the panel: the next Tab stays inside it, and a
+        // screen reader lands on the menu rather than the page behind it.
+        overlay.querySelector<HTMLElement>('a')?.focus();
+      } else if (returnFocus) {
+        burger.focus();
       }
     };
 
-    burger.addEventListener('click', () => setOpen(!open));
+    burger.addEventListener('click', () => setOpen(!open, true));
 
-    // Delegate: any link tap closes the menu, then the browser handles
-    // the anchor navigation normally.
+    // The overlay is position:fixed/inset:0, so it covers the whole viewport
+    // and there is no geometric "outside" to click. Treat a tap on the
+    // backdrop — anywhere in the panel that is not a link — as the dismiss
+    // gesture, and a tap on a link as close-then-navigate.
     overlay.addEventListener('click', (e) => {
-      if ((e.target as Element).closest('a')) setOpen(false);
+      const link = (e.target as Element).closest('a');
+      // On a link, don't pull focus back to the burger: the browser is
+      // about to move to the link target.
+      setOpen(false, !link);
+    });
+
+    // Anything genuinely outside the panel — the nav bar sits above it at a
+    // higher z-index, so the brand/logo is reachable while open. pointerdown
+    // so a drag starting outside dismisses too.
+    document.addEventListener('pointerdown', (e) => {
+      if (!open) return;
+      const t = e.target as Element;
+      if (overlay.contains(t) || burger.contains(t)) return;
+      setOpen(false, true);
     });
 
     document.addEventListener('keydown', (e) => {
       if (!open) return;
       if (e.key === 'Escape') {
-        setOpen(false);
-        burger.focus();
+        setOpen(false, true);
         return;
       }
       // Simple focus trap: cycle between the burger and the overlay links.
@@ -377,7 +402,7 @@
 
     // Leaving the mobile breakpoint while open: reset so the page is
     // never left scroll-locked under an invisible overlay.
-    window.matchMedia('(min-width: 769px)').addEventListener('change', (e) => {
+    window.matchMedia('(min-width: 768px)').addEventListener('change', (e) => {
       if (e.matches && open) setOpen(false);
     });
   }
