@@ -76,27 +76,50 @@ npm run preview   # preview the build
 Astro 6 · Node ≥ 22.12 · deps: `@astrojs/sitemap`, `gsap`, `hls.js`. No UI framework —
 interactivity is vanilla JS in Astro `<script>` islands, always bundled to external files.
 
-### Routes (19 pages)
+### Routes (18 pages)
 
 | Route | Source |
 |---|---|
 | `/` | `src/pages/index.astro` |
 | `/work/` | `src/pages/work/index.astro` |
-| `/work/<slug>/` | `src/pages/work/[slug].astro` — 10 projects from WP |
+| `/work/<slug>/` | `src/pages/work/[slug].astro` — 8 projects from WP |
 | `/services/<slug>/` | `src/pages/services/[slug].astro` — branding, print-signage, web, video, retainer |
 | `/start/` | `src/pages/start.astro` |
+| `/thanks/` | `src/pages/thanks.astro` — no-JS contact landing, `noindex` |
 | `/404` | `src/pages/404.astro` |
 
 `src/pages/_music.astro` is underscore-prefixed, so Astro excludes it from routing.
+
+### Cloudflare Pages Functions (`site/functions/`)
+
+Server-side code, deployed alongside the static build. **Not** part of
+`astro build` — exercise it with `npx wrangler pages dev dist`.
+
+| File | Purpose |
+|---|---|
+| `api/contact.ts` | `POST /api/contact` — contact form backend |
+| `_middleware.ts` | `X-Robots-Tag: noindex` for `*.pages.dev` hosts only |
+
+**The preview `noindex` cannot be a `_headers` rule.** `_headers` matches on
+PATH and applies to every hostname serving the project, so it cannot tell
+`ded-site.pages.dev` from the production domain. Host-based rules need the
+middleware.
 
 ### Components & data
 
 - `src/layouts/Base.astro` — `<head>`, `@font-face`, **all design tokens in `:root`**, intro
   wipe, global scroll-reveal, Cloudflare Analytics beacon.
 - `src/components/SiteNav.astro` — fixed bar; contents capped by `.nav-inner` to the shell
-  width. Desktop inline menu; ≤768px hamburger → full-screen overlay with `aria-expanded`,
-  Escape handling and a focus trap. Light-section observer flips the bar over light bands
+  width. Desktop inline menu; **<768px** (`max-width: 767.98px`, so 768 itself is desktop)
+  hamburger → full-screen overlay with `aria-expanded`, Escape, focus trap, focus moved into
+  the panel on open and back to the button on close, and close on link / backdrop / outside
+  click. Light-section observer flips the bar over light bands
   (`.work-header, .svc, .about-section, .contact-section, .w-cta`).
+- **`src/scripts/scroll-lock.ts` — shared, reference-counted scroll lock.** Applies
+  `html.scroll-locked`. Both the intro wipe and the mobile menu hold it; the lock lifts only
+  once every holder releases. **Never write `body.style.overflow` directly** — two features
+  doing that is exactly the bug this replaced (open the menu mid-intro and the page ended up
+  permanently locked).
 - `src/components/ServicesSection.astro` — the homepage "where do you need help?" list.
 - `src/components/SiteFooter.astro`, `Icon.astro` (inline SVG), `ScrollCue.astro`.
 - **`src/data/services.ts` — single source for all five services.** Consumed by both
@@ -108,6 +131,23 @@ interactivity is vanilla JS in Astro `<script>` islands, always bundled to exter
 The "not sure what you need?" path. It **narrows the question and hands off** to the single
 contact form at `/#contact` — it deliberately does **not** duplicate the form. There is one
 form and one endpoint; a second would mean two sets of validation drifting apart.
+
+### Contact form
+`POST /api/contact` → `functions/api/contact.ts`. One handler, two paths:
+**with JS** the bundled island sends `Accept: application/json` via `fetch` and renders an
+inline status; **without JS** the same POST gets a `303` to `/thanks/` (or back to
+`/#contact?error=…`). Fields: `name`, `email`, `company`, `services` (chip checkboxes,
+read with `getAll`), `budget`, `timeline`, `description`, plus a `botcheck` honeypot that
+returns a decoy success.
+
+Turnstile requires JS, so the no-JS path cannot produce a token. Tokenless submissions are
+**accepted and flagged** "Not verified by Turnstile" in the email body rather than rejected —
+otherwise progressive enhancement would be broken by design. The same applies when
+`TURNSTILE_SECRET_KEY` is unset, so the form works before the keys exist. A **failed**
+verification is always rejected.
+
+The site key is read from `PUBLIC_TURNSTILE_SITE_KEY` at build time; with it unset the widget
+is omitted entirely. Never hardcode either key.
 
 ### WP data fetch (build time)
 ```
@@ -227,27 +267,54 @@ executable `<script>`.
   installed `--no-save`; Chromium and WebKit are cached.
   When writing the server, use `fileURLToPath()`, not `URL.pathname` — the project path
   contains spaces, which `pathname` leaves percent-encoded.
-- The intro wipe locks `body { overflow: hidden }` for `INTRO_TOTAL_MS = 4300`, then restores
-  it. This is intentional, not a leak — but measuring page state inside that window is
-  misleading. Wait it out before asserting on scroll or body style.
+- The intro wipe holds the shared scroll lock for `INTRO_TOTAL_MS = 4300`, then releases it
+  (on `animationend`, on the timer, on a +3s backstop, and on bfcache restore). Intentional,
+  not a leak — but measuring page state inside that window is misleading. Wait it out before
+  asserting on scroll or lock state. Reduced motion skips the intro and never locks.
+- **`overflow: hidden` does not stop `window.scrollTo()`** — it only blocks *user* scrolling.
+  Test scroll locks with a real `mouse.wheel`, or you will get a false negative.
+- **Never pair `overflow-x: hidden` with a visible Y axis.** Per CSS Overflow 3 the visible
+  axis computes to `auto`, silently creating a scroll container that swallows the first wheel
+  gesture. Use `overflow-x: clip` (this was a real bug on project pages).
 
 ---
 
 ## Current Status
 
-Live on Cloudflare Pages at `ded-site.pages.dev`. 10 projects. 19 pages.
+Live on Cloudflare Pages at `ded-site.pages.dev`. **8 projects. 18 pages.**
 
 **Recently shipped (all on `main`):**
+- `8640ec5` — shared scroll lock; mobile-nav gaps (outside click, focus into panel, class
+  lock, 767.98 breakpoint); first-party contact backend (Pages Function + Turnstile +
+  Resend) replacing Web3Forms; `/thanks/`; preview-host `noindex` middleware.
+- `5eb9dfb` — "More work" cards fall back to ACF `master_image`, fixing black tiles on the
+  four projects with no WP featured image.
+- `f2f7ecb` — project pages: `overflow-x: clip` not `hidden`, fixing the swallowed first
+  wheel gesture.
+- `0cde9a2` — this file rewritten against the built site.
 - `839a125` — services + industry rows: unified shell width, inset highlight padding, hover
-  jiggle, animated top rule; nav aligned to the shell, logo +10%, menu 12px.
+  jiggle, animated top rule; nav aligned to the shell.
 - `6470c38` — the five `/services/*` pages + `/start`, `src/data/services.ts`, column-major
   tab order, unified H1 token, two-column "How it landed", blue favicon.
-- `29897ac` — homepage type scale + shell width unified; Industry experience regridded.
-- `fe8fb92` — ServicesSection component replaces the old "Five ways I can help" rows.
 
-**Done, previously listed as open:** mobile hamburger nav (overlay, Escape, focus trap);
-contact form on a real endpoint (Web3Forms AJAX + no-JS POST fallback, honeypot);
+**Done, previously listed as open:** mobile hamburger nav (now complete — outside click,
+focus management, class-based lock); contact form on a first-party endpoint;
 `favicon.svg` blue `#3457C6`; OG image at 1200×630.
+
+### Cloudflare dashboard settings this repo expects
+
+The code is deployed but **inert until these exist**:
+
+| Setting | Where | Value |
+|---|---|---|
+| `RESEND_API_KEY` | Pages → Settings → Env vars (secret, Production + Preview) | Resend API key |
+| `TURNSTILE_SECRET_KEY` | same, secret | Turnstile secret |
+| `PUBLIC_TURNSTILE_SITE_KEY` | same, **plain** (build-time) | Turnstile site key |
+| Resend domain | Resend dashboard | verify `send.davidedigerdesign.com`, add its DNS records |
+
+Without `RESEND_API_KEY` the form returns a clean "misconfigured" error rather than failing
+silently. Without the Turnstile keys the widget is omitted and submissions are accepted but
+marked unverified.
 
 ---
 
@@ -259,19 +326,26 @@ contact form on a real endpoint (Web3Forms AJAX + no-JS POST fallback, honeypot)
 2. **Favicon raster set is stale.** `favicon.svg` is blue, but `favicon.ico`,
    `favicon-16x16.png`, `favicon-32x32.png`, `favicon.png` and `apple-touch-icon.png` are
    still the earlier artwork. Regenerate all from the blue SVG.
-3. **Contact form endpoint.** Currently Web3Forms with a public access key (safe by design —
-   it can only deliver to the studio inbox). Confirm deliverability to
-   info@davidedigerdesign.com after the email cutover, and decide whether to stay on
-   Web3Forms.
-4. **Populate remaining projects.** 10 live; more to add via the `ded_project` CPT.
-5. **Service page copy is studio-written and unreviewed.** It makes concrete claims
+3. **Contact form — set the keys and send a live test.** See the dashboard table above.
+   Until `RESEND_API_KEY` is set the form cannot deliver. Confirm arrival at
+   info@davidedigerdesign.com (SiteGround MX) and check reply-to works.
+4. **Populate remaining projects.** 8 live; more to add via the `ded_project` CPT.
+   Two were unpublished from WP around 2026-09-10 — `el-salvador-home-building-video` and
+   `innotech-building-design` — so their pages now 404. **`public/_redirects` still points
+   `/el-salvador-photo-gallery/` at the first of them**, i.e. a redirect into a 404. Repoint
+   or restore.
+5. **`/work/` index is shadowed by a redirect.** `public/_redirects` has
+   `/work/ → /#work 301`, meant for the *old* site's work landing page, but it also matches
+   the new `/work/` index — which is built but unreachable in production. Remove that line
+   or scope it.
+6. **Service page copy is studio-written and unreviewed.** It makes concrete claims
    (two-business-day reply, press checks, no rediscovery fee) — David should confirm or
    correct before launch.
-6. **Publish-to-live hook URL is still empty.** `wp_option ded_publish_hook_url` is unset, so
+7. **Publish-to-live hook URL is still empty.** `wp_option ded_publish_hook_url` is unset, so
    the button bounces to Settings → Publish to Live. David must paste the Cloudflare deploy
    hook there. **Never hardcode or commit that URL.**
-7. **Auto-rebuild webhook** from WP publish (currently manual, or the admin button).
-8. **Finish the type migration** for the components listed under Type above.
+8. **Auto-rebuild webhook** from WP publish (currently manual, or the admin button).
+9. **Finish the type migration** for the components listed under Type above.
 
 ---
 
