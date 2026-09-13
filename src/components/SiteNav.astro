@@ -156,29 +156,36 @@
     display: none;
     flex-direction: column;
     justify-content: center;
-    gap: 5px;
-    width: 44px;
-    height: 44px;
-    padding: 10px;
+    align-items: flex-end;
+    gap: 6px;
+    width: 48px;
+    height: 48px;
+    padding: 10px 0 10px 10px;
     background: transparent;
     border: none;
     cursor: pointer;
   }
+  /* 28 × 2px on a 6px gap — up from 22 × 1.5 / 5. Reads clearly at arm's
+     length on a phone without becoming a slab. */
   .nav-burger-line {
     display: block;
-    width: 22px;
-    height: 1.5px;
-    background: #F5F4F0;
+    width: 28px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--text-primary, #F5F4F0);
     transition: transform 300ms cubic-bezier(.25,.1,.25,1),
                 opacity 200ms ease;
   }
-  .hp-nav.nav--light .nav-burger-line { background: #0F1014; }
-  .hp-nav.menu-open  .nav-burger-line { background: #F5F4F0; }
+  /* Dark ink only while the bar itself is light. Over a dark or transparent
+     bar the lines stay white. */
+  .hp-nav.nav--light .nav-burger-line { background: var(--text-dark, #0F1014); }
+  .hp-nav.menu-open  .nav-burger-line { background: var(--text-primary, #F5F4F0); }
 
-  /* Burger → X */
-  .nav-burger[aria-expanded="true"] .nav-burger-line:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+  /* Burger → X. Offset = line height + gap = 8px, so the two strokes meet
+     exactly on the centre line. */
+  .nav-burger[aria-expanded="true"] .nav-burger-line:nth-child(1) { transform: translateY(8px) rotate(45deg); }
   .nav-burger[aria-expanded="true"] .nav-burger-line:nth-child(2) { opacity: 0; }
-  .nav-burger[aria-expanded="true"] .nav-burger-line:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+  .nav-burger[aria-expanded="true"] .nav-burger-line:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
 
   /* ── Overlay ──────────────────────────────────────────────────────
      Sits under the fixed bar (z 99 < 100) so brand + burger stay on top.
@@ -272,10 +279,23 @@
     html.js-nav .hp-menu    { display: none; }
     html.js-nav .nav-burger { display: flex; }
 
-    /* No JS: keep the inline links reachable — tighten them and drop the
-       logotype (emblem stays) so everything fits a small viewport. */
+    /* Drop the logotype at every small viewport, JS or not — the emblem
+       carries the brand here. It used to be hidden only under
+       html:not(.js-nav), so in the normal (JS) case the wordmark stayed and
+       ran 21px UNDER the burger: white lines drawn over white letterforms,
+       which reads as a smudged or invisible icon.
+
+       All three selectors are needed. A media query adds no specificity, so
+       a bare `.nav-logotype` (0-1-0) loses to the light/menu-open variant
+       swaps above — `.hp-nav.nav--light .nav-mark-light-bg` (0-3-0) and
+       `.hp-nav.menu-open.nav--light .nav-mark-*` (0-4-0). These match that
+       specificity and, being later in source, win. */
+    .hp-nav .nav-logotype,
+    .hp-nav.nav--light .nav-logotype,
+    .hp-nav.menu-open.nav--light .nav-logotype { display: none; }
+
+    /* No JS: no burger, so tighten the inline links to fit instead. */
     html:not(.js-nav) .hp-menu { gap: 16px; }
-    html:not(.js-nav) .nav-logotype { display: none; }
   }
 </style>
 
