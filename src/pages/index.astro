@@ -144,6 +144,41 @@ const siteName = 'David Ediger Design';
 const homeTitle = 'David Ediger Design — Portfolio';
 const homeDesc =
   'Twenty-three years of print, web, video, photo, and audio. Brands that refuse to blend in.';
+// ─── Homepage hero: mobile fallback image ────────────────────────────────
+// The hero video is skipped at ≤480px (data saving), which otherwise leaves
+// phones on a bare dark background. This image fills that gap. Managed in WP
+// under Site Settings → Homepage hero; see wp-mu-plugins/ded-site-options.php.
+//
+// FAIL-SAFE: any failure here leaves heroMobile null and the hero renders
+// exactly as it does today. A build must never break because an optional
+// decorative image could not be fetched.
+interface HeroMobile {
+  url: string;
+  width: number | null;
+  height: number | null;
+  alt: string;
+}
+let heroMobile: HeroMobile | null = null;
+let heroMobileFocus = 'center';
+
+try {
+  const res = await fetch('https://davidedigerdesign.in/wp-json/ded/v1/site-options', {
+    signal: AbortSignal.timeout(8000),
+  });
+  if (res.ok) {
+    const data = (await res.json()) as {
+      hero_mobile_image?: HeroMobile | null;
+      hero_mobile_focus?: string;
+    };
+    if (data?.hero_mobile_image?.url) heroMobile = data.hero_mobile_image;
+    if (['center', 'top', 'bottom'].includes(data?.hero_mobile_focus ?? '')) {
+      heroMobileFocus = data.hero_mobile_focus as string;
+    }
+  }
+} catch {
+  // WP unreachable at build time — keep the plain dark hero.
+}
+
 // Turnstile site key — PUBLIC by design (it is exposed in the widget markup).
 // Set PUBLIC_TURNSTILE_SITE_KEY in the Pages build environment. Left unset,
 // the widget is omitted and the form still submits; the Function then marks
@@ -234,6 +269,21 @@ const jsonLd = {
       aria-hidden="true"
       data-hls-src="https://customer-svfce6is3mlvvekf.cloudflarestream.com/bde8b56a0110fbecaeba46a28d485527/manifest/video.m3u8"
     ></video>
+    {/* Mobile fallback. Rendered only when one is set in WP, and revealed by
+        CSS at exactly the widths where the video is hidden (≤480px), so the
+        two can never both be visible. Decorative: the headline carries the
+        meaning, so alt stays empty unless the studio supplied one. */}
+    {heroMobile && (
+      <img
+        class:list={['hero-mobile-img', `hero-mobile-img--${heroMobileFocus}`]}
+        src={heroMobile.url}
+        width={heroMobile.width ?? undefined}
+        height={heroMobile.height ?? undefined}
+        alt={heroMobile.alt}
+        aria-hidden={heroMobile.alt ? undefined : 'true'}
+        fetchpriority="high"
+      />
+    )}
     <div class="hero-video-scrim" aria-hidden="true"></div>
     <img src="/images/ded_emblem_white.svg" class="hero-emblem" alt="" aria-hidden="true" />
     <div class="hero-text">
@@ -601,10 +651,37 @@ body.dark-zone-active {
   .hero-video { opacity: 0 !important; }
 }
 
-/* ≤480px: skip the video entirely (data saving) — show the dark hero. */
+/* Mobile fallback image. Hidden everywhere by default and revealed only in
+   the ≤480px block below — the exact widths where the video is switched off,
+   so the two can never both be showing. Sits on the same layer as the video
+   (z-index 0), under the scrim and all hero text. */
+.hero-mobile-img {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  pointer-events: none;
+}
+.hero-mobile-img--center { object-position: center; }
+.hero-mobile-img--top    { object-position: center top; }
+.hero-mobile-img--bottom { object-position: center bottom; }
+
+/* ≤480px: skip the video entirely (data saving). Show the WP-managed
+   fallback image if one is set; otherwise the plain dark hero, as before. */
 @media (max-width: 480px) {
-  .hero-video,
+  .hero-video { display: none; }
+
+  .hero-mobile-img { display: block; }
+
+  /* The scrim stays for the image — the headline sits over the lower half
+     and needs the same legibility floor the video gets. Without an image it
+     would darken nothing but the flat background, so it is only kept when an
+     image is actually present. */
   .hero-video-scrim { display: none; }
+  .hp-hero:has(.hero-mobile-img) .hero-video-scrim { display: block; }
 }
 
 .hero-showreel {
