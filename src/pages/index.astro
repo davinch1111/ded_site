@@ -1828,6 +1828,20 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
    all fit in one screen; nothing is pushed below the fold. The video stays —
    it reads well in this aspect. */
 @media (orientation: landscape) and (max-height: 500px) {
+  /* ── Height ──────────────────────────────────────────────────────────
+     Size the hero to the LARGE viewport, so once Safari/Brave retract the
+     URL bar the showreel gets a full uninterrupted screen instead of the
+     next section intruding. While the chrome is still showing the hero
+     overflows slightly — that is deliberate, and is what cues the scroll.
+
+     The base rule (outside this query) sets 100svh; this overrides it.
+     Plain 100vh lands first as the fallback, then @supports upgrades any
+     browser that understands the large-viewport unit. */
+  .hp-hero { min-height: 100vh; }
+  @supports (min-height: 100lvh) {
+    .hp-hero { min-height: 100lvh; }
+  }
+
   /* Header: shrink it, and give it a gradient backing. The bar is
      transparent until scrolled, so over the video the links were sitting on
      whatever frame happened to be playing. */
@@ -1871,6 +1885,48 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   .hp-hero .scroll-cue { bottom: 6px; gap: 0; padding: 2px 10px; }
   .hp-hero .scroll-cue .scroll-cue-line { height: 16px; }
   .hp-hero .scroll-cue .scroll-cue-label { display: none; }
+
+  /* ── Content stays inside the SMALL viewport ─────────────────────────
+     The box is now 100lvh, but both of these are bottom-anchored, so left
+     alone they would hang off the bottom of what is actually on screen
+     while the chrome is still up. Lifting them by exactly the chrome's
+     height (100lvh - 100svh) keeps the H1, subhead, CTA and cue readable
+     on arrival rather than only after scrolling. That term is 0 once the
+     chrome has collapsed, so this costs nothing in the expanded state. */
+  @supports (height: 100lvh) {
+    .hp-hero .hero-text {
+      bottom: calc(100lvh - 100svh + clamp(46px, 11vh, 56px));
+    }
+    .hp-hero .scroll-cue {
+      bottom: calc(100lvh - 100svh + 6px);
+    }
+  }
+
+  /* ── Snap ────────────────────────────────────────────────────────────
+     PROXIMITY, never mandatory: mandatory takes the scroll away from the
+     user and reads as broken. Proximity only tidies up a scroll that has
+     already landed near an edge, which is exactly the "chrome collapsed,
+     now sit flush" case. Scoped to this breakpoint — portrait and desktop
+     are untouched.
+
+     On html, not body: body carries overflow-x:hidden, so the viewport
+     scroll container is the root element. */
+  html {
+    scroll-snap-type: y proximity;
+  }
+  .hp-hero,
+  .dark-zone {
+    scroll-snap-align: start;
+  }
+}
+
+/* Reduced motion: no snapping at all. Scroll-snap moves the page out from
+   under the user, which is precisely what this preference asks us not to
+   do. Same breakpoint, so portrait and desktop are unaffected either way. */
+@media (orientation: landscape) and (max-height: 500px) and (prefers-reduced-motion: reduce) {
+  html {
+    scroll-snap-type: none;
+  }
 }
 
 </style>
