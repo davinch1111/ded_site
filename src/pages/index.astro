@@ -669,20 +669,17 @@ body.dark-zone-active {
 .hero-mobile-img--top    { object-position: center top; }
 .hero-mobile-img--bottom { object-position: center bottom; }
 
-/* ≤480px: skip the video entirely (data saving). Show the WP-managed
-   fallback image if one is set; otherwise the plain dark hero, as before. */
+/* ≤480px: skip the video entirely (data saving). */
 @media (max-width: 480px) {
   .hero-video { display: none; }
 
-  .hero-mobile-img { display: block; }
-
-  /* The scrim stays for the image — the headline sits over the lower half
-     and needs the same legibility floor the video gets. Without an image it
-     would darken nothing but the flat background, so it is only kept when an
-     image is actually present. */
+  /* The scrim only earns its keep when there is an image beneath it — over
+     the flat dark base it would darken nothing. */
   .hero-video-scrim { display: none; }
   .hp-hero:has(.hero-mobile-img) .hero-video-scrim { display: block; }
 }
+
+
 
 .hero-showreel {
   margin-top: 22px;
@@ -1790,6 +1787,90 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
 }
 @media (max-width: 560px) {
   .hero-emblem { display: none; }
+}
+
+
+/* ══════════════ HERO RESPONSIVE OVERRIDES ══════════════
+   Deliberately LAST in this stylesheet. A media query adds no
+   specificity, so these have to out-order the base .hero-* and
+   .hp-hero .scroll-cue rules declared above rather than fight them
+   with escalating selectors. Keep them here. */
+/* ── Portrait phones and small tablets ───────────────────────────────────
+   The fallback image now covers the whole portrait range, not just ≤480px:
+   a 16:9 video cropped to a tall viewport shows almost nothing useful. Both
+   rules are gated on the image actually existing (:has), so with the field
+   empty the behaviour is exactly as before — video down to 480px, dark hero
+   below that. */
+@media (orientation: portrait) and (max-width: 767.98px) {
+  .hero-mobile-img { display: block; }
+  .hp-hero:has(.hero-mobile-img) .hero-video { display: none; }
+  .hp-hero:has(.hero-mobile-img) .hero-video-scrim { display: block; }
+
+  /* Bottom-weight the text group: drop it nearer the floor so the upper
+     third of the frame stays clear for the image's subject, instead of the
+     block sitting optically centred. */
+  /* Scoped to .hp-hero (0,2,0): the base .hero-text / .hero-ey rules are
+     declared LATER in this file, and a media query adds no specificity, so
+     a bare selector here would lose on source order. */
+  .hp-hero .hero-text { bottom: clamp(88px, 11vh, 132px); }
+  .hp-hero .hero-ey { margin-bottom: 12px; }
+
+  /* The cue was 88px tall and left only ~7px above "Watch showreel". Shrink
+     it so the CTA gains breathing room as the text moves down. Scoped to the
+     homepage hero — the project hero keeps the full-size gesture. */
+  .hp-hero .scroll-cue { bottom: 10px; gap: 6px; padding: 4px 12px; }
+  .hp-hero .scroll-cue .scroll-cue-line { height: 26px; }
+}
+
+/* ── Landscape phones ────────────────────────────────────────────────────
+   ~330px of usable height once the header is accounted for, so this is its
+   own case rather than a tweak of the portrait one. H1, subhead and CTA must
+   all fit in one screen; nothing is pushed below the fold. The video stays —
+   it reads well in this aspect. */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Header: shrink it, and give it a gradient backing. The bar is
+     transparent until scrolled, so over the video the links were sitting on
+     whatever frame happened to be playing. */
+  .hp-nav { padding: 8px 0; }
+  .hp-nav:not(.nav--scrolled):not(.nav--light) {
+    background: linear-gradient(to bottom, rgba(3,4,14,0.92) 0%, rgba(3,4,14,0.55) 60%, rgba(3,4,14,0) 100%);
+  }
+  .nav-emblem   { height: 32px; }
+  .nav-logotype { height: 17px; }
+
+  /* Overlapped the CONTACT nav item at this height. */
+  .hero-emblem { display: none; }
+
+  /* The least essential line, and it collided with the nav row. */
+  .hero-ey { display: none; }
+
+  /* Compress the type. The base .hp-hero h1 rule carries !important AND is
+     declared later in this file, so matching its `.hp-hero h1` specificity
+     would lose on source order. Adding the element's own class takes this to
+     (0,2,1) and wins outright, whatever the order. */
+  .hp-hero h1.hero-h1 {
+    font-size: clamp(1.75rem, 3.6vw, 2rem) !important;
+    line-height: 1.08 !important;
+    margin-bottom: 12px;
+  }
+  .hp-hero .hero-sub {
+    font-size: 14px;
+    line-height: 1.45;
+    max-width: 60ch;
+  }
+  .hp-hero .hero-showreel { margin-top: 12px; }
+
+  /* Sit the block low but clear of the compact cue. The gap to the header is
+     asserted in the hero layout checks. Same scoping reason as above. */
+  /* Floor is 46px, not 40: at the shortest supported height (390px) 11vh
+     resolves to 42.9 and leaves only 17px above the cue. */
+  .hp-hero .hero-text { bottom: clamp(46px, 11vh, 56px); }
+
+  /* Cue reduced to the line alone — the label is the first thing worth
+     losing when there are ~330px to work with. */
+  .hp-hero .scroll-cue { bottom: 6px; gap: 0; padding: 2px 10px; }
+  .hp-hero .scroll-cue .scroll-cue-line { height: 16px; }
+  .hp-hero .scroll-cue .scroll-cue-label { display: none; }
 }
 
 </style>
