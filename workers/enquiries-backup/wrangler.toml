@@ -1,0 +1,29 @@
+# Deployed separately from the Pages project:
+#   cd workers/enquiries-backup && wrangler deploy
+#
+# Pages Functions cannot run on a cron — `scheduled` is Workers-only — so
+# the weekly backup lives here rather than in site/functions/.
+
+name = "ded-enquiries-backup"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+# Sundays at 04:17 UTC. Off-peak, and deliberately not on the hour: a great
+# many crons fire at :00, so an odd minute avoids that queue.
+[triggers]
+crons = ["17 4 * * 0"]
+
+# The same database the Pages project binds as DB. Fill database_id in from
+# `wrangler d1 create ded-enquiries` (or `wrangler d1 list`).
+[[d1_databases]]
+binding = "DB"
+database_name = "ded-enquiries"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+# Create with: wrangler r2 bucket create ded-backups
+[[r2_buckets]]
+binding = "BACKUPS"
+bucket_name = "ded-backups"
+
+# No `routes` on purpose: this Worker should not be publicly reachable.
+# The /run fetch handler is for `wrangler dev` only.
