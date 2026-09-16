@@ -1,0 +1,59 @@
+# Old davidedigerdesign.com URL inventory
+#
+# Captured from the LIVE old WordPress site before the domain cutover,
+# while it was still reachable. Captured: 2026-09-16 07:52 UTC
+#
+# Source: https://davidedigerdesign.com/wp-sitemap.xml (declared in robots.txt)
+#
+# GOTCHA worth remembering: every sitemap on the old site is served with
+# an HTTP 404 status while still returning valid sitemap XML in the body.
+# A crawler that checks the status code and stops sees nothing here, which
+# is very likely why indexing of these URLs is patchy. They were captured
+# by reading the response body regardless of status.
+#
+# There is no /sitemap_index.xml (that is the Yoast layout); this install
+# uses WordPress core sitemaps.
+#
+# Format: <url>\t<lastmod>   — tab separated. For URLs only: cut -f1
+# Totals: 33 entries, 33 unique URLs, across 3 child sitemaps
+#
+# NOT a redirect map. Mapping to the new site is a separate task.
+
+# ── wp-sitemap-posts-page-1.xml  (18 urls) ─────────────────────
+https://davidedigerdesign.com/	2024-09-03T10:13:14-07:00
+https://davidedigerdesign.com/about-brooklyn/	2016-12-01T22:18:47-08:00
+https://davidedigerdesign.com/about-brooklyn/what-they-have-said/	2016-12-01T12:39:42-08:00
+https://davidedigerdesign.com/about/	2019-11-27T04:07:07-08:00
+https://davidedigerdesign.com/awards/	2019-10-23T09:38:58-07:00
+https://davidedigerdesign.com/brands_01/	2016-10-11T09:22:11-07:00
+https://davidedigerdesign.com/contact-us/	2015-09-03T15:28:12-07:00
+https://davidedigerdesign.com/david_ediger/	2023-01-04T21:52:42-08:00
+https://davidedigerdesign.com/drop-us-a-line/	2016-12-01T12:40:11-08:00
+https://davidedigerdesign.com/el-salvador-photo-gallery/	2016-10-13T13:27:44-07:00
+https://davidedigerdesign.com/our-philosophy-is/	2016-12-01T12:38:32-08:00
+https://davidedigerdesign.com/services/	2020-08-31T21:03:04-07:00
+https://davidedigerdesign.com/showcase/	2021-01-03T12:03:48-08:00
+https://davidedigerdesign.com/studio-2/	2019-09-30T05:11:20-07:00
+https://davidedigerdesign.com/studio-2/awards/	2019-10-23T09:38:58-07:00
+https://davidedigerdesign.com/typography/	2020-09-01T13:26:05-07:00
+https://davidedigerdesign.com/video-gallery/	2024-12-13T13:25:13-08:00
+https://davidedigerdesign.com/work/	2023-06-02T20:58:56-07:00
+
+# ── wp-sitemap-posts-portfolio-1.xml  (8 urls) ─────────────────────
+https://davidedigerdesign.com/portfolio-item/brochure-print-design-multiple-clients/	2021-05-13T14:22:54-07:00
+https://davidedigerdesign.com/portfolio-item/chanvrehemp/	2021-05-13T14:03:49-07:00
+https://davidedigerdesign.com/portfolio-item/innotech-windows-booklet-brochure/	2020-09-04T11:04:16-07:00
+https://davidedigerdesign.com/portfolio-item/logo-design-multiple-clients/	2020-09-04T12:50:53-07:00
+https://davidedigerdesign.com/portfolio-item/natural-advancement-hand-sanitizer/	2021-05-13T14:16:06-07:00
+https://davidedigerdesign.com/portfolio-item/painting/	2023-05-31T21:22:11-07:00
+https://davidedigerdesign.com/portfolio-item/video-production/	2020-11-09T11:29:10-08:00
+https://davidedigerdesign.com/portfolio-item/web-design-multiple-clients/	2020-09-04T20:41:27-07:00
+
+# ── wp-sitemap-taxonomies-portfolio-category-1.xml  (7 urls) ─────────────────────
+https://davidedigerdesign.com/portfolio-category/branding/
+https://davidedigerdesign.com/portfolio-category/design/
+https://davidedigerdesign.com/portfolio-category/packaging-label-design/
+https://davidedigerdesign.com/portfolio-category/photography/
+https://davidedigerdesign.com/portfolio-category/print-work/
+https://davidedigerdesign.com/portfolio-category/video/
+https://davidedigerdesign.com/portfolio-category/web-design/
