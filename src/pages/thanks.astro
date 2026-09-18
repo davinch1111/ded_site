@@ -8,6 +8,10 @@ import Base from '../layouts/Base.astro';
 import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import Icon from '../components/Icon.astro';
+// Shared .sv-* layout (container width, header offset, section rhythm).
+// This page renders none of it without the import — see the note at the
+// top of the stylesheet.
+import '../styles/service-page.css';
 
 const pageTitle = 'Thanks — David Ediger Design';
 const pageDesc = 'Your message is on its way.';
@@ -41,7 +45,7 @@ const pageDesc = 'Your message is on its way.';
 </Base>
 
 <style is:global>
-  /* Layout comes from the shared .sv-* set defined in services/[slug].astro. */
+  /* Layout comes from src/styles/service-page.css, imported above. */
   .tx-actions { margin-top: clamp(32px, 5vh, 56px); padding-bottom: clamp(64px, 12vh, 140px); }
   .tx-link { color: var(--w-text, #F5F4F0); text-decoration: underline; text-underline-offset: 3px; }
   .tx-link:hover { color: var(--accent); }

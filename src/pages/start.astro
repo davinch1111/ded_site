@@ -8,6 +8,10 @@ import Base from '../layouts/Base.astro';
 import SiteNav from '../components/SiteNav.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 import Icon from '../components/Icon.astro';
+// Shared .sv-* layout (container width, header offset, section rhythm).
+// This page renders none of it without the import — see the note at the
+// top of the stylesheet.
+import '../styles/service-page.css';
 // Same source as the service pages, so the chooser can never list a service
 // that does not exist or describe one that has since been reworded.
 import { SERVICES } from '../data/services';
@@ -116,9 +120,8 @@ const ogImage = new URL('/og-image.png', Astro.site).href;
 </Base>
 
 <style is:global>
-/* Layout, type and CTA styles are shared with the service pages (.sv-*),
-   defined in src/pages/services/[slug].astro. Only the chooser list below
-   is specific to this page. */
+/* Layout/type/CTA come from src/styles/service-page.css, imported above.
+   Only the chooser list below is specific to this page. */
 .st-list { list-style: none; margin: 0; padding: 0; }
 
 .st-link {
