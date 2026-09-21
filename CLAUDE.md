@@ -69,9 +69,15 @@ with `wp eval`. All are additive.
 ### Commands (from `site/`)
 ```bash
 npm run dev       # dev server, port 4321
-npm run build     # static build → dist/
+npm run build     # static build → dist/, then postbuild: check-redirects
 npm run preview   # preview the build
+
+npx wrangler pages dev dist   # the ONLY way to exercise _redirects + functions
 ```
+
+**`npm run build` runs `scripts/check-redirects.mjs` as `postbuild`.** That is the
+same command Cloudflare Pages runs, so a broken redirect map fails the deploy
+instead of shipping. See *Redirects* below.
 
 Astro 6 · Node ≥ 22.12 · deps: `@astrojs/sitemap`, `gsap`, `hls.js`. No UI framework —
 interactivity is vanilla JS in Astro `<script>` islands, always bundled to external files.
@@ -105,6 +111,32 @@ PATH and applies to every hostname serving the project, so it cannot tell
 `ded-site.pages.dev` from the production domain. Host-based rules need the
 middleware.
 
+### Redirects (`public/_redirects`)
+
+The 301 map from the old WordPress site, covering all 33 URLs in
+`docs/old-urls.txt`. Inert until the domain cutover.
+
+- **A redirect beats a static asset on Cloudflare Pages.** A rule whose source
+  matches a path this site builds makes that page **unreachable**. `/work/ →
+  /#work` was written for the *old* site's work landing page and also swallowed
+  the new `/work/` index, which built on every deploy and 301'd away for weeks.
+  The new index answers on that exact path, so the old URL needs **no rule**.
+- **Work rules target `/work/`, never `/#work`.** Search engines discard the
+  fragment, so every `/#…` rule resolves to plain `/` — all the old portfolio
+  equity consolidated onto the homepage instead of the work index. `/#about`,
+  `/#contact` and `/#services` stay as fragments: no standalone page exists.
+- Specific rules must precede splats.
+
+**`scripts/check-redirects.mjs` runs on every build** and fails it on four
+things: a source that shadows a built page, a splat that shadows built pages, a
+target that doesn't exist in `dist/`, and a fragment target whose `id` is not on
+the page. It reads `dist/_redirects` (the copy that deploys) against `dist/`.
+Targets rot on their own — `/el-salvador-photo-gallery/` pointed at a project
+later unpublished from WP, so the redirect led to a 404 with nothing to flag it.
+
+`_redirects` is edge logic: `npm run preview` and any static server ignore it.
+Test with `npx wrangler pages dev dist`.
+
 ### Components & data
 
 - `src/layouts/Base.astro` — `<head>`, `@font-face`, **all design tokens in `:root`**, intro
@@ -126,6 +158,14 @@ middleware.
   `/services/[slug]` and `/start`, so the chooser can never list a service that does not
   exist. It lives in its own module because Astro hoists `getStaticPaths()` into a scope that
   cannot see page frontmatter consts (`SERVICES is not defined` at build).
+- **`src/styles/service-page.css` — the shared `.sv-*` page shell.** Imported by
+  `services/[slug].astro`, `start.astro` and `thanks.astro`; all five routes
+  resolve to one bundle. **Astro bundles page styles PER ENTRY POINT**, so a
+  class authored in one page's `<style is:global>` is emitted *only* for that
+  page. `.sv-*` used to live in `services/[slug].astro`, which left `/start/`
+  and `/thanks/` with no container, no header offset and no section rhythm in
+  production. A comment pointing at another page's style block is not a
+  dependency — an import is. Never share classes across pages any other way.
 
 ### `/start`
 The "not sure what you need?" path. It **narrows the question and hands off** to the single
@@ -222,6 +262,12 @@ Both use the same pattern, and changes should stay in step:
   blue sweeping to full width via `scaleX`, 360ms.
 - Slot classes (`.svc__item--01`…`05`, `.arow--01`…`09`) carry `--rule-x` / `--delay`.
   Unitless fractions, because the sweep is a transform.
+- **Every row reads `num → title → body → arrow`** — including the full-width
+  retainer row 05, whose two columns are `.svc__wide-head` (num + title) and
+  `.svc__wide-main` (body + arrow). The arrow used to sit inside `.svc__wide-head`,
+  which announced the link label before the text explaining it and rendered it
+  literally above the description at ≤860px. `.svc__wide-main` is the grid item,
+  so `align-self` belongs there, not on `.svc__body--wide`.
 
 ### Motion
 Scoped transitions, ease-out, `scale(0.97)` on `:active`. No parallax.
@@ -260,8 +306,16 @@ executable `<script>`.
 ## Conventions & gotchas
 
 - All front-end work goes in `site/`. Never build pages or Elementor layouts on WordPress.
-- A **Fact-Forcing Gate** requires presenting facts before the first Bash and first
-  Edit/Write of a session — expect it, present the facts, retry.
+- A **Fact-Forcing Gate** requires presenting facts before Bash and before each
+  Edit/Write — expect it, present the facts, retry. For file creation it wants
+  the caller, proof no existing file does the job, the data shape, and the
+  user's instruction quoted verbatim.
+- **`docs/` is a pre-cutover archive of the OLD site**, captured while it was
+  still reachable: `old-urls.txt` (33 URLs) and `old-site-content.md` (text).
+  **`/about/`, `/awards/`, `/studio-2/` and `/typography/` are Brooklyn theme
+  DEMO content — never reuse that copy.** Note the old sitemaps served HTTP 404
+  while returning valid XML, which is why indexing was patchy; they were
+  captured by reading the body regardless of status.
 - **Verification harness is not committed.** Recreate throwaway `site/_serve.mjs` (static
   server) + `site/_verify.mjs` (Playwright) as needed, then delete them. Playwright is
   installed `--no-save`; Chromium and WebKit are cached.
@@ -283,7 +337,23 @@ executable `<script>`.
 
 Live on Cloudflare Pages at `ded-site.pages.dev`. **8 projects. 18 pages.**
 
-**Recently shipped (all on `main`):**
+**Recently shipped (all on `main`, newest first):**
+- `d110ce1` — services row 05: the link moves below its description, so all five
+  rows read `num → title → body → arrow` in DOM (= tab / screen-reader) order.
+- `82ca29a` — `/work/` unshadowed (the redirect that hid it is deleted, not
+  rewritten); old portfolio URLs repointed from `/#work` to `/work/`;
+  `/el-salvador-photo-gallery/` no longer redirects into a 404;
+  `scripts/check-redirects.mjs` added as `postbuild`; 404 page made useful and
+  its link targets raised to the WCAG 24px minimum.
+- `c3ba05b` — `/start/` and `/thanks/` rendered unstyled in production: the
+  `.sv-*` system moves into `src/styles/service-page.css` and is imported,
+  not borrowed from another page's `<style is:global>`.
+- `fd31dfe` · `e7194fc` — old-site text archive + 33-URL inventory captured
+  before cutover (`docs/old-site-content.md`, `docs/old-urls.txt`).
+- `d4251b6` · `0f1e7c3` · `ea4c3e6` — hero: landscape phone fills the large
+  viewport with proximity snap; bottom-weighted portrait layout; WP-managed
+  mobile fallback image field.
+- `8122867` — mobile nav: wordmark no longer collides with the burger.
 - `8640ec5` — shared scroll lock; mobile-nav gaps (outside click, focus into panel, class
   lock, 767.98 breakpoint); first-party contact backend (Pages Function + Turnstile +
   Resend) replacing Web3Forms; `/thanks/`; preview-host `noindex` middleware.
@@ -291,15 +361,21 @@ Live on Cloudflare Pages at `ded-site.pages.dev`. **8 projects. 18 pages.**
   four projects with no WP featured image.
 - `f2f7ecb` — project pages: `overflow-x: clip` not `hidden`, fixing the swallowed first
   wheel gesture.
-- `0cde9a2` — this file rewritten against the built site.
 - `839a125` — services + industry rows: unified shell width, inset highlight padding, hover
   jiggle, animated top rule; nav aligned to the shell.
 - `6470c38` — the five `/services/*` pages + `/start`, `src/data/services.ts`, column-major
   tab order, unified H1 token, two-column "How it landed", blue favicon.
 
-**Done, previously listed as open:** mobile hamburger nav (now complete — outside click,
-focus management, class-based lock); contact form on a first-party endpoint;
-`favicon.svg` blue `#3457C6`; OG image at 1200×630.
+**Done, previously listed as open:** mobile hamburger nav (outside click, focus
+management, class-based lock); contact form on a first-party endpoint;
+`favicon.svg` blue `#3457C6`; OG image at 1200×630; the `/work/` redirect shadow
+and the redirect-into-a-404 (both closed by `82ca29a`).
+
+### Branches
+
+`feat/d1-enquiries` (`f068b7e`, local + origin) parks the D1 enquiry store,
+admin inbox and R2 backup. **The INSERT does not work.** Do not merge it or
+build on it without being asked.
 
 ### Cloudflare dashboard settings this repo expects
 
@@ -320,24 +396,27 @@ marked unverified.
 
 ## Open items
 
-1. **Domain + email cutover** to davidedigerdesign.com. **Preserve the SiteGround MX
-   records** when DNS moves — mail must keep flowing through SiteGround. Carry MX over
-   before switching the apex.
+1. **Domain + email cutover** to davidedigerdesign.com. DNS is on Cloudflare;
+   SiteGround still hosts email and its **MX records are untouched — keep them
+   that way.** Carry MX over before switching the apex. Canonical will be the
+   bare domain. The hero's WP mobile-fallback image field exists but is **empty**
+   until David uploads the graphic.
 2. **Favicon raster set is stale.** `favicon.svg` is blue, but `favicon.ico`,
    `favicon-16x16.png`, `favicon-32x32.png`, `favicon.png` and `apple-touch-icon.png` are
    still the earlier artwork. Regenerate all from the blue SVG.
-3. **Contact form — set the keys and send a live test.** See the dashboard table above.
-   Until `RESEND_API_KEY` is set the form cannot deliver. Confirm arrival at
-   info@davidedigerdesign.com (SiteGround MX) and check reply-to works.
+3. **Contact form — send a live end-to-end test.** Keys are now set in both
+   environments and the project redeployed; `send.davidedigerdesign.com` is
+   verified in Resend. **Never tested end to end.** Submit the real form and
+   confirm arrival at info@davidedigerdesign.com (SiteGround MX), that reply-to
+   works, and that the no-JS path lands on `/thanks/`.
 4. **Populate remaining projects.** 8 live; more to add via the `ded_project` CPT.
    Two were unpublished from WP around 2026-09-10 — `el-salvador-home-building-video` and
-   `innotech-building-design` — so their pages now 404. **`public/_redirects` still points
-   `/el-salvador-photo-gallery/` at the first of them**, i.e. a redirect into a 404. Repoint
-   or restore.
-5. **`/work/` index is shadowed by a redirect.** `public/_redirects` has
-   `/work/ → /#work 301`, meant for the *old* site's work landing page, but it also matches
-   the new `/work/` index — which is built but unreachable in production. Remove that line
-   or scope it.
+   `innotech-building-design` — so their pages 404. `/el-salvador-photo-gallery/` is parked
+   on `/work/` until the first returns; repoint it at the project if it is restored.
+5. **Nav and footer still link to `/#work`, not `/work/`.** They were written
+   while the `/work/` index was unreachable. Now that it resolves, `SiteNav` and
+   `SiteFooter` should probably point at the real page. Not changed yet — it is
+   a visible navigation change and wants David's say-so.
 6. **Service page copy is studio-written and unreviewed.** It makes concrete claims
    (two-business-day reply, press checks, no rediscovery fee) — David should confirm or
    correct before launch.
