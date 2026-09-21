@@ -1,12 +1,33 @@
 # 301 map: old davidedigerdesign.com (WordPress/Brooklyn theme) → new site.
-# Source: the old site's wp-sitemap (pages, portfolio items, portfolio
-# categories) crawled 2026-07-06 — 33 indexed URLs. Preserves search equity
-# at domain cutover; inert until then (the old paths simply don't exist on
-# the new site). Specific rules must precede splats.
+#
+# Source: docs/old-urls.txt — the old site's wp-sitemap, crawled 2026-09-16.
+# All 33 indexed URLs are accounted for below. Preserves search equity at the
+# domain cutover; inert until then, since these paths only exist on the old
+# site. Specific rules must precede splats.
+#
+# TARGETS. Work rules point at /work/, a real page, NOT at /#work. Search
+# engines discard the fragment, so every /#… rule resolves to plain / — which
+# consolidated all the old portfolio equity onto the homepage instead of the
+# work index, and landed visitors above the section they asked for. /#about,
+# /#contact and /#services stay as fragments: those sections have no
+# standalone page to target.
+#
+# NEVER add a rule whose source matches a path this site builds. On Cloudflare
+# Pages a redirect takes precedence over the static asset, so such a rule makes
+# a real route unreachable. `/work/  /#work  301` did exactly that: it was
+# written for the OLD site's work landing page, but it also matched the new
+# /work/ index, which was built on every deploy and 301'd away from for weeks.
+# The new index lives at that same path, so the old URL now resolves on its own
+# and needs no rule at all.
+#
+# scripts/check-redirects.mjs runs on every build and fails on both mistakes —
+# a source that shadows a built page, and a target that does not exist.
 
-# ── Pages ──────────────────────────────────────────────────────────
+# ── Pages → contact ────────────────────────────────────────────────
 /contact-us/                       /#contact  301
 /drop-us-a-line/                   /#contact  301
+
+# ── Pages → about ──────────────────────────────────────────────────
 /about/                            /#about    301
 /about-brooklyn/                   /#about    301
 /about-brooklyn/what-they-have-said/ /#about  301
@@ -15,24 +36,27 @@
 /awards/                           /#about    301
 /studio-2/                         /#about    301
 /studio-2/awards/                  /#about    301
-/services/                         /#services 301
-/showcase/                         /#work     301
-/brands_01/                        /#work     301
-/typography/                       /#work     301
-/video-gallery/                    /#work     301
-/el-salvador-photo-gallery/        /work/el-salvador-home-building-video/ 301
 
-# /work/ (old work landing) → homepage work section. Exact match only —
-# the new /work/<slug>/ pages are unaffected.
-/work/                             /#work     301
+# ── Pages → services ───────────────────────────────────────────────
+/services/                         /#services 301
+
+# ── Pages → work index ─────────────────────────────────────────────
+/showcase/                         /work/     301
+/brands_01/                        /work/     301
+/typography/                       /work/     301
+/video-gallery/                    /work/     301
+# Previously pointed at /work/el-salvador-home-building-video/, which was
+# unpublished from WP on 2026-09-10 and now 404s — a redirect into a dead end.
+# Parked on the index; repoint it if that project is ever restored.
+/el-salvador-photo-gallery/        /work/     301
 
 # ── Portfolio items with a direct successor ────────────────────────
 /portfolio-item/chanvrehemp/       /work/chanvre-hemp/ 301
 /portfolio-item/innotech-windows-booklet-brochure/ /work/innotech-windows-and-doors/ 301
 
 # ── Everything else under the old portfolio structure ──────────────
-/portfolio-item/*                  /#work     301
-/portfolio-category/*              /#work     301
+/portfolio-item/*                  /work/     301
+/portfolio-category/*              /work/     301
 
 # ── Old WP internals that search engines sometimes index ───────────
 /wp-sitemap.xml                    /sitemap-index.xml 301
