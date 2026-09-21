@@ -131,9 +131,16 @@ const slotClass = (slot: number) => `svc__item--${String(slot).padStart(2, '0')}
       <span class="svc__wide-head">
         <span class="svc__num">{retainerItem.num}</span>
         <span class="svc__title" set:html={retainerItem.title}></span>
+      </span>
+      {/* num → title → body → arrow, the same order as 01–04. The arrow used
+          to sit inside .svc__wide-head, which put the link label BEFORE the
+          description in the DOM at every width — and rendered it literally
+          above the description at ≤860px, where this row collapses to one
+          column. */}
+      <span class="svc__wide-main">
+        <span class="svc__body svc__body--wide">{retainerItem.body}</span>
         <span class="svc__arrow" aria-hidden="true">See how it works &rarr;</span>
       </span>
-      <span class="svc__body svc__body--wide">{retainerItem.body}</span>
     </a>
 
     <div class="svc__foot">
@@ -297,7 +304,11 @@ const slotClass = (slot: number) => `svc__item--${String(slot).padStart(2, '0')}
     color: var(--type-body-color);
   }
 
-  .svc__body--wide {
+  /* Right-hand column of the wide row: description then arrow. It is the grid
+     item, so the centering that used to live on .svc__body--wide belongs here
+     — the body is now nested one level deeper and align-self would be inert. */
+  .svc__wide-main {
+    display: block;
     align-self: center;
   }
 
@@ -417,7 +428,7 @@ const slotClass = (slot: number) => `svc__item--${String(slot).padStart(2, '0')}
       border-top-width: 2px;
     }
 
-    .svc__item--wide .svc__body--wide {
+    .svc__item--wide .svc__wide-main {
       margin-top: 12px;
     }
 
