@@ -275,8 +275,36 @@ const video = showVideo && acf.video_url ? normalizeVideoEmbed(acf.video_url) : 
 // ─── SEO ─────────────────────────────────────────────────────────────────────
 const cleanTitle  = project.title.replace(/&amp;/g, '&').replace(/<[^>]+>/g, '').trim();
 const pageTitle   = `${cleanTitle} — David Ediger Design`;
-const rawDesc     = (acf.tagline || acf.brief_text || `${cleanTitle}: creative work by David Ediger Design.`).replace(/<[^>]+>/g, '').trim();
-const metaDesc    = rawDesc.length > 155 ? rawDesc.slice(0, 152).trimEnd() + '…' : rawDesc;
+// Meta description. The `||` chain this replaced stopped at the first truthy
+// field, so a two-word ACF tagline ("be happy") beat a full brief and every
+// project shipped an 8-53 character description — far under the ~70-160 Google
+// renders, and useless to a searcher deciding whether to click.
+//
+// Compose instead: lead with the tagline, extend with the brief, and top up
+// from the discipline terms so a project with a thin tagline and no brief
+// still says what the work actually was.
+const strip = (s?: string) => (s || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+
+const taglineText = strip(acf.tagline);
+const briefText   = strip(acf.brief_text);
+const disciplines = project.discipline.map(t => t.name).join(', ');
+
+let rawDesc = [
+  taglineText && !/[.!?]$/.test(taglineText) ? `${taglineText}.` : taglineText,
+  briefText,
+].filter(Boolean).join(' ');
+
+if (rawDesc.length < 70) {
+  const context = disciplines
+    ? `${disciplines} for ${cleanTitle}, by David Ediger Design — Creative Director, British Columbia.`
+    : `${cleanTitle} — creative work by David Ediger Design.`;
+  rawDesc = rawDesc ? `${rawDesc} ${context}` : context;
+}
+
+// Trim on a word boundary, not mid-word, so the ellipsis reads cleanly.
+const metaDesc = rawDesc.length > 155
+  ? rawDesc.slice(0, 152).replace(/\s+\S*$/, '') + '…'
+  : rawDesc;
 const ogImage     = heroBg || null;
 const canonical   = `https://davidedigerdesign.com/work/${project.slug}/`;
 
