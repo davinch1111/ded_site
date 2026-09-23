@@ -7,7 +7,14 @@ import sitemap from '@astrojs/sitemap';
 export default defineConfig({
   output: 'static',
   site: 'https://davidedigerdesign.com',
-  integrations: [sitemap()],
+
+  // /thanks/ carries <meta name="robots" content="noindex"> — it is the no-JS
+  // contact landing, reachable only by submitting the form. Listing a noindex
+  // page in the sitemap sends Google two contradictory signals about the same
+  // URL, which is reported in Search Console as "Submitted URL marked
+  // noindex". Excluded here so the sitemap only ever advertises indexable
+  // pages. Astro already omits 404.
+  integrations: [sitemap({ filter: (page) => !page.endsWith('/thanks/') })],
 
   // All styles ship as external CSS files — no inline <style> except Astro's
   // own island stylesheet, which security.csp hashes. Keeps style-src free of
