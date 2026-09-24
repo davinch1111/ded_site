@@ -5,6 +5,9 @@ import SiteFooter from '../components/SiteFooter.astro';
 import Icon from '../components/Icon.astro';
 import ScrollCue from '../components/ScrollCue.astro';
 import ServicesSection from '../components/ServicesSection.astro';
+// Same source the /services/<slug>/ pages and /start are built from, so the
+// schema's service list cannot drift from the pages that actually exist.
+import { SERVICES } from '../data/services';
 
 interface Project {
   id: number;
@@ -202,13 +205,48 @@ const jsonLd = {
       'worksFor': { '@id': orgId },
     },
     {
-      '@type': 'Organization',
+      // ProfessionalService, not plain Organization: this is a design studio
+      // selling services in a place, and the subtype is what lets Google tie
+      // the entity to a region and a service catalogue. Still carries every
+      // Organization property, so nothing is lost by narrowing the type.
+      '@type': 'ProfessionalService',
       '@id': orgId,
       'name': siteName,
+      'alternateName': 'DED',
+      'description': homeDesc,
       'url': canonical,
       'logo': new URL('/images/ded-logo-2026-colour.svg', Astro.site).href,
+      'image': ogImage,
       'email': 'info@davidedigerdesign.com',
       'founder': { '@id': personId },
+      'foundingDate': '2003',
+      'address': {
+        '@type': 'PostalAddress',
+        'addressRegion': 'British Columbia',
+        'addressCountry': 'CA',
+      },
+      'areaServed': [
+        { '@type': 'AdministrativeArea', 'name': 'British Columbia' },
+        { '@type': 'Country', 'name': 'Canada' },
+        { '@type': 'Country', 'name': 'United States' },
+      ],
+      'knowsLanguage': 'en',
+      // Built from src/data/services.ts — the same five services the
+      // /services/<slug>/ pages are generated from.
+      'hasOfferCatalog': {
+        '@type': 'OfferCatalog',
+        'name': 'Studio services',
+        'itemListElement': SERVICES.map((s) => ({
+          '@type': 'Offer',
+          'itemOffered': {
+            '@type': 'Service',
+            'name': s.title,
+            'description': s.lede,
+            'url': new URL(`/services/${s.slug}/`, Astro.site).href,
+            'provider': { '@id': orgId },
+          },
+        })),
+      },
       'sameAs': [
         'https://www.instagram.com/david.ediger.design',
         'https://www.linkedin.com/in/david-ediger-b402a914/',
