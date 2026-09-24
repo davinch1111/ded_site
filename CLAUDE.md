@@ -19,8 +19,18 @@ Director. Staged on Cloudflare Pages before the domain cutover.
 - Deployed to **Cloudflare Pages** at `ded-site.pages.dev`, building from GitHub
   `davinch1111/ded_site` `main`. Every push to `main` triggers a deploy.
 
-**davidedigerdesign.com is still the OLD WordPress site.** Nothing built here appears there
-until the domain cutover. Always verify against `ded-site.pages.dev`.
+**LIVE on davidedigerdesign.com since 2026-09-24.** The cutover is done — this
+Astro site is what the domain serves. Verify against `davidedigerdesign.com`;
+`ded-site.pages.dev` still serves the identical build as a preview and is
+`noindex`, so it is no longer the place to check "what users see".
+
+- **Canonical is the bare domain.** `www` 301s to it. Every canonical, OG URL
+  and sitemap entry uses `https://davidedigerdesign.com`.
+- **`functions/_middleware.ts` is what keeps the preview out of search**, and
+  it is allow-by-default: only hosts ending `.pages.dev` get
+  `X-Robots-Tag: noindex, nofollow`, and production is never named, so it
+  cannot be caught by a typo. Verified live — the apex sends no such header.
+  **Never invert this to a production-host allowlist.**
 
 ---
 
@@ -136,6 +146,57 @@ later unpublished from WP, so the redirect led to a 404 with nothing to flag it.
 
 `_redirects` is edge logic: `npm run preview` and any static server ignore it.
 Test with `npx wrangler pages dev dist`.
+
+### SEO / AI search
+
+| Surface | Where |
+|---|---|
+| `site` + sitemap | `astro.config.mjs` — `https://davidedigerdesign.com`, `@astrojs/sitemap` |
+| Crawl directives | `public/robots.txt` → sitemap index |
+| AI crawlers | `public/llms.txt` |
+| Entity schema | `src/pages/index.astro` — `ProfessionalService` in an `@graph` |
+| Per-project schema | `src/pages/work/[slug].astro` — `CreativeWork` |
+
+- **The sitemap filter is deliberate.** `/thanks/` is `noindex`, so it is
+  excluded — listing a noindex URL in a sitemap is a contradictory signal and
+  shows up in Search Console as "Submitted URL marked noindex". 16 URLs.
+  Sitemaps serve **200**; the old WP site returned valid XML under a 404, which
+  is why crawlers ignored it.
+- **The `ProfessionalService` OfferCatalog is built from `src/data/services.ts`**,
+  not retyped, so schema cannot advertise a service with no page. Same reason
+  `/start`'s chooser reads from it.
+- **Project meta descriptions are composed, not chosen.** The old
+  `acf.tagline || acf.brief_text` stopped at the first truthy value, so a
+  two-word tagline ("be happy") beat a full brief and all eight projects shipped
+  8–53 character descriptions. Now tagline + brief, topped up from discipline
+  terms below 70 chars, trimmed on a word boundary. The same string feeds the
+  `CreativeWork` description.
+- **Project `og:image` still points at `davidedigerdesign.in`** (the WP
+  backend). Social previews therefore depend on that host; moving them to the
+  production domain or R2 is an open asset-hosting decision.
+- `llms.txt` is hand-written and **will drift** — update it when projects or
+  services change. It explicitly disclaims `ded-site.pages.dev` and
+  `davidedigerdesign.in` so a crawler cites the bare domain.
+
+### Accessibility
+
+Lighthouse **SEO 100 / Accessibility 100**, desktop and mobile, on `/`,
+`/work/`, `/start/`, `/services/web/` and a project page.
+
+- **Audit at mobile widths too.** The nav brand link had no accessible name
+  below 768px on every page — its only alt-bearing children (`.nav-logotype`)
+  are `display: none` there, which removes them from the accessibility tree.
+  It is now named on the anchor, which is width-independent. A desktop-only
+  audit cannot catch this class of bug.
+- **`alt=""` is correct on the emblems, work-card thumbnails and lightbox** —
+  cards take their name from a visible `<h2>`, and the lightbox alt is set in
+  JS on open. Adding alt text there double-announces.
+- **Do not put an `aria-label` on a card that has visible text.** It *replaces*
+  the accessible name rather than extending it, so it must contain every
+  visible word or it fails WCAG 2.5.3 Label in Name and breaks speech input.
+- `/404.html` scores a11y 95 on purpose: the ghost "404" numeral is 1.27:1,
+  `aria-hidden`, pure decoration (WCAG 1.4.3 exempt). Its SEO 66 is the
+  `noindex` penalty, correct for an error page.
 
 ### Components & data
 
@@ -306,10 +367,11 @@ executable `<script>`.
 ## Conventions & gotchas
 
 - All front-end work goes in `site/`. Never build pages or Elementor layouts on WordPress.
-- A **Fact-Forcing Gate** requires presenting facts before Bash and before each
-  Edit/Write — expect it, present the facts, retry. For file creation it wants
-  the caller, proof no existing file does the job, the data shape, and the
-  user's instruction quoted verbatim.
+- **The Fact-Forcing Gate is gone.** It came from the `everything-claude-code`
+  plugin, which was archived out of `~/.claude/skills/` on 2026-09-23 after a
+  security audit (it auto-ran 40 hooks and logged every tool input to
+  `~/.claude/homunculus/`). No hooks are installed now. Nothing needs to be
+  presented before a Bash or Edit call any more.
 - **`docs/` is a pre-cutover archive of the OLD site**, captured while it was
   still reachable: `old-urls.txt` (33 URLs) and `old-site-content.md` (text).
   **`/about/`, `/awards/`, `/studio-2/` and `/typography/` are Brooklyn theme
@@ -338,6 +400,16 @@ executable `<script>`.
 Live on Cloudflare Pages at `ded-site.pages.dev`. **8 projects. 18 pages.**
 
 **Recently shipped (all on `main`, newest first):**
+- `4eaae8b` — a11y: four WCAG AA contrast failures fixed (`.foot-copy` was
+  1.98:1); nav brand link named, it had NO accessible name below 768px on every
+  page; `aria-label` removed from `/work/` cards (WCAG 2.5.3). Lighthouse SEO
+  100 / a11y 100, desktop and mobile.
+- `b17803d` — `public/llms.txt` for AI crawlers.
+- `fc78d14` — homepage entity upgraded Organization → `ProfessionalService`
+  (BC address, areaServed, OfferCatalog built from `src/data/services.ts`).
+- `34406c0` — project meta descriptions composed rather than picked by `||`;
+  all eight went from 8–53 chars to 145–150.
+- `511df51` — noindex `/thanks/` excluded from the sitemap.
 - `d110ce1` — services row 05: the link moves below its description, so all five
   rows read `num → title → body → arrow` in DOM (= tab / screen-reader) order.
 - `82ca29a` — `/work/` unshadowed (the redirect that hid it is deleted, not
@@ -396,11 +468,12 @@ marked unverified.
 
 ## Open items
 
-1. **Domain + email cutover** to davidedigerdesign.com. DNS is on Cloudflare;
-   SiteGround still hosts email and its **MX records are untouched — keep them
-   that way.** Carry MX over before switching the apex. Canonical will be the
-   bare domain. The hero's WP mobile-fallback image field exists but is **empty**
-   until David uploads the graphic.
+1. **Hero mobile fallback image is still empty.** The WP field exists and the
+   markup renders only when it is set; until David uploads a graphic, phones
+   ≤480px get the dark background with no image behind the headline.
+   *(Domain + email cutover is DONE — live on the bare domain since 2026-09-24,
+   DNS on Cloudflare, SiteGround MX carried over untouched and still serving
+   mail.)*
 2. **Favicon raster set is stale.** `favicon.svg` is blue, but `favicon.ico`,
    `favicon-16x16.png`, `favicon-32x32.png`, `favicon.png` and `apple-touch-icon.png` are
    still the earlier artwork. Regenerate all from the blue SVG.
