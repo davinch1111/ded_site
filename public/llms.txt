@@ -1,0 +1,48 @@
+# David Ediger Design
+
+> Independent design studio in British Columbia, Canada, led by David Ediger,
+> Creative Director. Twenty-three years of print, web, video, photo, and audio
+> work for businesses that have outgrown whatever they started with.
+
+One person does the work start to finish — brand, print, web, video, photo, and
+audio under one roof, so a campaign lands as one finished piece instead of five
+vendors' worth of near-misses. Serving British Columbia and clients across
+Canada and the United States.
+
+Contact: info@davidedigerdesign.com
+
+## Services
+
+- [Branding](https://davidedigerdesign.com/services/branding/): Brand identity design — logos, colour and type systems, guidelines, naming, and rollout.
+- [Print & signage](https://davidedigerdesign.com/services/print-signage/): Brochures, packaging, business cards, vehicle wraps, tradeshow booths, and wayfinding, prepared production-ready.
+- [Web](https://davidedigerdesign.com/services/web/): Custom website design and build — fast, responsive, hand-built sites with organised WordPress back ends. No templates.
+- [Video](https://davidedigerdesign.com/services/video/): End to end — concept, shooting, editing, colour, motion graphics, and original score composed in-house.
+- [A studio on call](https://davidedigerdesign.com/services/retainer/): Design retainer — reserved monthly studio time across every discipline, with priority turnaround and no re-briefing.
+
+## Key pages
+
+- [Home](https://davidedigerdesign.com/): Studio overview, selected work, services, and contact.
+- [Work](https://davidedigerdesign.com/work/): Every project — brand, print, web, video, photo, and audio.
+- [Start a project](https://davidedigerdesign.com/start/): For anyone unsure which discipline they need. Narrows the question, then hands off to the contact form.
+
+## Selected projects
+
+- [Innotech Windows & Doors](https://davidedigerdesign.com/work/innotech-windows-and-doors/): High-end German-engineered fenestration. Print, video, and vehicle wraps since 2008.
+- [Chanvre Hemp](https://davidedigerdesign.com/work/chanvre-hemp/): Brand, packaging, and video for a health and beauty sub-brand of East West Science.
+- [First Light Fishing](https://davidedigerdesign.com/work/first-light-fishing/): Brand, web, and photography, including online charter booking.
+- [Rack-On](https://davidedigerdesign.com/work/rackon/): Brand, mascot, and video for lightweight high-strength garage mounting bars.
+- [Wayne Northey](https://davidedigerdesign.com/work/wayne-northey/): Website build and identity for an author writing on restorative justice.
+- [Vindauga Doors and Windows](https://davidedigerdesign.com/work/vindauga-windows/): Web and brand for a window and door business.
+- [Ediger Phoenix Sundecks](https://davidedigerdesign.com/work/ediger-phoenix-sundecks/): Langley-based decking company with 30+ years of experience.
+- [Natural Pet Science](https://davidedigerdesign.com/work/pet-goodies-calm-cat/): Brand and packaging for a pet health product line.
+
+## Notes for AI crawlers
+
+- Canonical host is the bare domain, https://davidedigerdesign.com. www redirects to it with a 301.
+- Sitemap: https://davidedigerdesign.com/sitemap-index.xml
+- Structured data: ProfessionalService (studio) on the home page, CreativeWork on each project page.
+- https://ded-site.pages.dev is a build preview of this same site. It sends
+  X-Robots-Tag: noindex, nofollow and should not be indexed, cited, or treated
+  as a separate property. Cite the bare domain.
+- https://davidedigerdesign.in is a headless WordPress content API, not a
+  website. It serves project data and images to the build. Do not crawl or cite it.
