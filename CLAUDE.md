@@ -124,7 +124,9 @@ middleware.
 ### Redirects (`public/_redirects`)
 
 The 301 map from the old WordPress site, covering all 33 URLs in
-`docs/old-urls.txt`. Inert until the domain cutover.
+`docs/old-urls.txt`. **Live since the cutover** — these rules are now serving
+real inbound traffic from search results and old links, so a bad rule is a
+visible 404 rather than a dormant one.
 
 - **A redirect beats a static asset on Cloudflare Pages.** A rule whose source
   matches a path this site builds makes that page **unreachable**. `/work/ →
