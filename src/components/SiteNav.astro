@@ -16,7 +16,14 @@
       left/right edge as the Studio-services and About bands, while the bar
       background stays full-bleed. */}
   <div class="nav-inner">
-    <a href="/" class="nav-brand">
+    {/* aria-label, not alt text on the children. The only children carrying
+        alt are the two .nav-logotype images, and below 768px those are
+        display:none — which removes them from the accessibility tree, leaving
+        this link with NO accessible name on every page at phone widths. The
+        emblems are alt="" by design (they duplicate the logotype). Naming the
+        anchor itself is width-independent, so it survives whichever child the
+        light/dark and desktop/mobile rules happen to hide. */}
+    <a href="/" class="nav-brand" aria-label="David Ediger Design, home">
       <img src="/images/ded_emblem_white.svg"     class="nav-emblem nav-mark-dark-bg"   alt="" />
       <img src="/images/ded_emblem-coloured.svg"  class="nav-emblem nav-mark-light-bg"  alt="" />
       <img src="/images/ded_logotype-white.svg"   class="nav-logotype nav-mark-dark-bg"  alt="David Ediger Design" />

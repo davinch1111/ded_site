@@ -79,7 +79,9 @@ const year = new Date().getFullYear();
     font-weight: 400;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: rgba(245,244,240,0.3);
+    /* 0.3 composited to #4c4c52 on the #03040e footer — 2.39:1, well under
+       WCAG AA (4.5:1) at 10px. 0.58 lands on #8f8f93, 6.07:1. */
+    color: rgba(245,244,240,0.58);
     margin-bottom: 12px;
   }
 
@@ -115,7 +117,9 @@ const year = new Date().getFullYear();
     font-family: 'Montserrat', sans-serif;
     font-size: 11px;
     font-weight: 300;
-    color: rgba(245,244,240,0.25);
+    /* 0.25 composited to #404047 — 1.98:1, the worst contrast on the site.
+       0.55 gives 5.6:1. */
+    color: rgba(245,244,240,0.55);
     padding-top: 20px;
   }
 

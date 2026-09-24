@@ -112,10 +112,17 @@ const ogImage = new URL('/og-image.png', Astro.site).href;
       </header>
 
       <div class="wk-grid" id="wk-grid">
+        {/* No aria-label on the cards. Each carries a visible <h2> title plus
+            the discipline line, and an aria-label REPLACES that as the
+            accessible name rather than adding to it. "View project: Innotech
+            Window Folder" therefore did not contain the visible "Print ·
+            Video", which fails WCAG 2.5.3 Label in Name and broke speech
+            input — saying the discipline text matched nothing. Letting the
+            name be computed from the content gives "Innotech Window Folder
+            Print · Video", which contains every visible word. */}
         {cards.map((c, i) => (
           <a class:list={['wk-card', 'reveal', !c.image && `card-tone-${i % 6}`]}
-             href={`/work/${c.slug}/`} data-disciplines={c.disciplines.join('|')}
-             aria-label={`View project: ${c.title.replace(/<[^>]+>/g, '')}`}>
+             href={`/work/${c.slug}/`} data-disciplines={c.disciplines.join('|')}>
             <div class="wk-card-media">
               {c.image ? (
                 <img src={c.image} alt="" loading="lazy" />

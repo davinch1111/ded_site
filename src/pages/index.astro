@@ -1612,7 +1612,9 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(15,16,20,0.4);
+  /* 0.4 composited to #9c9c9e on the #fafafa field — 2.62:1, failing WCAG AA
+     (4.5:1) at 10px. 0.62 lands on #686868, 5.36:1. */
+  color: rgba(15,16,20,0.62);
   margin-bottom: 8px;
 }
 
@@ -1657,7 +1659,8 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   padding: 8px 16px;
   border: 1px solid rgba(15,16,20,0.2);
   border-radius: 2px;
-  color: rgba(15,16,20,0.55);
+  /* 0.55 composited to #79797b — 4.16:1, just under AA. 0.62 gives 5.36:1. */
+  color: rgba(15,16,20,0.62);
   cursor: pointer;
   user-select: none;
   transition: all 0.22s cubic-bezier(.25,.1,.25,1);
