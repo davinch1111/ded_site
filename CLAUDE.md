@@ -243,14 +243,61 @@ inline status; **without JS** the same POST gets a `303` to `/thanks/` (or back 
 read with `getAll`), `budget`, `timeline`, `description`, plus a `botcheck` honeypot that
 returns a decoy success.
 
-Turnstile requires JS, so the no-JS path cannot produce a token. Tokenless submissions are
-**accepted and flagged** "Not verified by Turnstile" in the email body rather than rejected —
-otherwise progressive enhancement would be broken by design. The same applies when
-`TURNSTILE_SECRET_KEY` is unset, so the form works before the keys exist. A **failed**
-verification is always rejected.
+#### Turnstile FAILS CLOSED — do not reopen it
+
+Verification rejects on **all five** paths: no secret, no token, `success:false`,
+`hostname` not in `ALLOWED_TURNSTILE_HOSTNAMES`, or siteverify unreachable.
+Rejection is a `400` asking the visitor to reload.
+
+It used to return `'skipped'` when the secret **or the token** was missing, and
+send the mail anyway with "Not verified by Turnstile" appended. **That note was
+the spam channel.** Bots do not run JS, so they never send a token, so every one
+of them took the skipped branch — a direct POST omitting the token was all it
+took. Both keys were correctly set in Production the whole time; this was logic,
+not configuration.
+
+**The no-JS path can no longer submit.** Turnstile cannot mint a token without
+JS, so that is unavoidable once the form fails closed — it is the exact hole
+spam walked through. A `<noscript>` block states this and gives the studio
+address. Restoring the old progressive-enhancement behaviour re-opens the hole.
+
+Preview hosts are **not** in the hostname allowlist, so the form does not submit
+on `ded-site.pages.dev`. Add the host temporarily to test there.
+
+#### Layers in front of the mail
+
+Everything below is a **silent drop**: the normal success response, nothing
+sent, so a bot cannot learn which trap it hit. The reason goes to the log only.
+
+| Trap | Rule |
+|---|---|
+| Honeypots | `website` (aria-hidden wrapper) and `botcheck` |
+| Time trap | `ts` stamped on load; missing, `<3s`, or `>2h` |
+| Content | HTML tags, `[url=`, more than 2 URLs, >30% Cyrillic |
+| Sender | `BLOCKED_EMAIL_DOMAINS` — mail.ru, rambler.ru + disposables |
+
+Cyrillic is measured against **letters, not characters**, so punctuation and
+digits cannot dilute the ratio.
+
+Two rules instead show a **visible** error, because a person can fix them: no
+service selected, and a description under 30 characters.
+
+Logs carry the reason and the email **domain only** — never the address, name,
+or message body.
+
+**The honeypot and `<noscript>` are styled from the stylesheet, never `style=""`.**
+The CSP has no `style-src-attr 'unsafe-inline'`, so an inline style would be
+dropped and the honeypot would render visibly to everyone. The `ts` stamp rides
+the existing bundled island for the same reason.
 
 The site key is read from `PUBLIC_TURNSTILE_SITE_KEY` at build time; with it unset the widget
 is omitted entirely. Never hardcode either key.
+
+**Testing without a browser:** Cloudflare's always-pass secret
+`1x0000000000000000000000000000000AA` makes siteverify succeed for any token —
+but it reports `hostname: example.com`, which the allowlist rejects, so add that
+host temporarily too. Reaching the `RESEND_API_KEY` 500 locally means a
+submission cleared every anti-spam gate.
 
 ### WP data fetch (build time)
 ```
@@ -402,6 +449,9 @@ executable `<script>`.
 Live on Cloudflare Pages at `ded-site.pages.dev`. **8 projects. 18 pages.**
 
 **Recently shipped (all on `main`, newest first):**
+- `a9b8fd1` — contact form hardened: Turnstile **fails closed** (the `'skipped'`
+  branch was the spam channel), plus honeypot, time trap, content heuristics and
+  a domain blocklist, all silent. 13 cases tested.
 - `4eaae8b` — a11y: four WCAG AA contrast failures fixed (`.foot-copy` was
   1.98:1); nav brand link named, it had NO accessible name below 768px on every
   page; `aria-label` removed from `/work/` cards (WCAG 2.5.3). Lighthouse SEO
@@ -479,11 +529,14 @@ marked unverified.
 2. **Favicon raster set is stale.** `favicon.svg` is blue, but `favicon.ico`,
    `favicon-16x16.png`, `favicon-32x32.png`, `favicon.png` and `apple-touch-icon.png` are
    still the earlier artwork. Regenerate all from the blue SVG.
-3. **Contact form — send a live end-to-end test.** Keys are now set in both
-   environments and the project redeployed; `send.davidedigerdesign.com` is
-   verified in Resend. **Never tested end to end.** Submit the real form and
-   confirm arrival at info@davidedigerdesign.com (SiteGround MX), that reply-to
-   works, and that the no-JS path lands on `/thanks/`.
+3. **Contact form — send one live browser submission.** Both Turnstile keys are
+   confirmed set in **Production** (site key renders on the live page; a garbage
+   token returns 403). Anti-spam is tested across 13 cases locally, but a real
+   browser submission has **never** been made end to end. It needs a browser
+   because Turnstile now fails closed and only a real widget mints a valid
+   token. Confirm arrival at info@davidedigerdesign.com (SiteGround MX) and that
+   reply-to works. The no-JS `/thanks/` path is **gone by design** — with JS off
+   the form shows the `<noscript>` address instead.
 4. **Populate remaining projects.** 8 live; more to add via the `ded_project` CPT.
    Two were unpublished from WP around 2026-09-10 — `el-salvador-home-building-video` and
    `innotech-building-design` — so their pages 404. `/el-salvador-photo-gallery/` is parked
