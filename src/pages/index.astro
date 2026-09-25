@@ -534,9 +534,25 @@ const jsonLd = {
           plain POST that lands on Web3Forms' hosted success page; the bundled
           script upgrades it to an on-page inline status. */}
       <form class="c-form" action="/api/contact" method="POST">
-        {/* Honeypot — hidden from people, tempting to bots. The Function
-            silently accepts and discards anything that fills this in. */}
+        {/* Honeypots — hidden from people, tempting to bots. The Function
+            returns a normal success response and sends nothing if either is
+            filled, so a bot cannot tell it was caught.
+
+            Hidden by a STYLESHEET CLASS, never style="" — the CSP has no
+            style-src-attr 'unsafe-inline', so an inline style here would be
+            dropped and the field would render visibly to everyone. */}
+        <div class="c-hp-wrap" aria-hidden="true">
+          <label for="c-website">Website (leave this empty)</label>
+          <input type="text" name="website" id="c-website" tabindex="-1" autocomplete="off" />
+        </div>
         <input type="text" name="botcheck" class="c-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+        {/* Time trap. Stamped with Date.now() by the bundled script on load;
+            the Function silently drops a submission with no stamp, one
+            submitted in under 3s, or one older than 2h. Left EMPTY in the
+            markup so a scripted POST that replays the static HTML has nothing
+            valid to send. */}
+        <input type="hidden" name="ts" value="" />
 
         <div class="c-row">
           <input class="c-inp" type="text"  name="name"  placeholder="Your name" aria-label="Your name" required />
@@ -580,9 +596,9 @@ const jsonLd = {
           placeholder="Tell me about the project. What does success look like?"></textarea>
 
         {/* Turnstile. Rendered only when a site key is configured at build
-            time, so the form still works before Turnstile is set up. The
-            widget needs JS, so the no-JS path submits without a token — the
-            Function accepts those but marks them unverified in the email. */}
+            time. The Function now FAILS CLOSED on the token, so a submission
+            without a verifying token never becomes mail — see the <noscript>
+            below for the path that leaves open. */}
         {turnstileSiteKey && (
           <div class="cf-turnstile c-turnstile"
                data-sitekey={turnstileSiteKey}
@@ -596,6 +612,19 @@ const jsonLd = {
 
         {/* Inline submit status (JS path only) — announced to screen readers */}
         <p class="c-status" role="status" aria-live="polite" hidden></p>
+
+        {/* Turnstile cannot issue a token without JS, and the Function now
+            fails closed on a missing token, so this form genuinely cannot be
+            submitted with JS off. Say so plainly and give the address, rather
+            than letting someone fill it in and get a silent rejection. */}
+        <noscript>
+          <p class="c-noscript">
+            This form needs JavaScript for spam verification. With it switched
+            off, please email
+            <a href="mailto:info@davidedigerdesign.com">info@davidedigerdesign.com</a>
+            directly and I will reply within two business days.
+          </p>
+        </noscript>
       </form>
     </div>
   </section>
@@ -1686,14 +1715,27 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
 }
 
 /* Honeypot — off-canvas, not display:none (bots skip hidden fields) */
-.c-hp {
+.c-hp,
+.c-hp-wrap {
   position: absolute;
   left: -9999px;
   width: 1px;
   height: 1px;
+  overflow: hidden;
   opacity: 0;
   pointer-events: none;
 }
+
+/* Offered only when JS is off, so the visitor is told before filling
+   anything in that this form cannot submit without it. */
+.c-noscript {
+  margin: 16px 0 0;
+  font-size: var(--type-body-size);
+  font-weight: var(--type-body-weight);
+  line-height: var(--type-body-leading);
+  color: var(--type-body-color);
+}
+.c-noscript a { color: var(--accent); }
 
 /* Turnstile widget. appearance="interaction-only" means this is usually
    zero-height and only expands when a visitor is actually challenged. */
@@ -2149,6 +2191,13 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   // and show an inline status. Chip state is native checkbox state.
   const cform = document.querySelector('.c-form') as HTMLFormElement | null;
   const cstatus = document.querySelector('.c-status') as HTMLElement | null;
+
+  // Time trap. Stamp load time so the Function can measure how long the form
+  // took to fill; it drops anything with no stamp, under 3s, or over 2h.
+  // Bundled, not inline — the CSP has no script-src 'unsafe-inline'.
+  const tsField = cform?.querySelector('input[name="ts"]') as HTMLInputElement | null;
+  if (tsField) tsField.value = String(Date.now());
+
   if (cform && cstatus) {
     cform.addEventListener('submit', async (e) => {
       e.preventDefault();
