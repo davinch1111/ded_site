@@ -324,7 +324,17 @@ submission cleared every anti-spam gate.
 ```
 GET /wp-json/wp/v2/ded_project?per_page=24&orderby=menu_order&order=asc&_embed
 ```
-A hardcoded fallback of 6 seed projects keeps the build green if WP is unreachable.
+**WP must be reachable at build time — the build FAILS without it.** Only the
+homepage degrades gracefully (`index.astro` has `FALLBACK_PROJECTS`, 6 seed
+entries). `work/[slug].astro` throws on a network error *and* on an empty
+result ("Aborting build to avoid silent empty site"), which fails the whole
+deploy. That is deliberate — shipping a work section with no work is worse than
+not shipping — but it means **davidedigerdesign.in is a hard dependency of every
+deploy**, and a WP outage blocks releases of unrelated changes.
+
+Note for local builds: if David's VPN (IPVanish) is on, `.in` is unroutable from
+his machine and `npm run build` fails with exactly this error. Check the VPN
+before assuming WordPress is down.
 Project pages read ACF: `tagline`, `master_image`, `project_logo`, `fact_*`, `brief_text`,
 `approach_text`, `gallery_items`, `video_url`, `outcome_text`, `outcome_stats`, `t_*`,
 `hover_video`, and the `show_*` section toggles.
@@ -433,6 +443,39 @@ Verify after any change: `dist/index.html` should contain **zero** `style="` and
 executable `<script>`.
 
 ---
+
+## Email signature assets — hosted on `.in`, NOT `.com`
+
+David's Apple Mail signature loads six images. They are served from
+**`https://davidedigerdesign.in/email/`** (Hostinger, LiteSpeed, no CDN), not
+from this site. That looks backwards. Do not "tidy it up".
+
+**Cloudflare blocks Apple Mail's image fetch.** The same six files serve a clean
+`200 image/png` from `davidedigerdesign.com/email/` — verified with curl, with
+Gmail/Outlook/Apple-Mail/Yahoo proxy user-agents, and by loading them in a
+browser on David's own machine. Mail still rendered them broken. Copying the
+identical files to `.in` fixed it immediately. The likely cause is Bot Fight
+Mode or a WAF managed rule challenging Mail's TLS fingerprint, which a
+user-agent test cannot reproduce. **Open item: a WAF Skip rule scoped to
+`/email/*` would let them move back here.** Nobody has looked in the dashboard yet.
+
+`public/email/*.png` is still committed and still deployed to `.com`. **Leave it
+there.** Mail sent before 2026-09-26 references those URLs, and they work for
+recipients; deleting them breaks images in already-delivered messages.
+
+Two gotchas worth keeping:
+
+- **David's VPN (IPVanish) does not route to `.in`.** With it on, the whole host
+  is unreachable from his machine, so he sees broken images in his own compose
+  window. Recipients fetch over their own connections and are unaffected. A
+  "the images broke again" report should start by asking whether the VPN is on.
+- **The signatures were also structurally corrupt**, independently of hosting.
+  Both declared `Content-Type: multipart/related` with a boundary that was never
+  closed — no `--boundary--` terminator. Browsers tolerate that; Mail's MIME
+  parser does not. They now ship as plain `text/html`, which is correct because
+  there are zero `cid:` references — every image is a remote URL, so the
+  multipart container was vestigial. If images break after a signature is edited
+  in a generator, check the MIME envelope before blaming the host.
 
 ## Conventions & gotchas
 
@@ -550,20 +593,22 @@ marked unverified.
 2. **Favicon raster set is stale.** `favicon.svg` is blue, but `favicon.ico`,
    `favicon-16x16.png`, `favicon-32x32.png`, `favicon.png` and `apple-touch-icon.png` are
    still the earlier artwork. Regenerate all from the blue SVG.
-3. **Contact form — send one live browser submission.** Both Turnstile keys are
-   confirmed set in **Production** (site key renders on the live page; a garbage
-   token returns 403). Anti-spam is tested across 13 cases locally, but a real
-   browser submission has **never** been made end to end. It needs a browser
-   because Turnstile now fails closed and only a real widget mints a valid
-   token. Confirm arrival at info@davidedigerdesign.com (SiteGround MX) and that
-   reply-to works. The no-JS `/thanks/` path is **gone by design** — with JS off
-   the form shows the `<noscript>` address instead.
+3. **Contact form — confirm the test email actually arrived.** A real browser
+   submission WAS made on 2026-09-26 from Brave: Turnstile auto-solved a
+   794-char token, both honeypots stayed empty, `ts` was 130s old, and the form
+   returned `ok` with the success message. Subject *"New project inquiry —
+   Claude Code TEST submission"*, reply-to `mk3@mk-4.com`. **Nobody has checked
+   the inbox.** That matters because a silent drop returns the IDENTICAL success
+   message — the response alone does not prove delivery. Confirm it landed at
+   info@davidedigerdesign.com (SiteGround MX) and that reply-to works.
 
-   **Include a Chrome autofill check in that same pass.** Trigger Chrome's
-   address/profile autofill on the form and confirm `hp_field_x` stays empty —
-   an autofilled honeypot silently destroys the enquiry, and no automated test
-   can prove a real browser's heuristics leave it alone. Inspect the field in
-   devtools after autofilling; do not just watch the visible inputs.
+   **The Chrome/Brave autofill check was NOT completed.** Brave offered no
+   autofill dropdown — that profile has no saved address data, so there was
+   nothing to trigger. No automated test can prove a real browser's heuristics
+   leave `hp_field_x` alone, and an autofilled honeypot silently destroys the
+   enquiry. With a saved address in the browser, autofill the form and inspect
+   `hp_field_x` in devtools; do not just watch the visible inputs.
+
 4. **Populate remaining projects.** 8 live; more to add via the `ded_project` CPT.
    Two were unpublished from WP around 2026-09-10 — `el-salvador-home-building-video` and
    `innotech-building-design` — so their pages 404. `/el-salvador-photo-gallery/` is parked
@@ -572,14 +617,21 @@ marked unverified.
    while the `/work/` index was unreachable. Now that it resolves, `SiteNav` and
    `SiteFooter` should probably point at the real page. Not changed yet — it is
    a visible navigation change and wants David's say-so.
-6. **Service page copy is studio-written and unreviewed.** It makes concrete claims
+6. **Cloudflare blocks Apple Mail from loading images off `.com`.** Email
+   signature assets live on `davidedigerdesign.in` as a workaround — see *Email
+   signature assets* above. To bring them back here, add a WAF **Skip** rule
+   scoped to `/email/*` (suspect Bot Fight Mode or a managed rule matching on
+   TLS fingerprint), then repoint the two Mail signatures. Parked by David
+   2026-09-26; not urgent, but it will bite anything else that needs an email
+   client to fetch from this domain.
+7. **Service page copy is studio-written and unreviewed.** It makes concrete claims
    (two-business-day reply, press checks, no rediscovery fee) — David should confirm or
    correct before launch.
-7. **Publish-to-live hook URL is still empty.** `wp_option ded_publish_hook_url` is unset, so
+8. **Publish-to-live hook URL is still empty.** `wp_option ded_publish_hook_url` is unset, so
    the button bounces to Settings → Publish to Live. David must paste the Cloudflare deploy
    hook there. **Never hardcode or commit that URL.**
-8. **Auto-rebuild webhook** from WP publish (currently manual, or the admin button).
-9. **Finish the type migration** for the components listed under Type above.
+9. **Auto-rebuild webhook** from WP publish (currently manual, or the admin button).
+10. **Finish the type migration** for the components listed under Type above.
 
 ---
 
