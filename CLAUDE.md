@@ -271,10 +271,31 @@ sent, so a bot cannot learn which trap it hit. The reason goes to the log only.
 
 | Trap | Rule |
 |---|---|
-| Honeypots | `website` (aria-hidden wrapper) and `botcheck` |
-| Time trap | `ts` stamped on load; missing, `<3s`, or `>2h` |
+| Honeypots | `hp_field_x` (aria-hidden wrapper) and `botcheck` |
+| Time trap | `ts` stamped on load; missing or `<3s` |
 | Content | HTML tags, `[url=`, more than 2 URLs, >30% Cyrillic |
 | Sender | `BLOCKED_EMAIL_DOMAINS` — mail.ru, rambler.ru + disposables |
+
+**A false positive here costs a lead, and both of the ones we shipped were
+invisible to everybody.** The visitor saw "Thanks, I'll be in touch"; no mail
+arrived; nobody knew. Weigh any new rule against that, not against the spam it
+catches.
+
+- **Never name a honeypot after a real field.** It was `website`, which is
+  exactly what Chrome's autofill matches — and Chrome and several password
+  managers ignore `autocomplete="off"`. Autofill populated the trap and killed
+  genuine enquiries. `hp_field_x` matches no autofill category, the label is
+  bland, and `data-lpignore` / `data-1p-ignore` / `data-form-type` cover the
+  managers that ignore `autocomplete`. `website` is deliberately **not** still
+  checked server-side — a cached page plus autofill is the exact bug.
+- **The form-age ceiling is 24h and VISIBLE**, not 2h and silent. Someone who
+  writes a careful brief over lunch is the *most* valuable enquiry, and the old
+  limit discarded precisely those. An expired form now returns a 400 telling
+  them to copy, reload and resend. The ceiling is near-useless defensively
+  anyway: bots submit in seconds and die on Turnstile and the 3s floor.
+- **A clock running ahead produces a negative age**, which used to fall into
+  the "too fast" branch and be dropped. Skew is now logged and skipped. Safe,
+  because forging a future `ts` still does not produce a Turnstile token.
 
 Cyrillic is measured against **letters, not characters**, so punctuation and
 digits cannot dilute the ratio.
@@ -537,6 +558,12 @@ marked unverified.
    token. Confirm arrival at info@davidedigerdesign.com (SiteGround MX) and that
    reply-to works. The no-JS `/thanks/` path is **gone by design** — with JS off
    the form shows the `<noscript>` address instead.
+
+   **Include a Chrome autofill check in that same pass.** Trigger Chrome's
+   address/profile autofill on the form and confirm `hp_field_x` stays empty —
+   an autofilled honeypot silently destroys the enquiry, and no automated test
+   can prove a real browser's heuristics leave it alone. Inspect the field in
+   devtools after autofilling; do not just watch the visible inputs.
 4. **Populate remaining projects.** 8 live; more to add via the `ded_project` CPT.
    Two were unpublished from WP around 2026-09-10 — `el-salvador-home-building-video` and
    `innotech-building-design` — so their pages 404. `/el-salvador-photo-gallery/` is parked
