@@ -541,9 +541,29 @@ const jsonLd = {
             Hidden by a STYLESHEET CLASS, never style="" — the CSP has no
             style-src-attr 'unsafe-inline', so an inline style here would be
             dropped and the field would render visibly to everyone. */}
+        {/* NAME CHOSEN TO DEFEAT AUTOFILL. This was `website`, which is exactly
+            what Chrome's autofill heuristics match on — and Chrome and several
+            password managers ignore autocomplete="off". Autofill would populate
+            the trap and a genuine enquiry would disappear into a silent
+            success. `hp_field_x` matches no autofill category, and the label is
+            deliberately bland: nothing here names a real field type, and it
+            does not announce itself as a trap either.
+
+            data-lpignore / data-1p-ignore / data-form-type are the opt-outs
+            LastPass, 1Password and Dashlane honour, since autocomplete alone
+            is not reliably respected. */}
         <div class="c-hp-wrap" aria-hidden="true">
-          <label for="c-website">Website (leave this empty)</label>
-          <input type="text" name="website" id="c-website" tabindex="-1" autocomplete="off" />
+          <label for="hp_field_x">Reference</label>
+          <input
+            type="text"
+            name="hp_field_x"
+            id="hp_field_x"
+            tabindex="-1"
+            autocomplete="off"
+            data-lpignore="true"
+            data-1p-ignore
+            data-form-type="other"
+          />
         </div>
         <input type="text" name="botcheck" class="c-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
 

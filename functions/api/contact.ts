@@ -49,8 +49,18 @@ const ALLOWED_TURNSTILE_HOSTNAMES = ['davidedigerdesign.com'];
 
 /** Minimum time a human plausibly needs. Anything faster is scripted. */
 const MIN_FILL_MS = 3_000;
-/** Older than this and the page has been sitting open, or `ts` was forged. */
-const MAX_FORM_AGE_MS = 2 * 60 * 60 * 1000;
+/**
+ * Upper bound on form age. 24h, not 2h, and it is a VISIBLE error rather than
+ * a silent drop.
+ *
+ * The 2h silent version quietly destroyed exactly the leads worth most: open
+ * the form, start a considered brief, break for lunch, come back and submit —
+ * "Thanks, I'll be in touch" appears and the message goes nowhere. Nobody
+ * finds out. The upper limit also does almost nothing against bots, which
+ * submit in seconds and are stopped by Turnstile and MIN_FILL_MS long before
+ * age matters. So: generous ceiling, and when it is hit, say so.
+ */
+const MAX_FORM_AGE_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Free-mail domains that generate effectively all of this form's spam, plus a
@@ -192,10 +202,18 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   // ── Honeypots ──────────────────────────────────────────────────────────
-  // `website` is the new visually-hidden field; `botcheck` is the original.
-  // Both are off-screen via a stylesheet class and out of the tab order, so a
-  // person cannot fill either by accident.
-  if (clean(form.get('website')) || clean(form.get('botcheck'))) {
+  // NAMES MATTER HERE. The first version of this field was called `website`,
+  // which is precisely what Chrome's autofill heuristics look for — and Chrome
+  // and several password managers ignore autocomplete="off". Autofill would
+  // then populate the trap and a real enquiry would vanish into a silent
+  // success. `hp_field_x` matches no autofill category, so nothing volunteers
+  // a value for it.
+  //
+  // `website` is deliberately NOT checked any more, not even as a transitional
+  // fallback for cached HTML: a cached page plus autofill is the exact
+  // false-positive this rename exists to remove. Cached pages still have
+  // `botcheck`, the time trap and Turnstile.
+  if (clean(form.get('hp_field_x')) || clean(form.get('botcheck'))) {
     return silentDrop('honeypot');
   }
 
@@ -208,8 +226,28 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     return silentDrop('timetrap-missing');
   }
   const age = Date.now() - ts;
-  if (age < MIN_FILL_MS) return silentDrop('timetrap-too-fast');
-  if (age > MAX_FORM_AGE_MS) return silentDrop('timetrap-stale');
+
+  // A negative age means the visitor's clock is ahead of ours, not that they
+  // are fast. Skipping the speed check is safe: a bot forging a future `ts`
+  // to get here still needs a Turnstile token it cannot mint.
+  if (age < 0) {
+    console.log(`[contact] clock-skew ahead_ms=${-age}`);
+  } else if (age < MIN_FILL_MS) {
+    return silentDrop('timetrap-too-fast');
+  }
+
+  // Visible, not silent. Someone who left the tab open overnight gets told to
+  // reload rather than being thanked for a message that was never sent.
+  if (age > MAX_FORM_AGE_MS) {
+    logReject('timetrap-expired', '');
+    return respond(
+      wantsJson,
+      false,
+      400,
+      'This form expired after being open too long. Please copy your message, reload the page, and send it again.',
+      '/#contact?error=expired'
+    );
+  }
 
   const name = clean(form.get('name'), 120);
   const email = clean(form.get('email'), 254);
