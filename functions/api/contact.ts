@@ -29,6 +29,13 @@
 interface Env {
   RESEND_API_KEY: string;
   TURNSTILE_SECRET_KEY?: string;
+  /**
+   * D1, OPTIONAL on purpose. If the binding is absent the form still works
+   * exactly as before — mail sends, nothing is stored. Storage is an audit
+   * trail, not a dependency of the visitor's submission. The parked branch
+   * failed precisely here: it treated a missing binding as a 500.
+   */
+  DB?: D1Database;
 }
 
 const TO_ADDRESS = 'info@davidedigerdesign.com';
@@ -118,6 +125,40 @@ const logReject = (reason: string, domain: string): void => {
   console.log(`[contact] rejected reason=${reason} domain=${domain || 'none'}`);
 };
 
+/** Same ISO-8601 shape the schema's DEFAULT produces, so string comparison
+ *  against created_at is valid. `datetime('now')` would NOT match — it yields
+ *  "YYYY-MM-DD HH:MM:SS", which sorts differently from "YYYY-MM-DDTHH:MM:SS.sssZ"
+ *  and would delete the wrong rows. */
+const ISO_NOW_MINUS_90D = "strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days')";
+
+/** Roughly 1 insert in 50 also prunes. Cheap amortised cleanup with no cron. */
+const PRUNE_CHANCE = 0.02;
+
+/**
+ * Record a blocked submission. Reason + email DOMAIN only — never the address,
+ * name or message body, matching the console logs this mirrors.
+ *
+ * Never throws. Storage failing must not change what the visitor sees.
+ */
+async function recordRejection(env: Env, reason: string, domain: string): Promise<void> {
+  if (!env.DB) return;
+  try {
+    await env.DB
+      .prepare('INSERT INTO rejections (reason, email_domain) VALUES (?, ?)')
+      .bind(reason, domain)
+      .run();
+    if (Math.random() < PRUNE_CHANCE) {
+      const r = await env.DB
+        .prepare(`DELETE FROM rejections WHERE created_at < ${ISO_NOW_MINUS_90D}`)
+        .run();
+      const n = r.meta?.changes ?? 0;
+      if (n > 0) console.log(`[contact] pruned ${n} rejection row(s) older than 90 days`);
+    }
+  } catch (e) {
+    console.error('[contact] D1 rejection insert failed:', e instanceof Error ? e.message : String(e));
+  }
+}
+
 type TurnstileResult = { ok: true } | { ok: false; reason: string };
 
 /**
@@ -181,7 +222,7 @@ function respond(
   });
 }
 
-export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
+export const onRequestPost: PagesFunction<Env> = async ({ request, env, waitUntil }) => {
   const wantsJson = (request.headers.get('accept') || '').includes('application/json');
 
   /**
@@ -191,6 +232,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
    */
   const silentDrop = (reason: string, domain = ''): Response => {
     logReject(reason, domain);
+    // waitUntil, not await: the row is written AFTER the response is already
+    // on its way, so D1 latency never shows up in the visitor's request and a
+    // D1 outage cannot delay or alter what they see.
+    waitUntil(recordRejection(env, reason, domain));
     return respond(wantsJson, true, 200, SUCCESS_MESSAGE, '/thanks/');
   };
 
@@ -240,6 +285,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   // reload rather than being thanked for a message that was never sent.
   if (age > MAX_FORM_AGE_MS) {
     logReject('timetrap-expired', '');
+    waitUntil(recordRejection(env, 'timetrap-expired', ''));
     return respond(
       wantsJson,
       false,
@@ -303,6 +349,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   );
   if (!turnstile.ok) {
     logReject(turnstile.reason, domain);
+    waitUntil(recordRejection(env, turnstile.reason, domain));
     return respond(
       wantsJson,
       false,
@@ -356,6 +403,46 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       description
     )}</p>`;
 
+  // ── Store BEFORE sending ────────────────────────────────────────────────
+  // Order matters. Resend is the part most likely to fail — a bad key, a rate
+  // limit, an outage — and an enquiry that was written down but not emailed is
+  // recoverable, while one that was emailed into a failure and never recorded
+  // is gone. So the row lands first as 'pending', then the send happens, then
+  // the status is corrected.
+  //
+  // A D1 failure is logged and ignored: `enquiryId` stays null, the mail still
+  // goes out, and the visitor still gets their success message. Storage is an
+  // audit trail, never a gate.
+  let enquiryId: number | null = null;
+  if (env.DB) {
+    try {
+      const ins = await env.DB
+        .prepare(
+          `INSERT INTO enquiries
+             (name, email, company, services, budget, timeline, description, email_status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')`
+        )
+        .bind(name, email, company, JSON.stringify(services), budget, timeline, description)
+        .run();
+      enquiryId = (ins.meta?.last_row_id as number | undefined) ?? null;
+    } catch (e) {
+      console.error('[contact] D1 enquiry insert failed:', e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  /** Correct the row's status after the send resolves. Never throws. */
+  const markEmail = async (status: 'sent' | 'failed', error = ''): Promise<void> => {
+    if (!env.DB || enquiryId === null) return;
+    try {
+      await env.DB
+        .prepare('UPDATE enquiries SET email_status = ?, email_error = ? WHERE id = ?')
+        .bind(status, error.slice(0, 500), enquiryId)
+        .run();
+    } catch (e) {
+      console.error('[contact] D1 status update failed:', e instanceof Error ? e.message : String(e));
+    }
+  };
+
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -374,7 +461,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     });
 
     if (!res.ok) {
-      console.error('[contact] Resend returned', res.status, await res.text());
+      const detail = await res.text();
+      console.error('[contact] Resend returned', res.status, detail);
+      // Awaited, not waitUntil: the row must not be left saying 'pending' when
+      // we already know the send failed. It is the only signal that an enquiry
+      // arrived but never reached the inbox.
+      await markEmail('failed', `${res.status} ${detail}`);
       return respond(
         wantsJson,
         false,
@@ -385,6 +477,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     }
   } catch (err) {
     console.error('[contact] Resend request threw', err);
+    await markEmail('failed', err instanceof Error ? err.message : String(err));
     return respond(
       wantsJson,
       false,
@@ -394,6 +487,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     );
   }
 
+  await markEmail('sent');
   return respond(wantsJson, true, 200, SUCCESS_MESSAGE, '/thanks/');
 };
 

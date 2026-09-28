@@ -1,0 +1,30 @@
+# Config for the D1 ADMIN COMMANDS ONLY (schema apply, review queries).
+#
+# DELIBERATELY NOT AT site/wrangler.toml. A wrangler.toml at the project root
+# would be picked up by the Pages project and switch it from DASHBOARD bindings
+# to CONFIG-FILE bindings — silently changing how the live deployment is
+# configured, and dropping every binding not repeated here. Pages never reads
+# this path; only the `--config db/wrangler.d1.toml` npm scripts do.
+#
+# The Production binding for the contact Function is set in the Cloudflare
+# dashboard: Pages → ded-site → Settings → Functions → D1 bindings,
+# variable name DB → database ded-enquiries, for BOTH Production and Preview.
+
+name = "ded-d1-admin"
+compatibility_date = "2026-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ded-enquiries"
+# ─────────────────────────────────────────────────────────────────────────────
+# REPLACE AFTER CREATING THE DATABASE:
+#   npx wrangler d1 create ded-enquiries      → prints the real database_id
+#
+# This placeholder is fine for --local (which keys off database_name) but the
+# --remote commands WILL FAIL or, worse, resolve to the wrong instance until it
+# is set. That is exactly how the parked branch broke: the schema was applied
+# through a config carrying a placeholder id, so the table was created on a
+# different database from the one the Function was bound to, and every INSERT
+# hit "no such table".
+# ─────────────────────────────────────────────────────────────────────────────
+database_id = "REPLACE_WITH_REAL_D1_DATABASE_ID"

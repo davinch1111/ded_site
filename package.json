@@ -11,6 +11,11 @@
     "postbuild": "node scripts/check-redirects.mjs",
     "preview": "astro preview",
     "snapshot": "node scripts/snapshot-projects.mjs",
+    "enquiries": "wrangler d1 execute ded-enquiries --remote --command \"SELECT id, substr(created_at,1,16) AS at, email_status, name, email, company, budget, timeline, substr(description,1,60) AS description FROM enquiries ORDER BY created_at DESC LIMIT 20\"",
+    "enquiries:failed": "wrangler d1 execute ded-enquiries --remote --command \"SELECT id, substr(created_at,1,16) AS at, email_status, name, email, substr(email_error,1,120) AS error FROM enquiries WHERE email_status <> 'sent' ORDER BY created_at DESC LIMIT 20\"",
+    "rejections": "wrangler d1 execute ded-enquiries --remote --command \"SELECT reason, COUNT(*) AS n FROM rejections WHERE created_at >= strftime('%Y-%m-%dT%H:%M:%fZ','now','-7 days') GROUP BY reason ORDER BY n DESC\" --command \"SELECT id, substr(created_at,1,16) AS at, reason, email_domain FROM rejections ORDER BY created_at DESC LIMIT 20\"",
+    "db:schema": "wrangler d1 execute ded-enquiries --remote --file=db/schema.sql",
+    "db:schema:local": "wrangler d1 execute ded-enquiries --local --persist-to .wrangler/state --file=db/schema.sql",
     "astro": "astro"
   },
   "dependencies": {

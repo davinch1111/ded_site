@@ -507,6 +507,70 @@ Two gotchas worth keeping:
   multipart container was vestigial. If images break after a signature is edited
   in a generator, check the MIME envelope before blaming the host.
 
+## D1 enquiry storage
+
+Every accepted submission is written to D1 **before** Resend is called; every
+rejection writes a reason + email domain. Binding name `DB`, database
+`ded-enquiries`, schema in `db/schema.sql`.
+
+| Table | Holds |
+|---|---|
+| `enquiries` | name, email, company, services (JSON), budget, timeline, description, `email_status` ('pending'\|'sent'\|'failed'), `email_error` |
+| `rejections` | `reason` + `email_domain` **only** |
+
+### Review
+
+```bash
+npm run enquiries         # last 20, with email_status
+npm run enquiries:failed  # anything not 'sent' — the ones needing a human
+npm run rejections        # counts by reason, last 7 days, + last 20 rows
+```
+
+### Why insert BEFORE send
+
+Resend is the part most likely to fail — bad key, rate limit, outage. An
+enquiry written down but not emailed is **recoverable**; one emailed into a
+failure and never recorded is **gone**. So the row lands as `'pending'`, the
+send happens, then the status is corrected to `'sent'` or `'failed'` with the
+error text. A row still saying `'pending'` means the handler died in between:
+the lead is safe, but nobody knows whether the mail went out.
+
+**D1 is never a gate.** The binding is optional (`DB?: D1Database`); a missing
+binding or a failed insert is logged and ignored — the mail still sends and the
+visitor still gets their success message. Storage is an audit trail. The parked
+branch failed exactly here by returning a 500 when the binding was absent.
+
+Rejection rows are written with `waitUntil`, after the response is already on
+its way, so D1 latency never reaches the visitor. The enquiry insert and the
+status update are awaited, because their ordering is the entire point.
+
+**`rejections` holds no personal data beyond the domain.** Not an oversight —
+it is large, long-lived, and exists only for tuning traps. Pruned to 90 days
+opportunistically (~1 insert in 50). The prune compares against
+`strftime('%Y-%m-%dT%H:%M:%fZ','now','-90 days')`, **not** `datetime('now',…)`:
+the latter yields `YYYY-MM-DD HH:MM:SS`, which does not sort against the ISO
+`created_at` and would delete the wrong rows, or none.
+
+### Local testing — the trap that killed the parked branch
+
+`--d1 DB=<name>` and a config `database_id` resolve to **different** local
+SQLite files. The schema lands in one, the Function binds the other, and every
+insert fails `no such table`. Pass the **ID**, matching `db/wrangler.d1.toml`:
+
+```bash
+npx wrangler d1 execute ded-enquiries --local --persist-to .wrangler/state \
+  --config db/wrangler.d1.toml --file=db/schema.sql
+npx wrangler pages dev dist --persist-to .wrangler/state \
+  --d1 "DB=<same id as db/wrangler.d1.toml>" \
+  --binding TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA \
+  --binding RESEND_API_KEY=<key>
+```
+
+**`db/wrangler.d1.toml` is deliberately NOT at `site/wrangler.toml`.** A
+`wrangler.toml` at the project root would be adopted by the Pages project and
+switch it from dashboard bindings to config-file bindings, silently dropping
+every binding not repeated in it. Only the `--config` npm scripts read that file.
+
 ## Conventions & gotchas
 
 - All front-end work goes in `site/`. Never build pages or Elementor layouts on WordPress.
@@ -671,14 +735,24 @@ WAS the spam channel. Do not restore it.
    TLS fingerprint), then repoint the two Mail signatures. Parked by David
    2026-09-26; not urgent, but it will bite anything else that needs an email
    client to fetch from this domain.
-7. **Service page copy is studio-written and unreviewed.** It makes concrete claims
+7. **D1 is built and locally tested but NOT live.** Wrangler was not
+   authenticated this session, so the database does not exist yet in
+   Cloudflare. Required, in order: `npx wrangler login`;
+   `npx wrangler d1 create ded-enquiries`; paste the real id into
+   `db/wrangler.d1.toml` (replacing `REPLACE_WITH_REAL_D1_DATABASE_ID`);
+   `npm run db:schema`; then in the dashboard add a D1 binding `DB` →
+   `ded-enquiries` under Pages → ded-site → Settings → Functions for **both
+   Production and Preview**; redeploy; confirm with a live submission and
+   `npm run enquiries`. Until then the form works exactly as now and simply
+   stores nothing.
+8. **Service page copy is studio-written and unreviewed.** It makes concrete claims
    (two-business-day reply, press checks, no rediscovery fee) — David should confirm or
    correct before launch.
-8. **Publish-to-live hook URL is still empty.** `wp_option ded_publish_hook_url` is unset, so
+9. **Publish-to-live hook URL is still empty.** `wp_option ded_publish_hook_url` is unset, so
    the button bounces to Settings → Publish to Live. David must paste the Cloudflare deploy
    hook there. **Never hardcode or commit that URL.**
-9. **Auto-rebuild webhook** from WP publish (currently manual, or the admin button).
-10. **Finish the type migration** for the components listed under Type above.
+10. **Auto-rebuild webhook** from WP publish (currently manual, or the admin button).
+11. **Finish the type migration** for the components listed under Type above.
 
 ---
 
