@@ -244,7 +244,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       wantsJson,
       false,
       400,
-      'This form expired after being open too long. Please copy your message, reload the page, and send it again.',
+      'That took a while, so the security check expired. Your message is still here — just press Send again.',
       '/#contact?error=expired'
     );
   }

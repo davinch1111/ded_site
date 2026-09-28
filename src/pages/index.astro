@@ -2218,6 +2218,22 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
   const tsField = cform?.querySelector('input[name="ts"]') as HTMLInputElement | null;
   if (tsField) tsField.value = String(Date.now());
 
+  // Re-arm the form after a FAILED submit so the visitor can simply press Send
+  // again — no reload, nothing retyped. Two things have to be renewed together:
+  // the Turnstile token (single-use) and `ts` (the server's 24h expiry window).
+  //
+  // `ts` is BACKDATED past the 3s minimum on purpose. Stamping it to now would
+  // put an immediate retry under MIN_FILL_MS, where the server SILENTLY drops
+  // it — turning a visible, recoverable error into the invisible failure this
+  // whole path exists to prevent. The 3s floor is there to catch scripted
+  // submits; someone retrying after an error has demonstrably been here a while.
+  const RETRY_TS_BACKDATE_MS = 5000;
+  const reArmForm = () => {
+    if (tsField) tsField.value = String(Date.now() - RETRY_TS_BACKDATE_MS);
+    // Single-use token: a retry needs a fresh one.
+    (window as any).turnstile?.reset?.();
+  };
+
   if (cform && cstatus) {
     cform.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2245,8 +2261,9 @@ body.dark-zone-active .work-nav:hover { background: rgba(255,255,255,0.1); borde
           (err instanceof Error && err.message && err.message !== 'send failed')
             ? err.message
             : 'Something went wrong sending that. Email me directly: info@davidedigerdesign.com';
-        // A Turnstile token is single-use: reset so a retry gets a fresh one.
-        (window as any).turnstile?.reset?.();
+        // Typed fields are deliberately NOT cleared here — cform.reset() runs
+        // only on success. Renew the token and timestamp so Send works again.
+        reArmForm();
       } finally {
         if (btn) btn.disabled = false;
       }

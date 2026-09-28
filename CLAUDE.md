@@ -272,7 +272,7 @@ sent, so a bot cannot learn which trap it hit. The reason goes to the log only.
 | Trap | Rule |
 |---|---|
 | Honeypots | `hp_field_x` (aria-hidden wrapper) and `botcheck` |
-| Time trap | `ts` stamped on load; missing or `<3s` |
+| Time trap | `ts` stamped on load; silent drop if missing or `<3s`. Over 24h is a VISIBLE error, not a drop |
 | Content | HTML tags, `[url=`, more than 2 URLs, >30% Cyrillic |
 | Sender | `BLOCKED_EMAIL_DOMAINS` — mail.ru, rambler.ru + disposables |
 
@@ -293,6 +293,18 @@ catches.
   limit discarded precisely those. An expired form now returns a 400 telling
   them to copy, reload and resend. The ceiling is near-useless defensively
   anyway: bots submit in seconds and die on Turnstile and the 3s floor.
+- **An expired form recovers in place — no reload, nothing retyped.** The 400
+  says "just press Send again"; the island then re-arms by resetting Turnstile
+  (tokens are single-use) and re-stamping `ts`. Typed fields survive because
+  `cform.reset()` runs only on success.
+- **The re-stamp is BACKDATED by 5s (`RETRY_TS_BACKDATE_MS`), and must stay
+  that way.** Stamping `ts` to `Date.now()` puts an immediate retry under the
+  3s floor, where the server SILENTLY drops it — converting a visible,
+  recoverable error into the invisible failure this path exists to prevent.
+  Verified by testing the naive version: it returns 200 and logs
+  `timetrap-too-fast`. The floor targets scripted submits; someone retrying
+  after an error has demonstrably been on the page a while, and still needs a
+  fresh Turnstile token regardless.
 - **A clock running ahead produces a negative age**, which used to fall into
   the "too fast" branch and be dropped. Skew is now logged and skipped. Safe,
   because forging a future `ts` still does not produce a Turnstile token.
