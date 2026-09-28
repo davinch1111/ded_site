@@ -4,6 +4,9 @@ import SiteNav from '../../components/SiteNav.astro';
 import SiteFooter from '../../components/SiteFooter.astro';
 import Icon from '../../components/Icon.astro';
 import ScrollCue from '../../components/ScrollCue.astro';
+// WP-with-snapshot-fallback. Shared with index.astro so there is ONE fallback
+// source, not two that drift. See src/data/wp-projects.mjs.
+import { loadProjects } from '../../data/wp-projects.mjs';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface WPImage {
@@ -57,72 +60,15 @@ interface ProjectLite {
 
 // ─── Build-time fetch ────────────────────────────────────────────────────────
 export async function getStaticPaths() {
-  const API_BASE = 'https://davidedigerdesign.in/wp-json/wp/v2';
-  // orderby=menu_order: the drag-and-drop order (ASE Content Order). The
-  // rest_ded_project_collection_params filter in ded-cpt.php allows it.
-  const ENDPOINT = `${API_BASE}/ded_project?_embed&per_page=100&orderby=menu_order&order=asc`;
+  // Tries WordPress, falls back to the committed snapshot on ANY failure —
+  // network error, timeout, non-200, empty result, unresolvable media. This
+  // used to throw, which made davidedigerdesign.in a hard dependency of every
+  // deploy: a WP outage (or David's VPN, which does not route to that host)
+  // blocked releases of completely unrelated changes. It now warns and builds.
+  // Refresh the snapshot with `npm run snapshot`.
+  const { raw, mediaMap } = await loadProjects();
 
-  let res: Response;
-  try {
-    res = await fetch(ENDPOINT, { signal: AbortSignal.timeout(12000) });
-  } catch (e) {
-    throw new Error(
-      `[work/[slug]] Network error fetching ${ENDPOINT}: ${(e as Error).message}. ` +
-      `WordPress at davidedigerdesign.in must be reachable at build time.`
-    );
-  }
-  if (!res.ok) {
-    throw new Error(
-      `[work/[slug]] WP REST returned ${res.status} ${res.statusText} from ${ENDPOINT}. ` +
-      `Cannot generate project pages.`
-    );
-  }
-  const raw: any[] = await res.json();
-  if (!Array.isArray(raw) || raw.length === 0) {
-    throw new Error(`[work/[slug]] WP returned no projects. Aborting build to avoid silent empty site.`);
-  }
-  // WP returns them in menu_order (drag order) already — no client sort.
-
-  // ── Collect all numeric image IDs across projects (handles legacy data
-  //    where ACF stored attachment IDs before return_format=array was set on
-  //    the matching field keys). Batch-resolve via the media endpoint.
-  const ids = new Set<number>();
   const isNumericId = (v: any): v is number => typeof v === 'number' && Number.isFinite(v) && v > 0;
-  for (const p of raw) {
-    const a = p.acf ?? {};
-    if (isNumericId(a.master_image)) ids.add(a.master_image);
-    if (isNumericId(a.project_logo)) ids.add(a.project_logo);
-    if (Array.isArray(a.gallery_items)) {
-      for (const g of a.gallery_items) if (isNumericId(g?.g_image)) ids.add(g.g_image);
-    }
-  }
-
-  const mediaMap = new Map<number, WPImage>();
-  if (ids.size > 0) {
-    const chunks: number[][] = [];
-    const all = Array.from(ids);
-    for (let i = 0; i < all.length; i += 80) chunks.push(all.slice(i, i + 80));
-    for (const chunk of chunks) {
-      const url = `${API_BASE}/media?include=${chunk.join(',')}&per_page=100&orderby=include`;
-      const r = await fetch(url, { signal: AbortSignal.timeout(12000) });
-      if (!r.ok) {
-        throw new Error(`[work/[slug]] Failed to resolve media batch (${r.status}) from ${url}`);
-      }
-      const items: any[] = await r.json();
-      for (const m of items) {
-        mediaMap.set(m.id, {
-          id: m.id,
-          url: m.source_url,
-          alt: m.alt_text ?? '',
-          width: m.media_details?.width,
-          height: m.media_details?.height,
-          sizes: m.media_details?.sizes ? Object.fromEntries(
-            Object.entries(m.media_details.sizes).map(([k, v]: [string, any]) => [k, v.source_url])
-          ) : undefined,
-        });
-      }
-    }
-  }
 
   const resolveImg = (v: any): WPImage | null => {
     if (!v) return null;

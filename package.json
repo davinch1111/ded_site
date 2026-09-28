@@ -10,6 +10,7 @@
     "build": "astro build",
     "postbuild": "node scripts/check-redirects.mjs",
     "preview": "astro preview",
+    "snapshot": "node scripts/snapshot-projects.mjs",
     "astro": "astro"
   },
   "dependencies": {

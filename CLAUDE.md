@@ -343,20 +343,31 @@ submission cleared every anti-spam gate.
 ```
 GET /wp-json/wp/v2/ded_project?per_page=24&orderby=menu_order&order=asc&_embed
 ```
-**WP must be reachable at build time — the build FAILS without it.** Only the
-homepage degrades gracefully (`index.astro` has `FALLBACK_PROJECTS`, 6 seed
-entries). `work/[slug].astro` throws on a network error *and* on an empty
-result ("Aborting build to avoid silent empty site"), which fails the whole
-deploy. That is deliberate — shipping a work section with no work is worse than
-not shipping — but it means **davidedigerdesign.in is a hard dependency of every
-deploy**, and a WP outage blocks releases of unrelated changes.
+**The build NEVER fails for want of WordPress.** `src/data/wp-projects.mjs` tries
+WP (10s per request) and falls back to a committed snapshot on any failure —
+network error, timeout, non-200, empty result, or unresolvable media. It warns
+loudly with the snapshot's date and carries on. Both `work/[slug].astro` and
+`index.astro` use it, so there is **one** fallback source; the homepage's six
+hand-maintained `FALLBACK_PROJECTS` are gone.
 
-Note for local builds: if David's VPN (IPVanish) is on, `.in` is unroutable from
-his machine and `npm run build` fails with exactly this error. Check the VPN
-before assuming WordPress is down.
-Project pages read ACF: `tagline`, `master_image`, `project_logo`, `fact_*`, `brief_text`,
-`approach_text`, `gallery_items`, `video_url`, `outcome_text`, `outcome_stats`, `t_*`,
-`hover_video`, and the `show_*` section toggles.
+**Run `npm run snapshot` whenever projects change in WP, and commit the result.**
+`src/data/projects.snapshot.json` (~227 KB, 8 projects + 66 media items) is what
+ships when WP is down. A stale snapshot means a stale site on precisely the day
+nobody is positioned to notice. The script refuses to write if WP is
+unreachable, so a bad fetch cannot destroy a good snapshot.
+
+The fallback is deliberately **all-or-nothing** — a partial WP result is never
+merged with the snapshot, because half-fresh data is harder to reason about
+than a build that is cleanly one or the other.
+
+**The snapshot is a static `import ... with { type: 'json' }`, not `readFileSync`.**
+Vite bundles the module into `dist/.prerender/chunks/` without copying the JSON
+beside it, so a file read resolved to a nonexistent path — and only on the
+fallback path, i.e. only during a real outage. Caught by building against a
+dead host; the happy path never touches that code. Do not "simplify" it back.
+
+Local builds: if David's VPN (IPVanish) is on, `.in` is unroutable from his
+machine and the snapshot warning fires. Check the VPN before assuming WP is down.
 
 ---
 
