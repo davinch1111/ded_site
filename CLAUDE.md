@@ -8,8 +8,8 @@ Guidance for Claude Code (claude.ai/code) working in this repository.
 
 ## Project Overview
 
-Rebuilding davidedigerdesign.com — a portfolio/studio site for David Ediger, Creative
-Director. Staged on Cloudflare Pages before the domain cutover.
+davidedigerdesign.com — a portfolio/studio site for David Ediger, Creative
+Director. **Live on the custom domain since 2026-09-24**; the cutover is done.
 
 **Architecture: headless WordPress + Astro (static).**
 - WordPress at davidedigerdesign.in is a **content API only** — projects, ACF fields,
@@ -236,12 +236,19 @@ contact form at `/#contact` — it deliberately does **not** duplicate the form.
 form and one endpoint; a second would mean two sets of validation drifting apart.
 
 ### Contact form
-`POST /api/contact` → `functions/api/contact.ts`. One handler, two paths:
-**with JS** the bundled island sends `Accept: application/json` via `fetch` and renders an
-inline status; **without JS** the same POST gets a `303` to `/thanks/` (or back to
-`/#contact?error=…`). Fields: `name`, `email`, `company`, `services` (chip checkboxes,
-read with `getAll`), `budget`, `timeline`, `description`, plus a `botcheck` honeypot that
-returns a decoy success.
+`POST /api/contact` → `functions/api/contact.ts`. The bundled island sends
+`Accept: application/json` via `fetch` and renders an inline status.
+
+**The no-JS path no longer completes.** The handler still answers a plain form POST
+with a `303` (to `/thanks/` on success, `/#contact?error=…` otherwise), but Turnstile
+fails closed and cannot mint a token without JS, so a no-JS submission is always
+rejected before it gets there. `/thanks/` is effectively unreachable now. That is
+deliberate — see *Turnstile FAILS CLOSED* below — and the form carries a `<noscript>`
+block giving the studio address instead.
+
+Fields: `name`, `email`, `company`, `services` (chip checkboxes, read with `getAll`),
+`budget`, `timeline`, `description`, plus `hp_field_x` and `botcheck` honeypots and a
+`ts` timestamp.
 
 #### Turnstile FAILS CLOSED — do not reopen it
 
@@ -522,9 +529,20 @@ Two gotchas worth keeping:
 
 ## Current Status
 
-Live on Cloudflare Pages at `ded-site.pages.dev`. **8 projects. 18 pages.**
+**Live at https://davidedigerdesign.com** (Cloudflare Pages, custom domain,
+bare domain canonical). **8 projects. 18 pages.** `ded-site.pages.dev` still
+serves the same build as a `noindex` preview — do not verify against it.
 
 **Recently shipped (all on `main`, newest first):**
+- `5cdfa63` — an expired form now recovers in place: "press Send again", island
+  re-arms Turnstile + `ts`, typed fields kept, no reload. The re-stamp is
+  backdated 5s so a retry does not fall under the 3s silent floor.
+- `07bea1e` — documented why email images live on `.in`; corrected a false
+  claim that a fallback keeps the build green when WP is unreachable.
+- `b90f0b0` — six email-signature images published at `/email/`.
+- `57abb63` — anti-spam false positives fixed: 24h ceiling (was a 2h SILENT
+  drop that destroyed slow, considered enquiries) and the honeypot renamed off
+  `website`, which browser autofill was filling.
 - `a9b8fd1` — contact form hardened: Turnstile **fails closed** (the `'skipped'`
   branch was the spam channel), plus honeypot, time trap, content heuristics and
   a domain blocklist, all silent. 13 cases tested.
@@ -579,7 +597,9 @@ build on it without being asked.
 
 ### Cloudflare dashboard settings this repo expects
 
-The code is deployed but **inert until these exist**:
+**All three are confirmed set in PRODUCTION** (2026-09-26): the site key renders
+a real `data-sitekey` on the live page, and a garbage token returns 403, which
+only happens when the secret is present.
 
 | Setting | Where | Value |
 |---|---|---|
@@ -588,9 +608,13 @@ The code is deployed but **inert until these exist**:
 | `PUBLIC_TURNSTILE_SITE_KEY` | same, **plain** (build-time) | Turnstile site key |
 | Resend domain | Resend dashboard | verify `send.davidedigerdesign.com`, add its DNS records |
 
-Without `RESEND_API_KEY` the form returns a clean "misconfigured" error rather than failing
-silently. Without the Turnstile keys the widget is omitted and submissions are accepted but
-marked unverified.
+Without `RESEND_API_KEY` the form returns a clean "misconfigured" error rather than
+failing silently.
+
+**Without `TURNSTILE_SECRET_KEY` NOTHING is accepted** — verification fails closed,
+so every submission is rejected with a 400. That is deliberate. The old behaviour,
+where a missing key meant submissions were accepted and merely "marked unverified",
+WAS the spam channel. Do not restore it.
 
 ---
 
