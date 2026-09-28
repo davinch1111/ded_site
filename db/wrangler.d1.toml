@@ -16,15 +16,17 @@ compatibility_date = "2026-09-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "ded-enquiries"
-# ─────────────────────────────────────────────────────────────────────────────
-# REPLACE AFTER CREATING THE DATABASE:
-#   npx wrangler d1 create ded-enquiries      → prints the real database_id
+# The real database, created in the Cloudflare dashboard on 2026-09-28.
 #
-# This placeholder is fine for --local (which keys off database_name) but the
-# --remote commands WILL FAIL or, worse, resolve to the wrong instance until it
-# is set. That is exactly how the parked branch broke: the schema was applied
-# through a config carrying a placeholder id, so the table was created on a
-# different database from the one the Function was bound to, and every INSERT
-# hit "no such table".
-# ─────────────────────────────────────────────────────────────────────────────
-database_id = "REPLACE_WITH_REAL_D1_DATABASE_ID"
+# NOT A SECRET. A D1 database_id is an identifier, not a credential — it grants
+# nothing without an authenticated account, which is why it is committed while
+# API tokens never are.
+#
+# It must match EXACTLY what the Pages binding points at. The parked branch
+# broke because a placeholder id sent the schema to one database while the
+# Function was bound to another, so every INSERT hit "no such table".
+#
+# For LOCAL testing, pass this same id — not the name — to pages dev:
+#   --d1 "DB=399d2eda-0a03-49f1-8706-cfb4f970bbbe"
+# `--d1 DB=ded-enquiries` resolves to a DIFFERENT local SQLite file.
+database_id = "399d2eda-0a03-49f1-8706-cfb4f970bbbe"

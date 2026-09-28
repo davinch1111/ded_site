@@ -735,16 +735,18 @@ WAS the spam channel. Do not restore it.
    TLS fingerprint), then repoint the two Mail signatures. Parked by David
    2026-09-26; not urgent, but it will bite anything else that needs an email
    client to fetch from this domain.
-7. **D1 is built and locally tested but NOT live.** Wrangler was not
-   authenticated this session, so the database does not exist yet in
-   Cloudflare. Required, in order: `npx wrangler login`;
-   `npx wrangler d1 create ded-enquiries`; paste the real id into
-   `db/wrangler.d1.toml` (replacing `REPLACE_WITH_REAL_D1_DATABASE_ID`);
-   `npm run db:schema`; then in the dashboard add a D1 binding `DB` →
-   `ded-enquiries` under Pages → ded-site → Settings → Functions for **both
-   Production and Preview**; redeploy; confirm with a live submission and
-   `npm run enquiries`. Until then the form works exactly as now and simply
+7. **D1 — database created, binding still to do.** `ded-enquiries` exists
+   (id `399d2eda-0a03-49f1-8706-cfb4f970bbbe`, committed in
+   `db/wrangler.d1.toml`). Remaining, in order: paste `db/schema.sql` into the
+   Cloudflare D1 Console and run it; then Pages → ded-site → Settings →
+   Functions → D1 bindings, variable `DB` → `ded-enquiries`, for **both
+   Production and Preview**; redeploy; confirm with a live submission.
+   Wrangler is still not authenticated locally, so the `--remote` npm scripts
+   (`npm run enquiries`, `npm run rejections`, `npm run db:schema`) will not
+   run until `npx wrangler login` succeeds — the D1 Console is the workaround
+   for now. Until the binding exists the form works exactly as today and
    stores nothing.
+
 8. **Service page copy is studio-written and unreviewed.** It makes concrete claims
    (two-business-day reply, press checks, no rediscovery fee) — David should confirm or
    correct before launch.
