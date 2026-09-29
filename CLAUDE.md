@@ -526,6 +526,13 @@ npm run enquiries:failed  # anything not 'sent' — the ones needing a human
 npm run rejections        # counts by reason, last 7 days, + last 20 rows
 ```
 
+Two things these scripts got wrong at first, both silent-ish failures:
+`wrangler` is not on PATH (needs `npx`), and `--config db/wrangler.d1.toml` is
+required or the database name will not resolve. **`--command` also cannot be
+repeated** — the second occurrence is ignored and wrangler errors with "You
+must provide either --command or --file". Multiple statements go in ONE
+`--command`, separated by `;`.
+
 ### Why insert BEFORE send
 
 Resend is the part most likely to fail — bad key, rate limit, outage. An
@@ -704,21 +711,17 @@ WAS the spam channel. Do not restore it.
 2. **Favicon raster set is stale.** `favicon.svg` is blue, but `favicon.ico`,
    `favicon-16x16.png`, `favicon-32x32.png`, `favicon.png` and `apple-touch-icon.png` are
    still the earlier artwork. Regenerate all from the blue SVG.
-3. **Contact form — confirm the test email actually arrived.** A real browser
-   submission WAS made on 2026-09-26 from Brave: Turnstile auto-solved a
-   794-char token, both honeypots stayed empty, `ts` was 130s old, and the form
-   returned `ok` with the success message. Subject *"New project inquiry —
-   Claude Code TEST submission"*, reply-to `mk3@mk-4.com`. **Nobody has checked
-   the inbox.** That matters because a silent drop returns the IDENTICAL success
-   message — the response alone does not prove delivery. Confirm it landed at
-   info@davidedigerdesign.com (SiteGround MX) and that reply-to works.
+3. **Confirm the enquiry email actually lands in the inbox.** The pipeline is
+   verified as far as Resend: a real browser submission on 2026-09-28 recorded
+   `email_status='sent'` with an empty `email_error` in D1, meaning Resend
+   accepted it. What is still unconfirmed is delivery — that it arrives at
+   info@davidedigerdesign.com (SiteGround MX) and that reply-to works. Check
+   `npm run enquiries:failed` periodically; anything not 'sent' needs a human.
 
-   **The Chrome/Brave autofill check was NOT completed.** Brave offered no
-   autofill dropdown — that profile has no saved address data, so there was
-   nothing to trigger. No automated test can prove a real browser's heuristics
-   leave `hp_field_x` alone, and an autofilled honeypot silently destroys the
-   enquiry. With a saved address in the browser, autofill the form and inspect
-   `hp_field_x` in devtools; do not just watch the visible inputs.
+   **The Chrome/Brave autofill check is still not done.** Brave offered no
+   autofill dropdown (no saved address data), so nothing could trigger it. With
+   a saved address, autofill the form and inspect `hp_field_x` in devtools — an
+   autofilled honeypot silently destroys the enquiry.
 
 4. **Populate remaining projects.** 8 live; more to add via the `ded_project` CPT.
    Two were unpublished from WP around 2026-09-10 — `el-salvador-home-building-video` and
@@ -735,17 +738,11 @@ WAS the spam channel. Do not restore it.
    TLS fingerprint), then repoint the two Mail signatures. Parked by David
    2026-09-26; not urgent, but it will bite anything else that needs an email
    client to fetch from this domain.
-7. **D1 — database created, binding still to do.** `ded-enquiries` exists
-   (id `399d2eda-0a03-49f1-8706-cfb4f970bbbe`, committed in
-   `db/wrangler.d1.toml`). Remaining, in order: paste `db/schema.sql` into the
-   Cloudflare D1 Console and run it; then Pages → ded-site → Settings →
-   Functions → D1 bindings, variable `DB` → `ded-enquiries`, for **both
-   Production and Preview**; redeploy; confirm with a live submission.
-   Wrangler is still not authenticated locally, so the `--remote` npm scripts
-   (`npm run enquiries`, `npm run rejections`, `npm run db:schema`) will not
-   run until `npx wrangler login` succeeds — the D1 Console is the workaround
-   for now. Until the binding exists the form works exactly as today and
-   stores nothing.
+7. **D1 Preview binding is missing.** Production is bound and verified live
+   (a real submission recorded `email_status='sent'`). Preview is NOT, so
+   `env.DB` is undefined on `ded-site.pages.dev` and a preview test silently
+   stores nothing — which looks identical to success. Add the same `DB` →
+   `ded-enquiries` binding under Preview when convenient.
 
 8. **Service page copy is studio-written and unreviewed.** It makes concrete claims
    (two-business-day reply, press checks, no rediscovery fee) — David should confirm or
