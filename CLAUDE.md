@@ -761,3 +761,39 @@ WAS the spam channel. Do not restore it.
 - Never delete or overwrite WP demo pages, the front page, the theme, or the database.
 - All front-end work goes in `site/`, never on the WP server.
 - Confirm with David before anything irreversible.
+
+---
+
+## Skill precedence
+
+Several installed skills claim overlapping ground on design, redesign and
+animation. This order settles it. Where a skill disagrees with this file, this
+file wins.
+
+- **The design system in this CLAUDE.md overrides every skill.** The dark
+  Porsche-adjacent aesthetic, the single accent `#3457C6`, Montserrat as the
+  only face, and the CSP-safe rules (scripts bundled and never inline; content
+  visible by default; animation additive only) are **locked**. A skill
+  proposing a new palette, a second typeface, inline `style=""` or an inline
+  `<script>` is wrong for this repo, however good the generic advice.
+- **Visual design, layout or redesign → `impeccable`.** It must not replace the
+  established look; treat this CLAUDE.md as its design context. It expects a
+  `PRODUCT.md`/`DESIGN.md` pair that this repo deliberately does not have —
+  the design-system section here is more specific than a generated file, so
+  skip `/impeccable teach` and point it at this document instead.
+- **Motion and animation → `emil-design-eng`, `review-animations`,
+  `improve-animations`.** Impeccable defers on motion even though its own
+  description claims "animate".
+- **`frontend-design` is used only when `impeccable` is not loaded.**
+- **Copy follows the portfolio voice standard in this file.** `copywriting` and
+  `cro` advise on structure and conversion only, never on voice.
+- **Project skills live at the PROJECT ROOT, not in this repo.**
+  `.claude/skills/` and `.claude/agents/` sit one level above `site/`, outside
+  git, because that is the directory sessions start in and therefore the only
+  place they load from. They are **not version-controlled and do not travel
+  with a clone** — reinstall them from the commits pinned in the cleanup plan
+  (`~/Documents/cc-skills-cleanup.md`). Moving them into `site/` would make
+  them committable but stop them loading.
+- **Only one skill may create or edit `DESIGN.md`, and only when David asks.**
+  Three separate skills will generate one unprompted if invited; the result is
+  a file nobody owns that contradicts this one.
